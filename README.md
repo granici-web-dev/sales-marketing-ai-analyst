@@ -1,0 +1,148 @@
+# Sales & Marketing AI Analyst
+
+> AI-аналитик маркетинга и продаж для румынского SMB на базе MEFI CRM.
+
+Платформа собирает данные из MEFI CRM, рекламных систем (Meta, Google, TikTok Ads) и веб-аналитики (GA4, Search Console), строит дашборды и **раз в день генерирует AI-инсайты** через Claude Sonnet 4.5 — с конкретным планом действий на румынском языке.
+
+**Status:** 🚧 In development (Pre-MVP)
+**Pilot client:** Sofa Belle (premium furniture, Romania)
+
+---
+
+## Quick Links
+
+- 📖 [SPEC.md](./SPEC.md) — Full product specification
+- 🤖 [CLAUDE.md](./CLAUDE.md) — Instructions for Claude Code
+- 🏗️ [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — System architecture
+- 💻 [docs/STACK.md](./docs/STACK.md) — Tech stack details
+- 📋 [docs/CONVENTIONS.md](./docs/CONVENTIONS.md) — Coding conventions
+- 🏠 [docs/SOFABELLE.md](./docs/SOFABELLE.md) — Pilot client context
+- 🔌 [docs/INTEGRATIONS.md](./docs/INTEGRATIONS.md) — External integrations
+- 🔒 [SECURITY.md](./SECURITY.md) — Security & GDPR policy
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Docker 24+ and Docker Compose v2
+- Python 3.11+ (for local development without Docker)
+- Node.js 20+ and pnpm (for frontend development)
+- An Anthropic API key
+- (Eventually) Access to: MEFI API, Meta Business Manager, Google Ads, TikTok for Business, GA4, Search Console
+
+### Initial Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/<your-org>/sales-marketing-ai-analyst.git
+cd sales-marketing-ai-analyst
+
+# Copy environment variables
+cp .env.example .env
+# Fill in the values in .env (see comments in the file)
+
+# Generate secrets
+echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env
+python3 -c "from cryptography.fernet import Fernet; print(f'FERNET_KEY={Fernet.generate_key().decode()}')" >> .env
+
+# Start all services
+docker compose up -d
+
+# Run database migrations
+docker compose exec backend alembic upgrade head
+
+# Create first admin user (script will be added later)
+# docker compose exec backend python -m app.scripts.create_admin
+```
+
+The application will be available at:
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:8000
+- **API docs (Swagger):** http://localhost:8000/docs
+
+---
+
+## Development
+
+See [CLAUDE.md](./CLAUDE.md) for detailed development commands and conventions.
+
+### Working with Claude Code
+
+This project uses [GSD (Get Shit Done)](https://github.com/gsd-build/get-shit-done) — a spec-driven development system for Claude Code.
+
+```bash
+# Install GSD (once per machine)
+npx get-shit-done-cc@latest
+
+# Start Claude Code with GSD enabled
+claude --dangerously-skip-permissions
+
+# Initialize project planning (first time)
+/gsd-new-project
+
+# Work on a phase
+/gsd-discuss-phase 1
+/gsd-plan-phase 1
+/gsd-execute-phase 1
+/gsd-verify-work 1
+/gsd-ship 1
+```
+
+The full specification is in [SPEC.md](./SPEC.md). GSD will read it and create the planning artifacts (`PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md`, `CONTEXT.md`).
+
+---
+
+## Project Structure
+
+```
+sales-marketing-ai-analyst/
+├── SPEC.md                  # Full product specification
+├── CLAUDE.md                # Claude Code instructions
+├── README.md                # This file
+├── SECURITY.md              # GDPR/security policy
+├── .env.example
+├── docker-compose.yml
+├── docker-compose.prod.yml
+│
+├── docs/                    # Detailed documentation
+│   ├── ARCHITECTURE.md
+│   ├── STACK.md
+│   ├── CONVENTIONS.md
+│   ├── SOFABELLE.md
+│   └── INTEGRATIONS.md
+│
+├── backend/                 # Python FastAPI backend
+├── worker/                  # Celery workers (если выделим отдельно)
+├── frontend/                # Next.js frontend
+├── infra/                   # Infrastructure configs
+└── tests/                   # E2E tests
+```
+
+---
+
+## Roadmap
+
+The product is built **iteratively**:
+
+| Iteration | Scope | Status |
+|---|---|---|
+| **MVP1** | MEFI only — Sales Dashboard + basic Marketing + AI Insights | ⏳ Planned |
+| **MVP2** | + Meta Ads + Google Ads + TikTok Ads | ⏳ Future |
+| **MVP3** | + GA4 + Google Search Console | ⏳ Future |
+| **Production** | Multi-tenant, billing, Romanian hosting | ⏳ Future |
+
+See [SPEC.md section 2](./SPEC.md#2-roadmap-по-итерациям) for details.
+
+---
+
+## License
+
+Proprietary. All rights reserved.
+
+---
+
+## Contact
+
+[Your contact info here]
