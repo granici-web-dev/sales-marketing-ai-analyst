@@ -180,23 +180,90 @@
 
 ## Traceability
 
-*Updated during roadmap creation.*
+*Updated during roadmap creation (2026-05-19).*
 
 | Requirement | Phase | Status |
 |---|---|---|
-| INFRA-01..06 | Phase 1: Foundation | Pending |
-| AUTH-01..03 | Phase 1: Foundation | Pending |
-| MEFI-01..12 | Phase 2: MEFI ETL | Pending |
-| DATA-01..04 | Phase 2: MEFI ETL | Pending |
-| METR-01..06 | Phase 3: Metrics Engine | Pending |
-| ANOM-01..07 | Phase 4: Anomaly Detection | Pending |
-| AI-01..09 | Phase 5: AI Insights | Pending |
-| SALE-01..07 | Phase 6: Sales Dashboard | Pending |
-| SALES-01..04 | Phase 6: Salespeople Dashboard | Pending |
-| MARK-01..04 | Phase 6: Marketing Dashboard | Pending |
-| INSI-01..06 | Phase 6: Insights UI | Pending |
-| UI-01..08 | Phase 1 (infra) + Phase 6 (UI) | Pending |
-| PIPE-01..04 | Phase 2 (ETL) + Phase 3 (metrics) | Pending |
+| INFRA-01 | Phase 1: Foundation | Pending |
+| INFRA-02 | Phase 1: Foundation | Pending |
+| INFRA-03 | Phase 1: Foundation | Pending |
+| INFRA-04 | Phase 1: Foundation | Pending |
+| INFRA-05 | Phase 1: Foundation | Pending |
+| INFRA-06 | Phase 1: Foundation | Pending |
+| AUTH-01 | Phase 1: Foundation | Pending |
+| AUTH-02 | Phase 1: Foundation | Pending |
+| AUTH-03 | Phase 1: Foundation | Pending |
+| MEFI-01 | Phase 2: MEFI ETL | Pending |
+| MEFI-02 | Phase 2: MEFI ETL | Pending |
+| MEFI-03 | Phase 2: MEFI ETL | Pending |
+| MEFI-04 | Phase 2: MEFI ETL | Pending |
+| MEFI-05 | Phase 2: MEFI ETL | Pending |
+| MEFI-06 | Phase 2: MEFI ETL | Pending |
+| MEFI-07 | Phase 2: MEFI ETL | Pending |
+| MEFI-08 | Phase 2: MEFI ETL | Pending |
+| MEFI-09 | Phase 2: MEFI ETL | Pending |
+| MEFI-10 | Phase 2: MEFI ETL | Pending |
+| MEFI-11 | Phase 2: MEFI ETL | Pending |
+| MEFI-12 | Phase 2: MEFI ETL | Pending |
+| DATA-01 | Phase 2: MEFI ETL | Pending |
+| DATA-02 | Phase 2: MEFI ETL | Pending |
+| DATA-03 | Phase 2: MEFI ETL | Pending |
+| DATA-04 | Phase 2: MEFI ETL | Pending |
+| METR-01 | Phase 3: Metrics Engine | Pending |
+| METR-02 | Phase 3: Metrics Engine | Pending |
+| METR-03 | Phase 3: Metrics Engine | Pending |
+| METR-04 | Phase 3: Metrics Engine | Pending |
+| METR-05 | Phase 3: Metrics Engine | Pending |
+| METR-06 | Phase 3: Metrics Engine | Pending |
+| ANOM-01 | Phase 4: Anomaly Detection | Pending |
+| ANOM-02 | Phase 4: Anomaly Detection | Pending |
+| ANOM-03 | Phase 4: Anomaly Detection | Pending |
+| ANOM-04 | Phase 4: Anomaly Detection | Pending |
+| ANOM-05 | Phase 4: Anomaly Detection | Pending |
+| ANOM-06 | Phase 4: Anomaly Detection | Pending |
+| ANOM-07 | Phase 4: Anomaly Detection | Pending |
+| AI-01 | Phase 5: AI Insights | Pending |
+| AI-02 | Phase 5: AI Insights | Pending |
+| AI-03 | Phase 5: AI Insights | Pending |
+| AI-04 | Phase 5: AI Insights | Pending |
+| AI-05 | Phase 5: AI Insights | Pending |
+| AI-06 | Phase 5: AI Insights | Pending |
+| AI-07 | Phase 5: AI Insights | Pending |
+| AI-08 | Phase 5: AI Insights | Pending |
+| AI-09 | Phase 5: AI Insights | Pending |
+| SALE-01 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| SALE-02 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| SALE-03 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| SALE-04 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| SALE-05 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| SALE-06 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| SALE-07 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| SALES-01 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| SALES-02 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| SALES-03 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| SALES-04 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| MARK-01 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| MARK-02 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| MARK-03 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| MARK-04 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| INSI-01 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| INSI-02 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| INSI-03 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| INSI-04 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| INSI-05 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| INSI-06 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| UI-01 | Phase 1 (i18n scaffold) + Phase 7 | Pending |
+| UI-02 | Phase 7: Frontend Dashboards | Pending |
+| UI-03 | Phase 7: Frontend Dashboards | Pending |
+| UI-04 | Phase 7: Frontend Dashboards | Pending |
+| UI-05 | Phase 7: Frontend Dashboards | Pending |
+| UI-06 | Phase 6 (API) + Phase 7 (banner UI) | Pending |
+| UI-07 | Phase 7: Frontend Dashboards | Pending |
+| UI-08 | Phase 7: Frontend Dashboards | Pending |
+| PIPE-01 | Phase 2: MEFI ETL | Pending |
+| PIPE-02 | Phase 2: MEFI ETL | Pending |
+| PIPE-03 | Phase 2: MEFI ETL | Pending |
+| PIPE-04 | Phase 1 (table) + Phase 2 (writes) | Pending |
 
 **Coverage:**
 - v1 requirements: 68 total
@@ -204,5 +271,6 @@
 - Unmapped: 0 ✓
 
 ---
+
 *Requirements defined: 2026-05-19*
-*Last updated: 2026-05-19 after initial definition*
+*Last updated: 2026-05-19 — traceability mapped to 8-phase roadmap*

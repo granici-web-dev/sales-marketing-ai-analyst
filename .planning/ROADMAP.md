@@ -1,0 +1,194 @@
+# Roadmap: Sales & Marketing AI Analyst
+
+**Created:** 2026-05-19
+**Milestone:** Iteration 1 (MVP1 — MEFI-only)
+**Granularity:** Standard (5-8 phases)
+**Mode:** YOLO (auto-execute)
+**Parallelization:** Enabled
+**Coverage:** 68/68 v1 requirements mapped
+
+---
+
+## Phases
+
+- [ ] **Phase 1: Foundation** — Docker stack, FastAPI async skeleton, Celery+RedBeat, Next.js 16+shadcn UI scaffold, JWT auth, next-intl i18n, multi-tenancy seam
+- [ ] **Phase 2: MEFI ETL** — MEFI API client, raw tables, conformed views, "ever reached" funnel logic, idempotent nightly sync with rate limits and backfill
+- [ ] **Phase 3: Metrics Engine** — Daily KPI calculation, funnel conversion rates, salesperson and source KPIs, WoW/MoM deltas
+- [ ] **Phase 4: Anomaly Detection** — Rule-based anomaly engine writing detected_problems with severity and estimated_loss_ron
+- [ ] **Phase 5: AI Insights** — Claude Sonnet 4.6 integration with structured Pydantic schema, prompt caching, post-validation, daily insights table
+- [ ] **Phase 6: Backend HTTP API** — FastAPI endpoints for all dashboards and insights with Pydantic response schemas
+- [ ] **Phase 7: Frontend Dashboards** — Next.js UI pages (Sales → Salespeople → Marketing → Insights) with Romanian locale
+- [ ] **Phase 8: Polish & Deploy** — E2E tests, Sentry, healthcheck task, Hetzner deployment with Caddy
+
+---
+
+## Phase Details
+
+### Phase 1: Foundation
+**Goal:** Working development environment where all infrastructure pieces (web, worker, scheduler, database, cache, frontend) start with one command and a user can log in to a protected route.
+**Depends on:** Nothing (first phase)
+**Requirements:** INFRA-01, INFRA-02, INFRA-03, INFRA-04, INFRA-05, INFRA-06, AUTH-01, AUTH-02, AUTH-03, UI-01 (i18n scaffold), PIPE-04 (pipeline_runs table)
+**Success Criteria:**
+1. Running `docker compose up -d` from project root starts all services (postgres, redis, backend, worker, beat, frontend) and `curl http://localhost:8000/healthz` returns 200 within 30 seconds.
+2. `alembic upgrade head` creates all base tables (`tenants`, `users`, `sync_runs`, `pipeline_runs`) with `tenant_id NOT NULL` and `TIMESTAMPTZ` columns; verified via `\d+` in psql.
+3. User can POST email and password to `/api/v1/auth/login`, receive a JWT, and the Next.js frontend stores it; subsequent navigation to `/dashboard` succeeds while an unauthenticated request to `/dashboard` redirects to `/login`.
+4. `celery -A app.tasks.celery_app inspect ping` returns `pong` from the worker, and `celery-redbeat` shows the scheduler is alive in Redis (`KEYS redbeat::*` is non-empty).
+5. A test job logged via `structlog` produces JSON output with `tenant_id`, `task_id`, no PII fields; grepping logs for sample customer name/email/phone returns nothing.
+6. SQLAlchemy session factory rejects a query without a tenant context — `with_loader_criteria` seam present in `app/db/session.py` (verified via failing test for "missing tenant").
+**Plans:** TBD
+**UI hint:** yes
+
+---
+
+### Phase 2: MEFI ETL
+**Goal:** Nightly sync pulls all Sofa Belle leads from MEFI into PostgreSQL with idempotent UPSERTs, derives a "ever reached" funnel, and exposes clean conformed views for downstream consumption.
+**Depends on:** Phase 1
+**Requirements:** MEFI-01, MEFI-02, MEFI-03, MEFI-04, MEFI-05, MEFI-06, MEFI-07, MEFI-08, MEFI-09, MEFI-10, MEFI-11, MEFI-12, DATA-01, DATA-02, DATA-03, DATA-04, PIPE-01, PIPE-02, PIPE-03
+**Success Criteria:**
+1. Triggering the MEFI sync task manually (`celery call app.tasks.etl.sync_mefi_leads`) populates `raw_mefi_leads` with the actual production lead count; running the same task again produces zero duplicate rows (idempotent UPSERT on `(tenant_id, external_id)`).
+2. Query `SELECT * FROM v_mefi_leads_active LIMIT 5` returns rows with `funnel_stage` set to one of `lead | vizita | oferta | contract` (derived "ever reached" from status sets), `showroom_id` and `utm_*` columns populated from promoted custom fields, and `lifecycle` filtered to active/lost (no junk).
+3. After scheduled run at 03:00 Europe/Bucharest, `sync_runs` shows a row with `status='success'`, `records_synced > 0`, `duration_ms > 0`; a forced 429 in tests results in a row with `status='retried'` honoring the `Retry-After` header.
+4. Running two MEFI sync tasks concurrently in tests: the second exits with "lock held" log line within 1s — verified via `SET NX EX` Redis lock on `sync:mefi:{tenant_id}`.
+5. The 12-month backfill task enqueued onto the `backfill` queue runs chunked by month without blocking the `default` queue (verified by inspecting both queues during a backfill run; daily sync still completes in `default`).
+6. Status change between two consecutive syncs (status_id 17 → 3) writes a row to `mefi_lead_history` with `from_status=17, to_status=3, changed_at` within the inter-sync window.
+7. Pipeline chain `etl → metrics → anomaly → insights` halts at ETL failure: forced exception in `sync_mefi_leads` produces `pipeline_runs.status='failed'` for that stage and downstream tasks are not enqueued.
+**Plans:** TBD
+
+---
+
+### Phase 3: Metrics Engine
+**Goal:** Daily KPIs computed deterministically from conformed views and persisted to metric tables, with funnel conversion rates, per-salesperson and per-source breakdowns, and WoW/MoM deltas.
+**Depends on:** Phase 2
+**Requirements:** METR-01, METR-02, METR-03, METR-04, METR-05, METR-06
+**Success Criteria:**
+1. Running `calculate_daily_kpis` Celery task for date D populates `daily_kpi`, `salesperson_daily_kpi` (6 rows for Sofa Belle), and `source_daily_kpi` (6 rows for 6 source categories); re-running for the same date does not duplicate rows (UPSERT on `(tenant_id, date, ...)`).
+2. `SELECT l_to_v_pct, v_to_o_pct, l_to_o_pct, o_to_c_pct, l_to_c_pct FROM daily_kpi WHERE date = CURRENT_DATE` returns five rates between 0 and 1 with zero-division guards (no NULL/error when a denominator is 0).
+3. `salesperson_daily_kpi` for each rep contains `leads_assigned`, `visits_scheduled`, `offers_sent`, `contracts_closed`, `time_to_first_touch_minutes`, and `data_completeness_pct` (% leads with `estimated_value IS NOT NULL`).
+4. Computed values for a sample day match a hand-rolled SQL aggregation of `v_mefi_leads_active` within 1 RON (Decimal precision preserved end-to-end; no float drift).
+5. `daily_kpi` for date D contains `wow_delta_pct` and `mom_delta_pct` for every numeric KPI, computed as `(current - prior) / prior` against the same weekday 7d ago and same date 30d ago.
+6. All date grouping in metric queries uses `AT TIME ZONE 'Europe/Bucharest'` (verified by SQL inspection); a lead created at 23:30 EEST on day D is attributed to day D in `daily_kpi`, not day D+1.
+**Plans:** TBD
+
+---
+
+### Phase 4: Anomaly Detection
+**Goal:** Rule-based engine consumes metrics and conformed lead views to write structured `detected_problems` rows with severity, current vs expected values, and an estimated loss in RON — these become Claude's input.
+**Depends on:** Phase 3
+**Requirements:** ANOM-01, ANOM-02, ANOM-03, ANOM-04, ANOM-05, ANOM-06, ANOM-07
+**Success Criteria:**
+1. `detect_anomalies` task run after metrics calculation writes rows to `detected_problems(date, rule_id, severity, metric, current_value, expected_value, estimated_loss_ron, context_json)` with one row per triggered rule.
+2. Seeding a lead with no contact attempt for 5 hours during business hours produces a `slow_first_touch` row with `severity='high'`; outside business hours the same lead does NOT trigger the rule.
+3. Seeding an offer in `oferta` stage with no status change for 15 days produces a `stuck_offer` row referencing the lead's external_id in `context_json`.
+4. Forcing L→V conversion to drop 35% below the trailing 30-day baseline produces a `showroom_traffic_drop` row with `expected_value` = baseline rate and `current_value` = today's rate.
+5. Forcing one salesperson's win rate to 30% below team average produces an `underperforming_salesperson` row identifying that salesperson by `salesperson_id`.
+6. Seeding 25% of leads as `lifecycle='junk'` produces a `junk_lead_quality` row referencing source breakdown; junk leads themselves are excluded from all other rule evaluations (verified — no false-positive `slow_first_touch` on junk leads).
+7. Each `detected_problems` row has a populated `estimated_loss_ron` computed deterministically from the rule (e.g., stuck_offer = sum(estimated_value of stuck offers) × historical close rate).
+**Plans:** TBD
+
+---
+
+### Phase 5: AI Insights
+**Goal:** Claude Sonnet 4.6 transforms structured `detected_problems` into a Romanian daily report (top-3 problems + 5-7 action items with owner/deadline) using a typed Pydantic schema, prompt caching, and number-cross-check validation.
+**Depends on:** Phase 4
+**Requirements:** AI-01, AI-02, AI-03, AI-04, AI-05, AI-06, AI-07, AI-08, AI-09
+**Success Criteria:**
+1. `generate_daily_insights` Celery task triggered at 06:00 Europe/Bucharest reads `detected_problems` for the day and writes a row to `daily_insights(date, status='success', payload_json, generated_at, input_tokens, output_tokens, cost_usd)`.
+2. `payload_json` validates against the `DailyInsightResponse` Pydantic schema: `problems[]` with `title, description, severity, estimated_loss_ron, recommended_actions[{action, owner, deadline}]`, plus `summary_ro` and `generated_at`; invalid structures are rejected by `messages.parse()` before reaching the DB.
+3. Insight text is in Romanian (verified — `summary_ro` and `description` fields pass a basic Romanian-language sniff: contain "RON" and at least one of `vânzări|comenzi|oferte|clienți|magazin`).
+4. Numbers extracted from narrative text via regex match input metrics within ±2% tolerance; injecting a deliberate number drift in tests triggers up to 2 regenerations, and on 3rd failure writes `status='failed'` with the raw response preserved.
+5. `usage.input_tokens`, `usage.output_tokens`, and `cost_usd` are logged per call; second invocation with the same system prompt shows `cache_read_input_tokens > 0` (prompt caching active).
+6. Grep of HTTP handler code (`app/api/`) for `anthropic.Anthropic` / `client.messages` returns zero matches — Claude is invoked exclusively from Celery task code.
+7. With `daily_insights.status='failed'`, the Insights page query returns the algorithmic anomaly list (fallback) with the failure notice flag set.
+**Plans:** TBD
+
+---
+
+### Phase 6: Backend HTTP API
+**Goal:** Thin FastAPI endpoints expose dashboard data and insights via Pydantic response schemas — no business logic in handlers, all reads via services against metric tables and conformed views.
+**Depends on:** Phase 3, Phase 4, Phase 5
+**Requirements:** Thin HTTP layer supporting SALE-01..07, SALES-01..04, MARK-01..04, INSI-01..06, UI-06 (data freshness), PIPE-04 (pipeline_runs read)
+**Success Criteria:**
+1. `GET /api/v1/dashboards/sales?from=2026-05-01&to=2026-05-19` returns funnel counts, conversion rates with deltas, KPI cards, source breakdown, revenue series in <300ms p95 against pre-computed metric tables.
+2. `GET /api/v1/dashboards/salespeople?from=...&to=...` returns leaderboard with 6 rep rows including time-to-first-touch and data_completeness_pct.
+3. `GET /api/v1/dashboards/marketing?from=...&to=...` returns lead volume by source, site conversion approximation, junk % by source, and explicitly-null `ad_spend` placeholders.
+4. `GET /api/v1/insights/today` returns `DailyInsightResponse` payload from `daily_insights`; `GET /api/v1/insights?date=YYYY-MM-DD` returns historical insights for that day or 404 if absent.
+5. `POST /api/v1/insights/refresh` enqueues a pipeline run, is rate-limited to 1 per hour per user (subsequent call within the window returns 429), and returns a `pipeline_run_id` the client can poll.
+6. `GET /api/v1/healthz` returns 200; `GET /api/v1/health/data` returns `last_sync_at`, `last_pipeline_status`, and a stale flag if `now - last_sync_at > 26h`.
+7. All endpoints return Pydantic-validated responses; revenue fields serialize as decimal strings (not floats); endpoint OpenAPI schema visible at `/docs` matches actual responses.
+**Plans:** TBD
+
+---
+
+### Phase 7: Frontend Dashboards
+**Goal:** Romanian-first Next.js 16 + shadcn/ui application renders Sales, Salespeople, Marketing, and Insights pages with proper loading/empty/error states, date range picker, and AI insight action plan as the headline view.
+**Depends on:** Phase 6
+**Requirements:** SALE-01, SALE-02, SALE-03, SALE-04, SALE-05, SALE-06, SALE-07, SALES-01, SALES-02, SALES-03, SALES-04, MARK-01, MARK-02, MARK-03, MARK-04, INSI-01, INSI-02, INSI-03, INSI-04, INSI-05, INSI-06, UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, UI-07, UI-08
+**Success Criteria:**
+1. User navigating to `/sales` sees a funnel visualization (Lead → Vizita → Oferta → Contract) with stage counts, conversion rates with WoW/MoM delta arrows, KPI cards (leads, visits, offers, contracts, revenue), source breakdown chart, revenue trend line, and a stuck-offers widget — all reflecting selected date range.
+2. User navigating to `/salespeople` sees a leaderboard of 6 reps with leads/visits/offers/contracts/revenue/win-rate, time-to-first-touch with red highlight where > 4h, per-rep funnel view, and data_completeness_pct column.
+3. User navigating to `/marketing` sees lead volume by source over time, site conversion approximation, junk % by source, and clearly-labeled "Coming in next update" placeholders for CPL/CAC/ROAS.
+4. User navigating to `/insights` sees today's top-3 problems with title/description/severity/estimated loss (formatted as `1.234,56 RON`)/action items with owner+deadline, a date picker to view past insights, a "Reîmprospătează" refresh button (disabled while rate-limited), and a "Generation failed" notice + algorithmic anomaly fallback when applicable.
+5. Switching the locale toggle from `ro` to `en` swaps all UI strings; currency stays formatted as `1.234,56 RON`, dates as `DD.MM.YYYY`, all timestamps shown in `Europe/Bucharest`.
+6. Throttled-network test (slow 3G in DevTools) shows skeleton loading states on every chart/table; mocking 500 from API shows error state with retry; mocking empty-data returns empty state copy (not blank screen).
+7. Data freshness banner appears at the top of every dashboard page when `last_sync_at > 26h ago` or the last pipeline run failed.
+8. Layout renders correctly at 1280px (desktop) and 768px (tablet) widths; grep of frontend source returns zero `@tremor/react` imports.
+**Plans:** TBD
+**UI hint:** yes
+
+---
+
+### Phase 8: Polish & Deploy
+**Goal:** Application is deployed to production on Hetzner behind Caddy with TLS, observability via Sentry, automated healthcheck, smoke tests passing, and Playwright E2E coverage on the core user flows.
+**Depends on:** Phase 7
+**Requirements:** All v1 requirements behind production gate; no new functional reqs (covers gaps: backup, monitoring, deployment readiness)
+**Success Criteria:**
+1. `pnpm test:e2e` Playwright suite passes covering: login → view sales dashboard → switch date range → view insights page → trigger refresh. All flows green in CI.
+2. Sentry receives test exception from backend (`raise RuntimeError('sentry test')`) and from frontend (`throw new Error('sentry test')`); both appear in the Sentry project within 30s.
+3. `healthcheck` Celery beat task runs every 15 minutes and writes a row to `pipeline_runs` with `stage='healthcheck'`; absence of a row in the last 30 min triggers a Sentry alert.
+4. Production URL `https://analyst.sofabelle.ro` (or staging equivalent) serves the application over HTTPS with valid Caddy-issued TLS certificate; redirect from `http://` returns 301 to `https://`.
+5. Smoke test script (`scripts/smoke.sh`) hits `/healthz`, logs in with the seed user, fetches `/api/v1/dashboards/sales?from=...&to=...`, and asserts 200 + non-empty body — runs green against production after each deploy.
+6. Hetzner deployment via `docker compose -f docker-compose.prod.yml up -d --build` succeeds from a clean VM following `docs/DEPLOYMENT.md`; PostgreSQL data volume persists across `docker compose down && up`.
+7. Backup of `pg_dump` runs nightly and the latest dump is restorable in <10 min into a clean PostgreSQL instance (verified once in a restore drill).
+**Plans:** TBD
+
+---
+
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Foundation | 0/? | Not started | — |
+| 2. MEFI ETL | 0/? | Not started | — |
+| 3. Metrics Engine | 0/? | Not started | — |
+| 4. Anomaly Detection | 0/? | Not started | — |
+| 5. AI Insights | 0/? | Not started | — |
+| 6. Backend HTTP API | 0/? | Not started | — |
+| 7. Frontend Dashboards | 0/? | Not started | — |
+| 8. Polish & Deploy | 0/? | Not started | — |
+
+---
+
+## Coverage Report
+
+| Group | REQ-IDs | Count | Phase |
+|---|---|---|---|
+| INFRA | INFRA-01..06 | 6 | Phase 1 |
+| AUTH | AUTH-01..03 | 3 | Phase 1 |
+| MEFI | MEFI-01..12 | 12 | Phase 2 |
+| DATA | DATA-01..04 | 4 | Phase 2 |
+| PIPE | PIPE-01..04 | 4 | Phase 1 (PIPE-04 table) + Phase 2 (PIPE-01..03 chain) |
+| METR | METR-01..06 | 6 | Phase 3 |
+| ANOM | ANOM-01..07 | 7 | Phase 4 |
+| AI | AI-01..09 | 9 | Phase 5 |
+| SALE | SALE-01..07 | 7 | Phase 6 (API) + Phase 7 (UI) |
+| SALES | SALES-01..04 | 4 | Phase 6 (API) + Phase 7 (UI) |
+| MARK | MARK-01..04 | 4 | Phase 6 (API) + Phase 7 (UI) |
+| INSI | INSI-01..06 | 6 | Phase 6 (API) + Phase 7 (UI) |
+| UI | UI-01..08 | 8 | Phase 1 (UI-01 scaffold) + Phase 7 (UI-02..08) |
+| **TOTAL** | | **68** | **All mapped** |
+
+**Coverage: 68/68 v1 requirements mapped — no orphans.**
+
+---
+
+*Roadmap created: 2026-05-19*
