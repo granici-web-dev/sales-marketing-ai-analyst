@@ -75,6 +75,19 @@
 - [ ] **AI-08**: Log `usage.input_tokens`, `usage.output_tokens`, cost per call to enable budget tracking
 - [ ] **AI-09**: Claude API called ONLY from Celery tasks — never from HTTP handlers
 
+### AI Chat
+
+- [ ] **CHAT-01**: User can type a question in Romanian in a chat interface and receive a grounded, data-backed answer from Claude Sonnet 4.6
+- [ ] **CHAT-02**: Claude uses Tool Use (function calling) with tools that query the metrics DB: `get_kpi(date_range, metric_name)`, `get_funnel_data(date_range)`, `get_salesperson_performance(salesperson_id, date_range)`, `compare_periods(period_a, period_b)`, `get_loss_reasons(date_range)`, `get_insight_history(date_range)`
+- [ ] **CHAT-03**: Conversation history stored in DB per user and persists across browser sessions
+- [ ] **CHAT-04**: System prompt includes full Sofa Belle business context (industry, funnel stages, metrics definitions, 4h response-time target, tone)
+- [ ] **CHAT-05**: Number cross-check: all numeric values in chat responses are verified against actual DB values; Claude states uncertainty when queried data is unavailable (e.g., asks about ad spend before Iteration 2)
+- [ ] **CHAT-06**: Chat responses include inline deep-links to the relevant dashboard section (e.g., "Conversie a scăzut → Sales Dashboard")
+- [ ] **CHAT-07**: "Se gândește..." (thinking) indicator shown while Claude is processing / calling tools
+- [ ] **CHAT-08**: FastAPI streaming endpoint with `StreamingResponse` and Anthropic async client — responses stream token-by-token to the frontend (exception to the batch-only Claude rule, documented)
+- [ ] **CHAT-09**: Typical query response time < 2 seconds to first token; tool call round-trips complete in < 500ms each (DB queries via pre-computed metric tables)
+- [ ] **CHAT-10**: Zero hallucinated salesperson names, funnel stage names, or KPI values — all entity references resolved from DB before passing to Claude
+
 ### Sales Dashboard
 
 - [ ] **SALE-01**: User can view funnel visualization showing total counts at each stage (Lead → Vizita → Oferta → Contract) for selected date range
@@ -264,10 +277,20 @@
 | PIPE-02 | Phase 2: MEFI ETL | Pending |
 | PIPE-03 | Phase 2: MEFI ETL | Pending |
 | PIPE-04 | Phase 1 (table) + Phase 2 (writes) | Pending |
+| CHAT-01 | Phase 8: AI Chat | Pending |
+| CHAT-02 | Phase 8: AI Chat | Pending |
+| CHAT-03 | Phase 8: AI Chat | Pending |
+| CHAT-04 | Phase 8: AI Chat | Pending |
+| CHAT-05 | Phase 8: AI Chat | Pending |
+| CHAT-06 | Phase 8: AI Chat | Pending |
+| CHAT-07 | Phase 8: AI Chat | Pending |
+| CHAT-08 | Phase 8: AI Chat | Pending |
+| CHAT-09 | Phase 8: AI Chat | Pending |
+| CHAT-10 | Phase 8: AI Chat | Pending |
 
 **Coverage:**
-- v1 requirements: 68 total
-- Mapped to phases: 68
+- v1 requirements: 78 total (68 original + 10 AI Chat)
+- Mapped to phases: 78
 - Unmapped: 0 ✓
 
 ---

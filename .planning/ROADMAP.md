@@ -5,7 +5,7 @@
 **Granularity:** Standard (5-8 phases)
 **Mode:** YOLO (auto-execute)
 **Parallelization:** Enabled
-**Coverage:** 68/68 v1 requirements mapped
+**Coverage:** 78/78 v1 requirements mapped (incl. 10 AI Chat requirements added after initial roadmap)
 
 ---
 
@@ -18,7 +18,8 @@
 - [ ] **Phase 5: AI Insights** — Claude Sonnet 4.6 integration with structured Pydantic schema, prompt caching, post-validation, daily insights table
 - [ ] **Phase 6: Backend HTTP API** — FastAPI endpoints for all dashboards and insights with Pydantic response schemas
 - [ ] **Phase 7: Frontend Dashboards** — Next.js UI pages (Sales → Salespeople → Marketing → Insights) with Romanian locale
-- [ ] **Phase 8: Polish & Deploy** — E2E tests, Sentry, healthcheck task, Hetzner deployment with Caddy
+- [ ] **Phase 8: AI Chat** — Interactive Romanian AI chat with Tool Use, conversation history, streaming responses, and number cross-check validation
+- [ ] **Phase 9: Polish & Deploy** — E2E tests, Sentry, healthcheck task, Hetzner deployment with Caddy
 
 ---
 
@@ -137,9 +138,27 @@
 
 ---
 
-### Phase 8: Polish & Deploy
+### Phase 8: AI Chat
+
+**Goal:** Business owners and managers can ask questions about their data in plain Romanian and receive accurate, tool-grounded answers with inline dashboard links — turning the product from "dashboard + daily report" into an interactive AI consultant.
+**Depends on:** Phase 6 (Backend HTTP API — chat tools reuse the same metric services)
+**Requirements:** CHAT-01, CHAT-02, CHAT-03, CHAT-04, CHAT-05, CHAT-06, CHAT-07, CHAT-08, CHAT-09, CHAT-10
+**Success Criteria:**
+1. User can ask "Cum stăm comparativ cu săptămâna trecută?" and receive a Romanian-language answer with actual WoW delta values fetched via `compare_periods` tool call, displayed with a "Se gândește..." indicator during processing.
+2. Claude successfully calls at least 3 distinct tools in a single conversation turn when answering a multi-part question (e.g., "Care e cel mai bun vânzător și de ce a scăzut conversia?"); all tool inputs and outputs are logged in the conversation history row.
+3. Asking about data not yet available (e.g., Meta Ads CAC before Iteration 2 is built) produces an honest "Nu am acces la datele de reclamă în această versiune" response, not a hallucinated number.
+4. All numeric values in a chat response match the corresponding `daily_kpi` / `salesperson_daily_kpi` DB values within ±1% — verified by a test that cross-checks response text against live DB query.
+5. Conversation history for a user session persists after browser refresh: reopening the chat shows prior messages and allows follow-up questions in context.
+6. Streaming: user sees first token within 2 seconds of submitting a question; subsequent tokens stream continuously without a loading pause; tool call round-trips (DB query) complete in < 500ms each.
+7. Chat endpoint `/api/v1/chat/stream` exists as a `StreamingResponse` using the Anthropic async client; CLAUDE.md documents this as the documented exception to the batch-only rule.
+**Plans:** TBD
+
+---
+
+### Phase 9: Polish & Deploy
+
 **Goal:** Application is deployed to production on Hetzner behind Caddy with TLS, observability via Sentry, automated healthcheck, smoke tests passing, and Playwright E2E coverage on the core user flows.
-**Depends on:** Phase 7
+**Depends on:** Phase 7, Phase 8
 **Requirements:** All v1 requirements behind production gate; no new functional reqs (covers gaps: backup, monitoring, deployment readiness)
 **Success Criteria:**
 1. `pnpm test:e2e` Playwright suite passes covering: login → view sales dashboard → switch date range → view insights page → trigger refresh. All flows green in CI.
@@ -164,7 +183,8 @@
 | 5. AI Insights | 0/? | Not started | — |
 | 6. Backend HTTP API | 0/? | Not started | — |
 | 7. Frontend Dashboards | 0/? | Not started | — |
-| 8. Polish & Deploy | 0/? | Not started | — |
+| 8. AI Chat | 0/? | Not started | — |
+| 9. Polish & Deploy | 0/? | Not started | — |
 
 ---
 
@@ -185,9 +205,10 @@
 | MARK | MARK-01..04 | 4 | Phase 6 (API) + Phase 7 (UI) |
 | INSI | INSI-01..06 | 6 | Phase 6 (API) + Phase 7 (UI) |
 | UI | UI-01..08 | 8 | Phase 1 (UI-01 scaffold) + Phase 7 (UI-02..08) |
-| **TOTAL** | | **68** | **All mapped** |
+| CHAT | CHAT-01..10 | 10 | Phase 8 |
+| **TOTAL** | | **78** | **All mapped** |
 
-**Coverage: 68/68 v1 requirements mapped — no orphans.**
+**Coverage: 78/78 v1 requirements mapped — no orphans.**
 
 ---
 
