@@ -50,7 +50,7 @@ Declared values (multiples of 4 only). These map to Tailwind v4 spacing utilitie
 | 3xl | 64px | p-16 | Page-level vertical rhythm |
 
 Exceptions:
-- Sidebar nav items: 44px minimum touch target height (accessibility — WCAG 2.5.5). Achieved via `py-[10px] px-3` (10px top + 10px bottom + 24px content = 44px).
+- Sidebar nav items: 44px minimum touch target height (accessibility — WCAG 2.5.5). Achieved via `py-[12px] px-3` (12px top + 12px bottom + 20px icon height = 44px).
 - Sidebar width: 240px fixed (not a spacing token — structural dimension).
 - Topbar height: 56px fixed (not a spacing token — structural dimension).
 
@@ -63,11 +63,11 @@ Font: **Inter** via `@import` in globals.css (or Next.js `next/font/google`).
 | Role | Size | Weight | Line Height | Tailwind | Usage |
 |------|------|--------|-------------|---------|-------|
 | Body | 14px | 400 (regular) | 1.5 | `text-sm` | Nav labels, form labels, table content, placeholder paragraph text |
-| Label | 12px | 500 (medium) | 1.4 | `text-xs font-medium` | Badges, section subheadings, meta text |
+| Label | 12px | 400 (regular) | 1.4 | `text-xs` | Badges, section subheadings, meta text |
 | Heading | 20px | 600 (semibold) | 1.2 | `text-xl font-semibold` | Page headings ("În curând"), card titles |
-| Display | 28px | 700 (bold) | 1.1 | `text-3xl font-bold` | Login page headline only |
+| Display | 28px | 600 (semibold) | 1.1 | `text-3xl font-semibold` | Login page headline only |
 
-Weight constraint: 2 weights in Phase 1 body — 400 (regular) and 600 (semibold). Weight 500 allowed for `Label` only to distinguish from body without using semibold.
+Weight constraint: exactly 2 weights — 400 (regular) for Body and Label roles; 600 (semibold) for Heading and Display roles. Weights 500 and 700 are not used in this phase.
 
 ---
 
@@ -127,7 +127,7 @@ Bottom border:  1px solid Border
 Nav item anatomy:
 ```
 Height:         44px (touch target minimum)
-Padding:        10px vertical, 12px horizontal (px-3 py-[10px])
+Padding:        12px vertical, 12px horizontal (px-3 py-[12px])
 Border radius:  6px (rounded-md)
 Gap (icon → label): 8px (sm)
 Icon size:      16px × 16px (lucide icon, size={16})
@@ -209,14 +209,14 @@ Card border: 1px solid Border
 ```
 
 Elements (top to bottom, 24px gap between groups):
-1. Wordmark: "Sofa Belle" — 28px bold, Foreground, centered
+1. Wordmark: "Sofa Belle" — 28px semibold, Foreground, centered
 2. Subtitle: "Panou de control" — 14px, Muted, centered
 3. Email field (full width):
-   - Label: "Email" (12px medium, Foreground)
+   - Label: "Email" (12px regular, Foreground)
    - Input: shadcn `<Input type="email" />` — 40px height, 14px, full width
    - Error state: red border + 12px error text below
 4. Password field (full width):
-   - Label: "Parolă" (12px medium, Foreground)
+   - Label: "Parolă" (12px regular, Foreground)
    - Input: shadcn `<Input type="password" />` — 40px height, 14px, full width
    - Error state: red border + 12px error text below
 5. Submit button: shadcn `<Button>` full width, 40px height, Accent background, "Intră în cont" label, 14px semibold white
