@@ -36,7 +36,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-org>/sales-marketing-ai-analyst.git
+git clone https://github.com/granici-web-dev/sales-marketing-ai-analyst
 cd sales-marketing-ai-analyst
 
 # Copy environment variables
@@ -58,6 +58,7 @@ docker compose exec backend alembic upgrade head
 ```
 
 The application will be available at:
+
 - **Frontend:** http://localhost:3000
 - **Backend API:** http://localhost:8000
 - **API docs (Swagger):** http://localhost:8000/docs
@@ -126,12 +127,12 @@ sales-marketing-ai-analyst/
 
 The product is built **iteratively**:
 
-| Iteration | Scope | Status |
-|---|---|---|
-| **MVP1** | MEFI only — Sales Dashboard + basic Marketing + AI Insights | ⏳ Planned |
-| **MVP2** | + Meta Ads + Google Ads + TikTok Ads | ⏳ Future |
-| **MVP3** | + GA4 + Google Search Console | ⏳ Future |
-| **Production** | Multi-tenant, billing, Romanian hosting | ⏳ Future |
+| Iteration      | Scope                                                       | Status     |
+| -------------- | ----------------------------------------------------------- | ---------- |
+| **MVP1**       | MEFI only — Sales Dashboard + basic Marketing + AI Insights | ⏳ Planned |
+| **MVP2**       | + Meta Ads + Google Ads + TikTok Ads                        | ⏳ Future  |
+| **MVP3**       | + GA4 + Google Search Console                               | ⏳ Future  |
+| **Production** | Multi-tenant, billing, Romanian hosting                     | ⏳ Future  |
 
 See [SPEC.md section 2](./SPEC.md#2-roadmap-по-итерациям) for details.
 
