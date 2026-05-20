@@ -33,14 +33,14 @@ None currently.
 ## Key Decisions Made
 
 - Single-tenant first (MVP1-3): tenant_id in schema, enforcement seam in Phase 1
-- claude-sonnet-4-6 for AI insights
+- claude-sonnet-4-5 for AI insights and chat (per SPEC.md)
 - shadcn/ui chart (Recharts v3) replacing Tremor
 - Next.js 16.2, React 19.2, Tailwind v4.3
 - celery-redbeat replacing default Beat file scheduler
 - Celery chain() for daily pipeline (not 4 independent cron jobs)
 - "Ever reached" funnel stage logic (not "currently in")
 - AI Chat (Phase 8): FastAPI StreamingResponse + Anthropic async client + Tool Use — documented exception to batch-only Claude rule; reuses Phase 6 metric services as tool backends
-- claude-sonnet-4-6 for both batch insights (Phase 5) and interactive chat (Phase 8)
+- claude-sonnet-4-5 for both batch insights (Phase 5) and interactive chat (Phase 8) — per SPEC.md and docs/CHAT.md
 - Phase 1 auth: HttpOnly cookie + interceptor-based refresh + Next.js middleware route protection
 - Phase 1 tenancy: hardcoded Sofa Belle UUID at startup (context var), with_loader_criteria seam, Alembic data migration for seed data
 - Phase 1 Docker: separate worker + beat + flower containers, depends_on with service_healthy

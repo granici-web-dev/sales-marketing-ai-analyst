@@ -15,7 +15,7 @@
 - [ ] **Phase 2: MEFI ETL** — MEFI API client, raw tables, conformed views, "ever reached" funnel logic, idempotent nightly sync with rate limits and backfill
 - [ ] **Phase 3: Metrics Engine** — Daily KPI calculation, funnel conversion rates, salesperson and source KPIs, WoW/MoM deltas
 - [ ] **Phase 4: Anomaly Detection** — Rule-based anomaly engine writing detected_problems with severity and estimated_loss_ron
-- [ ] **Phase 5: AI Insights** — Claude Sonnet 4.6 integration with structured Pydantic schema, prompt caching, post-validation, daily insights table
+- [ ] **Phase 5: AI Insights** — Claude Sonnet 4.5 integration with structured Pydantic schema, prompt caching, post-validation, daily insights table
 - [ ] **Phase 6: Backend HTTP API** — FastAPI endpoints for all dashboards and insights with Pydantic response schemas
 - [ ] **Phase 7: Frontend Dashboards** — Next.js UI pages (Sales → Salespeople → Marketing → Insights) with Romanian locale
 - [ ] **Phase 8: AI Chat** — Interactive Romanian AI chat with Tool Use, conversation history, streaming responses, and number cross-check validation
@@ -89,7 +89,7 @@
 ---
 
 ### Phase 5: AI Insights
-**Goal:** Claude Sonnet 4.6 transforms structured `detected_problems` into a Romanian daily report (top-3 problems + 5-7 action items with owner/deadline) using a typed Pydantic schema, prompt caching, and number-cross-check validation.
+**Goal:** Claude Sonnet 4.5 transforms structured `detected_problems` into a Romanian daily report (top-3 problems + 5-7 action items with owner/deadline) using a typed Pydantic schema, prompt caching, and number-cross-check validation.
 **Depends on:** Phase 4
 **Requirements:** AI-01, AI-02, AI-03, AI-04, AI-05, AI-06, AI-07, AI-08, AI-09
 **Success Criteria:**

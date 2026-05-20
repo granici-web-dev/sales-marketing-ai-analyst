@@ -70,7 +70,7 @@ This phase produces: Docker Compose stack, FastAPI async skeleton, Celery+celery
 - **Frontend:** Next.js 16.2, React 19.2, Tailwind v4.3, shadcn/ui + Recharts v3 (Tremor removed)
 - **Scheduler:** celery-redbeat (not Celery Beat default file scheduler)
 - **Pipeline:** Celery `chain()` for daily pipeline (not 4 independent cron jobs)
-- **AI model:** claude-sonnet-4-6 (upgraded from spec's claude-sonnet-4-5)
+- **AI model:** claude-sonnet-4-5 (per SPEC.md — used for both Phase 5 insights and Phase 8 chat)
 - Source: `.planning/STATE.md` key decisions section
 
 ### UI Structure

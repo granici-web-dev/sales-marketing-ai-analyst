@@ -99,8 +99,7 @@ these before making architectural decisions.
 metrics (May 2025 → May 2026). Use it as ground truth for which KPIs matter.
 Exact columns documented in `docs/SOFABELLE.md`.
 
-**Claude model decision:** Spec originally wrote `claude-sonnet-4-5`. After review,
-we are using `claude-sonnet-4-6` (current generation) for the AI insights generator.
+**Claude model decision:** Using `claude-sonnet-4-5` as specified in SPEC.md for both AI insights (Phase 5) and AI Chat (Phase 8).
 
 **Sales cycle characteristics:** Premium furniture, long cycle (2 weeks – 2 months),
 high ticket (20,000+ RON). Visit to showroom is mandatory before any deal closes.
@@ -122,7 +121,7 @@ AI insights must account for these domain specifics, not apply generic e-commerc
 |----------|-----------|---------|
 | Single-tenant first (MVP1-3) | Pilot is one client; full multi-tenancy would add ~30% dev time with zero value now | — Pending |
 | Schema has tenant_id everywhere | Avoids DB migrations when we add full tenancy in Iteration 4 | — Pending |
-| claude-sonnet-4-6 (upgraded from spec's 4.5) | Current generation, better reasoning for Romanian business insights | — Pending |
+| claude-sonnet-4-5 | Per SPEC.md — used for both AI insights (Phase 5) and AI Chat (Phase 8) | — Pending |
 | MEFI /leads is the only endpoint | Sales funnel derived from statuses + custom fields, not dedicated endpoints | — Pending |
 | Build it right (no MVP shortcuts on architecture) | No hard deadline; foundation quality saves time in later iterations | — Pending |
 | Celery tasks for all ETL + AI calls | Never block HTTP handlers; idempotent retry; Celery Beat scheduling | — Pending |
