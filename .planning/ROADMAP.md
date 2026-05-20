@@ -36,7 +36,15 @@
 4. `celery -A app.tasks.celery_app inspect ping` returns `pong` from the worker, and `celery-redbeat` shows the scheduler is alive in Redis (`KEYS redbeat::*` is non-empty).
 5. A test job logged via `structlog` produces JSON output with `tenant_id`, `task_id`, no PII fields; grepping logs for sample customer name/email/phone returns nothing.
 6. SQLAlchemy session factory rejects a query without a tenant context — `with_loader_criteria` seam present in `app/db/session.py` (verified via failing test for "missing tenant").
-**Plans:** TBD
+**Plans:** 7 plans
+Plans:
+- [ ] 01-01-PLAN.md — Wave 0 test stubs (D-06 failing test, conftest, all unit + integration test files)
+- [ ] 01-02-PLAN.md — Docker Compose stack (7 services, healthchecks, Dockerfiles, .env.example)
+- [ ] 01-03-PLAN.md — Python core modules (Pydantic Settings, PyJWT security, structlog, ContextVar tenancy, exceptions)
+- [ ] 01-04-PLAN.md — SQLAlchemy models, Alembic migrations, tenant isolation seam (with_loader_criteria)
+- [ ] 01-05-PLAN.md — Celery + celery-redbeat config with Europe/Bucharest timezone and worker_process_init fork-safety
+- [ ] 01-06-PLAN.md — FastAPI app, auth endpoints (login/refresh), health check, ASGI middleware
+- [ ] 01-07-PLAN.md — Next.js 16 frontend scaffold, shadcn, next-intl, proxy.ts auth guard, sidebar shell, login page
 **UI hint:** yes
 
 ---
