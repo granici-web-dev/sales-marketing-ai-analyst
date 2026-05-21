@@ -2,3 +2,5 @@ node_modules
 .next
 .git
 *.md
+pnpm-lock.yaml
+pnpm-workspace.yaml
