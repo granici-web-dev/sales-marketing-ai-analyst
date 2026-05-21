@@ -1,0 +1,21 @@
+[project]
+name = "sales-marketing-ai-analyst"
+version = "0.1.0"
+description = "Sales & Marketing AI Analyst backend"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "S", "B", "A", "COM", "C4", "PT", "RET", "SIM", "TID"]
+ignore = ["COM812", "S101"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
