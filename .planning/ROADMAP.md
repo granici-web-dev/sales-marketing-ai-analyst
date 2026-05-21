@@ -61,7 +61,13 @@ Plans:
 5. The 12-month backfill task enqueued onto the `backfill` queue runs chunked by month without blocking the `default` queue (verified by inspecting both queues during a backfill run; daily sync still completes in `default`).
 6. Status change between two consecutive syncs (status_id 17 → 3) writes a row to `mefi_lead_history` with `from_status=17, to_status=3, changed_at` within the inter-sync window.
 7. Pipeline chain `etl → metrics → anomaly → insights` halts at ETL failure: forced exception in `sync_mefi_leads` produces `pipeline_runs.status='failed'` for that stage and downstream tasks are not enqueued.
-**Plans:** TBD
+**Plans:** 5 plans
+Plans:
+- [ ] 02-01-PLAN.md — Alembic migration 003: raw_mefi_leads + mefi_lead_history + mefi_salespeople tables, v_mefi_leads_active + v_mefi_leads_junk views, funnel_config JSONB column + seed; SQLAlchemy models
+- [ ] 02-02-PLAN.md — MefiClient(BaseIntegration) HTTP client, Pydantic v2 response schemas, Settings.mefi_api_key
+- [ ] 02-03-PLAN.md — MefiRepository (bulk UPSERT, history detection, salesperson upsert), sync_mefi_leads Celery task, pipeline chain + beat schedule
+- [ ] 02-04-PLAN.md — backfill_mefi_leads Celery task (12-month chunked historical sync on backfill queue)
+- [ ] 02-05-PLAN.md — Full test suite: unit tests (respx mocks) + integration tests (test DB + migration), factory-boy fixtures
 
 ---
 
@@ -185,7 +191,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Executed | 2026-05-21 |
-| 2. MEFI ETL | 0/? | Not started | — |
+| 2. MEFI ETL | 0/5 | Not started | — |
 | 3. Metrics Engine | 0/? | Not started | — |
 | 4. Anomaly Detection | 0/? | Not started | — |
 | 5. AI Insights | 0/? | Not started | — |
