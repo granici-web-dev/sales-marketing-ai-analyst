@@ -11,7 +11,7 @@
 
 ## Phases
 
-- [x] **Phase 1: Foundation** — Docker stack, FastAPI async skeleton, Celery+RedBeat, Next.js 16+shadcn UI scaffold, JWT auth, next-intl i18n, multi-tenancy seam
+- [x] **Phase 1: Foundation** *(completed 2026-05-21 — KI-01: CSS/Tailwind unstyled, fix in Phase 7)* — Docker stack, FastAPI async skeleton, Celery+RedBeat, Next.js 16+shadcn UI scaffold, JWT auth, next-intl i18n, multi-tenancy seam
 - [ ] **Phase 2: MEFI ETL** — MEFI API client, raw tables, conformed views, "ever reached" funnel logic, idempotent nightly sync with rate limits and backfill
 - [ ] **Phase 3: Metrics Engine** — Daily KPI calculation, funnel conversion rates, salesperson and source KPIs, WoW/MoM deltas
 - [ ] **Phase 4: Anomaly Detection** — Rule-based anomaly engine writing detected_problems with severity and estimated_loss_ron

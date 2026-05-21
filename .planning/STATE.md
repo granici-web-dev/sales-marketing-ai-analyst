@@ -2,7 +2,7 @@
 
 **Project:** Sales & Marketing AI Analyst
 **Initialized:** 2026-05-19
-**Current Phase:** Phase 1 — Foundation
+**Current Phase:** Phase 2 — MEFI ETL
 **Milestone:** Iteration 1 (MVP1: MEFI-only)
 
 ## Project Reference
@@ -10,14 +10,14 @@
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Every morning, Sofa Belle gets a clear answer to "where are we losing money?" and 5–7 specific tasks for the day.
-**Current focus:** Phase 1 — Foundation
+**Current focus:** Phase 2 — MEFI ETL
 
 ## Phase Progress
 
 | Phase | Name | Status | Plans |
 |-------|------|--------|-------|
-| 1 | Foundation | ◆ Executed — pending verification | 7/7 complete |
-| 2 | MEFI ETL | ○ Pending | — |
+| 1 | Foundation | ✓ Complete (2026-05-21) | 7/7 |
+| 2 | MEFI ETL | ◐ Ready to discuss | — |
 | 3 | Metrics Engine | ○ Pending | — |
 | 4 | Anomaly Detection | ○ Pending | — |
 | 5 | AI Insights | ○ Pending | — |
@@ -46,4 +46,4 @@ None currently.
 - Phase 1 Docker: separate worker + beat + flower containers, depends_on with service_healthy
 - Phase 1 frontend: full shell layout with all 8 nav items from SPEC §13.1, next-intl with Romanian strings from day 1
 
-**Last session:** 2026-05-21 — Phase 1 execution complete (7/7 plans, all waves, pending verification)
+**Last session:** 2026-05-21 — Phase 1 complete ✓. Known issue: KI-01 CSS/Tailwind not loading (fix in Phase 7 or parallel). Advancing to Phase 2 MEFI ETL.
