@@ -1,0 +1,30 @@
+# Production overrides for docker-compose.yml
+# Run with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# This is a skeleton — Phase 9 adds Caddy reverse proxy, Sentry error tracking,
+# automated backups, and production security hardening.
+
+services:
+  backend:
+    # Remove --reload flag for production
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+    # No source code volume mount in production (use built image)
+    volumes: []
+
+  worker:
+    # No source code volume mount in production
+    volumes: []
+
+  beat:
+    # No source code volume mount in production
+    volumes: []
+
+  flower:
+    # No source code volume mount in production
+    volumes: []
+
+  frontend:
+    # Production: build and serve with Next.js production server
+    command: sh -c "pnpm build && pnpm start"
+    # No source code volume mount in production
+    volumes: []
