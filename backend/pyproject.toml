@@ -1,6 +1,7 @@
 [project]
 name = "sales-analyst-backend"
 version = "0.1.0"
+description = "Sales & Marketing AI Analyst backend"
 requires-python = ">=3.11"
 
 [project.optional-dependencies]
@@ -23,3 +24,15 @@ markers = [
     "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
     "unit: marks tests as unit tests",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "S", "B", "A", "COM", "C4", "PT", "RET", "SIM", "TID"]
+ignore = ["COM812", "S101"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true

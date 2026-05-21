@@ -1,0 +1,40 @@
+from __future__ import annotations
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """Typed configuration loaded from environment variables and .env file.
+
+    All secrets are read from the environment — never hardcoded.
+    Required fields (database_url, redis_url, jwt_secret_key) must be set
+    via environment variables or .env file; startup will fail if missing.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    # Database
+    database_url: str
+
+    # Redis (Celery broker + backend + celery-redbeat)
+    redis_url: str
+
+    # JWT auth (D-01: HS256; access 15 min, refresh 30 days)
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 30
+
+    # Multi-tenancy seam (D-05): hardcoded for MVP1-3; replaced by JWT claim in Iteration 4
+    sofa_belle_tenant_id: str = "00000000-0000-0000-0000-000000000001"
+
+    # Logging
+    log_level: str = "INFO"
+
+
+# Module-level singleton — imported throughout the application
+settings = Settings()
