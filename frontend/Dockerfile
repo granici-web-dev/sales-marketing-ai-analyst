@@ -1,12 +1,12 @@
 FROM node:24-alpine
 
 # Install pnpm globally
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 WORKDIR /app
 
 # Copy dependency files first for better layer caching
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json .npmrc ./
 
 # Install dependencies
 RUN pnpm install

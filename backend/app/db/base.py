@@ -3,9 +3,12 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import func
-from sqlalchemy.dialects.postgresql import TIMESTAMPTZ
+from sqlalchemy import DateTime, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+
+# SQLAlchemy uses TIMESTAMP(timezone=True) to map to PostgreSQL TIMESTAMPTZ.
+# The 'TIMESTAMPTZ' SQL alias is not a Python class in the dialect module.
+TIMESTAMPTZ = DateTime(timezone=True)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 

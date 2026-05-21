@@ -3,10 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import Text
-from sqlalchemy.dialects.postgresql import TIMESTAMPTZ
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TenantScopedMixin
+from app.db.base import Base, TenantScopedMixin, TIMESTAMPTZ
 
 
 class SyncRun(Base, TenantScopedMixin):
