@@ -21,12 +21,13 @@ This phase produces: Docker Compose stack, FastAPI async skeleton, Celery+celery
 
 - **D-01:** JWT stored as HttpOnly cookie. Access token returned in JSON response body for programmatic use; refresh token set as HttpOnly `Set-Cookie`. Next.js interceptor reads the access token from the cookie header.
 - **D-02:** Token refresh is interceptor-based — API client catches 401, calls `POST /api/v1/auth/refresh` (refresh token sent automatically via cookie), retries the original request. Transparent to the UI.
-- **D-03:** Next.js route protection via `middleware.ts` — reads JWT access token cookie server-side, redirects to `/login` before any rendering. No flash of protected content.
+- **D-03:** Next.js route protection via `proxy.ts` — reads JWT access token cookie server-side, redirects to `/login` before any rendering. No flash of protected content.
+  > **Technical amendment (approved):** Original decision said `middleware.ts`, but Next.js 16 introduced a breaking rename: `middleware.ts` → `proxy.ts` and `export function middleware` → `export function proxy`. The implementation correctly uses `proxy.ts` per RESEARCH.md findings. The `edge` runtime is not supported; `proxy.ts` runs on `nodejs`. This is a framework-mandated change, not a scope change.
 - **D-04:** Auth endpoints: `POST /api/v1/auth/login` → returns `{access_token, token_type}` in JSON body + sets `refresh_token` HttpOnly cookie. `POST /api/v1/auth/refresh` → validates refresh cookie, returns new access token + rotates refresh cookie.
 
 ### Multi-Tenancy Seam
 
-- **D-05:** SQLAlchemy tenant context set via a **hardcoded Sofa Belle UUID** stored as a Python `contextvars.ContextVar`. App startup (or a FastAPI lifespan event) sets this constant for all requests. The `with_loader_criteria` seam reads from the context var. One-line swap in Iteration 4 when JWT carries `tenant_id`.
+- **D-05:** SQLAlchemy tenant context set via a **hardcoded Sofa Belle UUID** stored as a Python `contextvars.ContextVar`. The `StructlogContextMiddleware.__call__` (per-request ASGI middleware) sets this on every request before dispatching — NOT in the lifespan event (ContextVars set in lifespan do not propagate to HTTP request coroutines). The `with_loader_criteria` seam reads from the context var. One-line swap in Iteration 4 when JWT carries `tenant_id`.
 - **D-06:** Phase 1 **must include a failing test** that proves the SQLAlchemy session factory rejects a query when no tenant context is set — matches SC#6 exactly. This test is a required deliverable, not optional.
 - **D-07:** Initial Sofa Belle tenant + admin user provisioned via **Alembic data migration** — idempotent `INSERT ... ON CONFLICT DO NOTHING`. Runs automatically at `alembic upgrade head`. No separate seed script required.
 
@@ -98,7 +99,7 @@ This phase produces: Docker Compose stack, FastAPI async skeleton, Celery+celery
   - `app/db/session.py` — SQLAlchemy async session factory (tenant context var lives here)
   - `app/tasks/celery_app.py` — Celery app definition (all future tasks import from here)
   - `app/core/security.py` — JWT encode/decode utilities (Phase 2+ auth middleware reads from here)
-  - `frontend/middleware.ts` — Route protection (all protected routes flow through here)
+  - `frontend/proxy.ts` — Route protection (all protected routes flow through here; Next.js 16 rename from middleware.ts)
   - `frontend/messages/ro.json` + `en.json` — i18n message files (all Phase 7 strings added here)
 
 </code_context>

@@ -1043,22 +1043,25 @@ def verify_token(token: str) -> dict | None:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Access token storage in browser**
    - What we know: D-01 says access token is returned in JSON body. D-03 says proxy.ts reads it from cookie.
    - What's unclear: Is the frontend supposed to store the access token in a cookie itself (after receiving it in JSON body), or in memory only? If memory-only, proxy.ts cannot read it server-side.
    - Recommendation: Store access token in a non-HttpOnly cookie (JavaScript can write it; proxy.ts can read it). The security tradeoff is acceptable because the refresh token (HttpOnly) is the sensitive long-lived credential. Confirm with user or implement as non-HttpOnly `access_token` cookie set by frontend after successful login.
+   - **RESOLVED:** Access token written to a non-HttpOnly cookie (`access_token`) by the frontend after login, so `proxy.ts` can read it server-side for route protection. Refresh token is HttpOnly. Login page sets `document.cookie = "access_token=" + result.access_token + "; path=/; SameSite=Lax"` after successful POST /api/v1/auth/login.
 
 2. **`bcrypt` hash in seed migration**
    - What we know: D-07 seeds admin user via Alembic data migration.
    - What's unclear: The initial password for the admin user and how to get its bcrypt hash into the migration without hardcoding plaintext.
    - Recommendation: Generate the hash during project init (`python -c "from passlib.context import CryptContext; print(CryptContext(['bcrypt']).hash('initial-password'))"`) and paste the hash into the migration file. Document the initial password in DEPLOYMENT.md.
+   - **RESOLVED:** bcrypt hash computed at migration authoring time using `passlib.hash.bcrypt.hash('initial_password')` and hardcoded in the Alembic data migration (002_seed_sofabelle.py) as a constant. Initial password is `Admin1234!`. Hash embedded as `$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewFXi0F8lv8mzNqe`.
 
 3. **`with_loader_criteria` and Tenant model exclusion**
    - What we know: `with_loader_criteria(Base, ...)` applies to all subclasses.
    - What's unclear: Whether the `Tenant` model itself needs a `tenant_id` column. Per CLAUDE.md, `tenants` and `admin_users` tables are exceptions.
    - Recommendation: Use `TenantScopedMixin` only on scoped models; `Tenant` inherits only `Base` (no mixin). In `do_orm_execute`, check `hasattr(cls, 'tenant_id')` before applying the filter.
+   - **RESOLVED:** Apply `with_loader_criteria` to `TenantScopedMixin` (not `Base`). The `do_orm_execute` event listener checks `issubclass(entity, TenantScopedMixin)` to exclude the Tenant model automatically. Since `Tenant` inherits only `Base` + `TimestampMixin` (not `TenantScopedMixin`), queries against the tenants table are never filtered and never trigger `TenantIsolationError`.
 
 ---
 
