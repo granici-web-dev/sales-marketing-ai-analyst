@@ -16,7 +16,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 
 | Phase | Name | Status | Plans |
 |-------|------|--------|-------|
-| 1 | Foundation | ◐ Ready to plan | — |
+| 1 | Foundation | ◆ Executed — pending verification | 7/7 complete |
 | 2 | MEFI ETL | ○ Pending | — |
 | 3 | Metrics Engine | ○ Pending | — |
 | 4 | Anomaly Detection | ○ Pending | — |
@@ -46,4 +46,4 @@ None currently.
 - Phase 1 Docker: separate worker + beat + flower containers, depends_on with service_healthy
 - Phase 1 frontend: full shell layout with all 8 nav items from SPEC §13.1, next-intl with Romanian strings from day 1
 
-**Last session:** 2026-05-20 — Phase 1 UI-SPEC approved (.planning/phases/01-foundation/01-UI-SPEC.md)
+**Last session:** 2026-05-21 — Phase 1 execution complete (7/7 plans, all waves, pending verification)
