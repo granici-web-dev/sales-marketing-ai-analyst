@@ -1,5 +1,5 @@
 ---
-status: partial
+status: approved
 phase: 01-foundation
 source: [01-VERIFICATION.md]
 started: 2026-05-21T00:00:00Z
@@ -38,3 +38,14 @@ skipped: 0
 blocked: 0
 
 ## Gaps
+
+---
+**Human verification result: APPROVED (2026-05-21)**
+
+Tests 1–4 passed operationally. Known issue recorded:
+
+**KI-01 — Frontend CSS/Tailwind not loading (plain HTML)**
+- Observed: frontend renders unstyled HTML instead of designed layout
+- Likely cause: Tailwind v4 requires `@tailwindcss/postcss` plugin wired via `postcss.config.mjs`; scaffold may be missing this file or the CSS import path in `globals.css`
+- Impact: cosmetic only — routing, auth guard (`proxy.ts`), and next-intl i18n work correctly
+- Resolution: Phase 7 (Frontend Dashboards) or as a parallel quick fix before Phase 2
