@@ -1,0 +1,41 @@
+{
+  "auth": {
+    "pageTitle": "Autentificare — Sofa Belle",
+    "wordmark": "Sofa Belle",
+    "subtitle": "Panou de control",
+    "email": "Email",
+    "emailPlaceholder": "adresa@email.ro",
+    "password": "Parolă",
+    "passwordPlaceholder": "••••••••",
+    "loginButton": "Intră în cont",
+    "fieldRequired": "Câmpul este obligatoriu",
+    "emailInvalid": "Formatul email-ului este incorect",
+    "invalidCredentials": "Email sau parolă incorectă. Încearcă din nou.",
+    "networkError": "Eroare de rețea. Verifică conexiunea și încearcă din nou."
+  },
+  "nav": {
+    "overview": "Prezentare generală",
+    "marketing": "Marketing",
+    "sales": "Vânzări",
+    "salespeople": "Agenți de vânzări",
+    "insights": "Analize AI",
+    "chat": "Chat AI",
+    "integrations": "Integrări",
+    "settings": "Setări"
+  },
+  "placeholder": {
+    "comingSoon": "În curând",
+    "overview": "Prezentarea generală va fi disponibilă în curând.",
+    "marketing": "Datele de marketing vor fi disponibile după conectarea surselor.",
+    "sales": "Dashboard-ul de vânzări va fi disponibil după sincronizarea CRM.",
+    "salespeople": "Performanța agenților va fi disponibilă după sincronizarea CRM.",
+    "insights": "Analizele AI vor fi generate zilnic după configurarea integrărilor.",
+    "chat": "Chat-ul AI va fi disponibil în curând.",
+    "integrations": "Configurarea integrărilor va fi disponibilă în curând.",
+    "settings": "Setările contului vor fi disponibile în curând."
+  },
+  "locale": {
+    "ro": "RO",
+    "en": "EN"
+  }
+}

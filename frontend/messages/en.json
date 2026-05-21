@@ -1,0 +1,41 @@
+{
+  "auth": {
+    "pageTitle": "Sign In — Sofa Belle",
+    "wordmark": "Sofa Belle",
+    "subtitle": "Control panel",
+    "email": "Email",
+    "emailPlaceholder": "email@address.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "loginButton": "Sign in",
+    "fieldRequired": "This field is required",
+    "emailInvalid": "Invalid email format",
+    "invalidCredentials": "Incorrect email or password. Please try again.",
+    "networkError": "Network error. Check your connection and try again."
+  },
+  "nav": {
+    "overview": "Overview",
+    "marketing": "Marketing",
+    "sales": "Sales",
+    "salespeople": "Salespeople",
+    "insights": "AI Insights",
+    "chat": "AI Chat",
+    "integrations": "Integrations",
+    "settings": "Settings"
+  },
+  "placeholder": {
+    "comingSoon": "Coming soon",
+    "overview": "Overview will be available soon.",
+    "marketing": "Marketing data will be available after connecting your sources.",
+    "sales": "Sales dashboard will be available after CRM sync.",
+    "salespeople": "Salesperson performance will be available after CRM sync.",
+    "insights": "AI insights will be generated daily after integrations are configured.",
+    "chat": "AI Chat will be available soon.",
+    "integrations": "Integration setup will be available soon.",
+    "settings": "Account settings will be available soon."
+  },
+  "locale": {
+    "ro": "RO",
+    "en": "EN"
+  }
+}
