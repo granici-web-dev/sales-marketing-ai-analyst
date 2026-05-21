@@ -1,0 +1,25 @@
+[project]
+name = "sales-analyst-backend"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio==1.2.0",
+    "pytest-cov",
+    "httpx",
+    "factory-boy",
+    "freezegun",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "unit: marks tests as unit tests",
+]
