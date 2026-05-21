@@ -47,3 +47,5 @@ None currently.
 - Phase 1 frontend: full shell layout with all 8 nav items from SPEC §13.1, next-intl with Romanian strings from day 1
 
 **Last session:** 2026-05-21 — Phase 1 complete ✓. Known issue: KI-01 CSS/Tailwind not loading (fix in Phase 7 or parallel). Advancing to Phase 2 MEFI ETL.
+
+**2026-05-21 session:** Phase 2 context gathered. Key decisions: store all lifecycle states (active/lost/junk) in raw_mefi_leads, two conformed views (v_mefi_leads_active + v_mefi_leads_junk), auto-detect backfill on first sync, auto-upsert salespeople, new Alembic migration 003 for funnel_config JSONB.
