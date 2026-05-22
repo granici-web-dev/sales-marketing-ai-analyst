@@ -17,7 +17,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | Phase | Name | Status | Plans |
 |-------|------|--------|-------|
 | 1 | Foundation | ✓ Complete (2026-05-21) | 7/7 |
-| 2 | MEFI ETL | ◐ Ready to discuss | — |
+| 2 | MEFI ETL | ◐ In Progress (2/5 plans) | 2/5 |
 | 3 | Metrics Engine | ○ Pending | — |
 | 4 | Anomaly Detection | ○ Pending | — |
 | 5 | AI Insights | ○ Pending | — |
