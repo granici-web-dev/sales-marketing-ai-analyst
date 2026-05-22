@@ -21,6 +21,7 @@ If re-running from scratch, drop and recreate the database.
 """
 from __future__ import annotations
 
+import uuid
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -45,13 +46,20 @@ ADMIN_PASSWORD_HASH = "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewFXi0F8lv8mz
 
 
 def upgrade() -> None:
+    # uuid.UUID objects are passed instead of raw strings so asyncpg sends them
+    # as the PostgreSQL `uuid` wire type. Passing a plain str causes asyncpg to
+    # infer VARCHAR, which PostgreSQL rejects with "column is of type uuid but
+    # expression is of type character varying" on a fresh database.
+    tenant_uuid = uuid.UUID(SOFA_BELLE_TENANT_ID)
+    admin_uuid = uuid.UUID(ADMIN_USER_ID)
+
     # Insert Sofa Belle tenant — idempotent (ON CONFLICT DO NOTHING)
     op.execute(
         sa.text("""
             INSERT INTO tenants (id, name, slug, created_at, updated_at)
             VALUES (:id, 'Sofa Belle', 'sofa-belle', now(), now())
             ON CONFLICT (id) DO NOTHING
-        """).bindparams(id=SOFA_BELLE_TENANT_ID)
+        """).bindparams(id=tenant_uuid)
     )
 
     # Insert admin user — idempotent (ON CONFLICT DO NOTHING)
@@ -62,8 +70,8 @@ def upgrade() -> None:
             VALUES (:id, :tenant_id, :email, :pw, true, now(), now())
             ON CONFLICT (id) DO NOTHING
         """).bindparams(
-            id=ADMIN_USER_ID,
-            tenant_id=SOFA_BELLE_TENANT_ID,
+            id=admin_uuid,
+            tenant_id=tenant_uuid,
             email=ADMIN_EMAIL,
             pw=ADMIN_PASSWORD_HASH,
         )

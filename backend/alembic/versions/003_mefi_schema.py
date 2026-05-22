@@ -422,11 +422,15 @@ def upgrade() -> None:
     # ── Step 9: Seed funnel_config for Sofa Belle ─────────────────────────────
     # Idempotent: AND funnel_config IS NULL ensures running upgrade head twice
     # does NOT overwrite manually edited configs (T-02-01).
+    # CAST(:cfg AS jsonb) instead of :cfg::jsonb — SQLAlchemy's text() parser
+    # doesn't recognise a named bindparam when '::' immediately follows the
+    # colon (it mistakes the cast operator for part of the param name and
+    # raises "doesn't define a bound parameter named 'cfg'").
     op.execute(
         sa.text(
             """
             UPDATE tenants
-            SET funnel_config = :cfg::jsonb
+            SET funnel_config = CAST(:cfg AS jsonb)
             WHERE slug = 'sofa-belle'
               AND funnel_config IS NULL
             """
