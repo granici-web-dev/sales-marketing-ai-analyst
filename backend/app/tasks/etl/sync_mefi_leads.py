@@ -73,11 +73,19 @@ async def _sync_async(tenant_id: UUID) -> dict:
     All app.db.session and app.models imports are inside this function to
     prevent module-level DB connection pool creation before Celery's prefork
     pool forks worker processes (INFRA-05 / fork-safety).
+
+    A fresh NullPool engine is created per invocation. asyncio.run() creates a
+    new event loop on every Celery task call, so a pooled engine would return
+    connections whose asyncpg Futures are attached to a previous loop, causing
+    "Task got Future attached to a different loop". NullPool never reuses
+    connections, eliminating the cross-loop reference entirely.
     """
     # Deferred imports — must stay inside this function body (Pitfall 8 / INFRA-05)
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.pool import NullPool
+
     from app.core.config import settings
     from app.core.tenancy import set_tenant_id
-    from app.db.session import AsyncSessionLocal
     from app.models.pipeline import SyncRun
     from app.services.integrations.mefi import MefiClient
     from app.services.repositories.mefi_repository import MefiRepository
@@ -87,6 +95,10 @@ async def _sync_async(tenant_id: UUID) -> dict:
 
     log = logger.bind(tenant_id=str(tenant_id), task="sync_mefi_leads")
 
+    # NullPool: no connection reuse across asyncio.run() boundaries (see docstring)
+    task_engine = create_async_engine(settings.database_url, poolclass=NullPool)
+    TaskSession = async_sessionmaker(task_engine, expire_on_commit=False, class_=AsyncSession)
+
     # ── Step 1: Acquire Redis lock (T-02-09) ─────────────────────────────────
     lock_key = f"sync:mefi:{tenant_id}"
     redis = aioredis.from_url(settings.redis_url, decode_responses=True)
@@ -94,15 +106,17 @@ async def _sync_async(tenant_id: UUID) -> dict:
         acquired = await redis.set(lock_key, "1", nx=True, ex=_LOCK_TTL)
     except Exception:
         await redis.aclose()
+        await task_engine.dispose()
         raise
 
     if not acquired:
         log.info("sync.lock_held", lock_key=lock_key)
         await redis.aclose()
+        await task_engine.dispose()
         return {"status": "noop", "reason": "lock_held"}
 
     try:
-        async with AsyncSessionLocal() as session:
+        async with TaskSession() as session:
             repo = MefiRepository(session, tenant_id)
 
             # ── Step 2: Write SyncRun at start ───────────────────────────────
@@ -125,6 +139,7 @@ async def _sync_async(tenant_id: UUID) -> dict:
                     sync_run.error_msg = "MEFI liveness check returned total=0"
                     sync_run.completed_at = datetime.now(UTC)
                     await session.commit()
+                    await task_engine.dispose()
                     return {"status": "failed", "reason": "liveness_failed"}
 
                 # ── Step 4: First-ever sync? Trigger backfill ────────────────
@@ -204,9 +219,12 @@ async def _sync_async(tenant_id: UUID) -> dict:
                             "utm_campaign": get_cf(cf, 39),
                             "utm_content": get_cf(cf, 40),
                             "utm_medium": get_cf(cf, 41),
-                            "custom_fields_raw": [f.model_dump() for f in cf] if cf else None,
-                            "raw_payload": lead.model_dump(),
+                            # mode="json": Pydantic v2 serializes datetime→ISO str,
+                            # Decimal→float, UUID→str — required for JSONB columns
+                            "custom_fields_raw": [f.model_dump(mode="json") for f in cf] if cf else None,
+                            "raw_payload": lead.model_dump(mode="json"),
                             "synced_at": now,
+                            "updated_at": now,  # must be in VALUES so EXCLUDED has it
                         }
                         rows.append(row)
 
@@ -259,13 +277,13 @@ async def _sync_async(tenant_id: UUID) -> dict:
             }
 
     except Exception as exc:
-        # ── Error path: update SyncRun to failed, release lock ───────────────
+        # ── Error path: update SyncRun to failed ─────────────────────────────
         try:
-            async with AsyncSessionLocal() as err_session:
-                from app.core.tenancy import set_tenant_id as _set  # noqa
-                _set(tenant_id)
-                from sqlalchemy import select as _select  # noqa
-                from app.models.pipeline import SyncRun as _SR  # noqa
+            from sqlalchemy import select as _select  # noqa
+            from app.models.pipeline import SyncRun as _SR  # noqa
+            from app.core.tenancy import set_tenant_id as _set  # noqa
+            _set(tenant_id)
+            async with TaskSession() as err_session:
                 result = await err_session.execute(
                     _select(_SR).where(
                         _SR.tenant_id == tenant_id,
@@ -285,6 +303,7 @@ async def _sync_async(tenant_id: UUID) -> dict:
     finally:
         await redis.delete(lock_key)
         await redis.aclose()
+        await task_engine.dispose()
 
 
 def daily_pipeline(tenant_id: str) -> object:

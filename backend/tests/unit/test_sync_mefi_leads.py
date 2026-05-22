@@ -67,10 +67,16 @@ class TestRedisLock:
         mock_redis.delete = AsyncMock()
         mock_redis.aclose = AsyncMock()
 
+        # Patch create_async_engine (now called inside _sync_async with NullPool)
+        # so the test doesn't need a real DB URL to exercise lock behavior.
+        mock_engine = AsyncMock()
+        mock_engine.dispose = AsyncMock()
         with patch("app.tasks.etl.sync_mefi_leads.aioredis") as mock_aioredis, \
              patch("app.core.tenancy.set_tenant_id"), \
-             patch("app.core.config.settings") as mock_settings:
+             patch("app.core.config.settings") as mock_settings, \
+             patch("sqlalchemy.ext.asyncio.create_async_engine", return_value=mock_engine):
             mock_settings.redis_url = "redis://localhost:6379/0"
+            mock_settings.database_url = "postgresql+asyncpg://test:test@localhost/test"
             mock_settings.mefi_api_key = "lrd_test"
             mock_settings.sofa_belle_tenant_id = str(tenant_id)
             mock_aioredis.from_url = MagicMock(return_value=mock_redis)
@@ -92,10 +98,14 @@ class TestRedisLock:
         mock_redis.set = AsyncMock(return_value=None)
         mock_redis.aclose = AsyncMock()
 
+        mock_engine = AsyncMock()
+        mock_engine.dispose = AsyncMock()
         with patch("app.tasks.etl.sync_mefi_leads.aioredis") as mock_aioredis, \
              patch("app.core.tenancy.set_tenant_id"), \
-             patch("app.core.config.settings") as mock_settings:
+             patch("app.core.config.settings") as mock_settings, \
+             patch("sqlalchemy.ext.asyncio.create_async_engine", return_value=mock_engine):
             mock_settings.redis_url = "redis://localhost"
+            mock_settings.database_url = "postgresql+asyncpg://test:test@localhost/test"
             mock_settings.mefi_api_key = "lrd_test"
             mock_aioredis.from_url = MagicMock(return_value=mock_redis)
 
@@ -116,10 +126,16 @@ class TestBeatSchedule:
         assert routes["tasks.etl.backfill_mefi_leads"]["queue"] == "backfill"
 
     def test_etl_include_in_celery_app(self) -> None:
-        """celery_app includes 'app.tasks.etl' module for task discovery (PIPE-01)."""
+        """celery_app lists explicit ETL task modules for task discovery (PIPE-01).
+
+        Package-level include ('app.tasks.etl') only imports the empty __init__.py
+        and discovers no tasks. Specific module paths are required.
+        """
         from app.tasks.celery_app import celery_app
 
-        assert "app.tasks.etl" in celery_app.conf.include
+        include = celery_app.conf.include
+        assert "app.tasks.etl.sync_mefi_leads" in include
+        assert "app.tasks.etl.backfill_mefi_leads" in include
 
     def test_sync_mefi_leads_task_name(self) -> None:
         """sync_mefi_leads task name matches the beat schedule key."""

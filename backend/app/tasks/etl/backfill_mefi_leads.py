@@ -82,11 +82,18 @@ def backfill_mefi_leads(self, tenant_id: str) -> dict:  # type: ignore[no-untype
 
 
 async def _backfill_async(tenant_id: UUID) -> dict:
-    """Core backfill coroutine — all I/O imports deferred to this body (Pitfall 8)."""
+    """Core backfill coroutine — all I/O imports deferred to this body (Pitfall 8).
+
+    Uses NullPool for the same reason as _sync_async in sync_mefi_leads.py:
+    asyncio.run() creates a new event loop per task invocation, so a pooled
+    engine would return stale asyncpg connections from a prior loop.
+    """
     # Deferred imports — must stay inside this function body (Pitfall 8 / INFRA-05)
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.pool import NullPool
+
     from app.core.config import settings
     from app.core.tenancy import set_tenant_id
-    from app.db.session import AsyncSessionLocal
     from app.services.integrations.mefi import MefiClient
     from app.services.repositories.mefi_repository import MefiRepository
 
@@ -103,7 +110,10 @@ async def _backfill_async(tenant_id: UUID) -> dict:
 
     total_synced = 0
 
-    async with AsyncSessionLocal() as session:
+    task_engine = create_async_engine(settings.database_url, poolclass=NullPool)
+    TaskSession = async_sessionmaker(task_engine, expire_on_commit=False, class_=AsyncSession)
+    try:
+      async with TaskSession() as session:
         repo = MefiRepository(session, tenant_id)
 
         async with MefiClient(api_key=settings.mefi_api_key) as client:
@@ -163,9 +173,10 @@ async def _backfill_async(tenant_id: UUID) -> dict:
                             "utm_campaign": get_cf(cf, 39),
                             "utm_content": get_cf(cf, 40),
                             "utm_medium": get_cf(cf, 41),
-                            "custom_fields_raw": [f.model_dump() for f in cf] if cf else None,
-                            "raw_payload": lead.model_dump(),
+                            "custom_fields_raw": [f.model_dump(mode="json") for f in cf] if cf else None,
+                            "raw_payload": lead.model_dump(mode="json"),
                             "synced_at": now,
+                            "updated_at": now,
                         })
 
                         if lead.assigned_to and lead.assigned_to.id:
@@ -189,5 +200,7 @@ async def _backfill_async(tenant_id: UUID) -> dict:
                     total_so_far=total_synced,
                 )
 
-    log.info("backfill.complete", total_synced=total_synced)
-    return {"status": "success", "total_synced": total_synced}
+        log.info("backfill.complete", total_synced=total_synced)
+        return {"status": "success", "total_synced": total_synced}
+    finally:
+        await task_engine.dispose()
