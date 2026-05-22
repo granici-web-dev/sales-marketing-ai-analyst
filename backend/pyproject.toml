@@ -29,6 +29,7 @@ dev = [
     "httpx",
     "factory-boy",
     "freezegun",
+    "respx>=0.21,<1",
 ]
 
 [tool.pytest.ini_options]
