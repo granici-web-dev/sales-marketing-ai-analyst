@@ -57,10 +57,15 @@ class MefiClient(BaseIntegration):
     Class attributes:
         BASE_URL: MEFI base URL for Sofa Belle's instance.
         source_name: Integration identifier used in SyncResult and logs.
+        _REQUEST_INTERVAL: Minimum seconds between requests — proactive
+            throttle to stay under the 100 req/10s burst limit (10 req/s).
+            0.15s ≈ 6.7 req/s, ~33% headroom below the hard ceiling.
+            Tune this if MEFI tightens limits or concurrent tasks share the token.
     """
 
     BASE_URL: str = "https://bellesofa.meficrm.com/api/v1"
     source_name: str = "mefi"
+    _REQUEST_INTERVAL: float = 0.15  # seconds between requests (~6.7 req/s)
 
     def __init__(self, api_key: str) -> None:
         """Create a MefiClient with a read key.
@@ -190,12 +195,18 @@ class MefiClient(BaseIntegration):
     # ------------------------------------------------------------------
 
     async def _request(self, method: str, path: str, **kwargs: Any) -> dict:
-        """Execute an HTTP request with rate-limit awareness.
+        """Execute an HTTP request with proactive throttling and rate-limit awareness.
 
-        Reads X-RateLimit-Remaining after every response. If remaining < 10,
-        waits 1 second as a gentle back-off before returning. On 429 raises
-        RateLimitError with the Retry-After value. On other non-2xx responses
-        calls response.raise_for_status().
+        Sleeps _REQUEST_INTERVAL before every request (proactive throttle) so
+        the call rate stays below the 100 req/10s burst ceiling regardless of
+        how many concurrent tasks share the same API token.
+
+        Also reads X-RateLimit-Remaining after every response and adds an extra
+        proportional pause when the remaining budget drops below 20 — a reactive
+        safety net on top of the proactive sleep.
+
+        On 429: raises RateLimitError with Retry-After. The Celery task handles
+        this by calling self.retry(countdown=retry_after).
 
         Args:
             method: HTTP method string ('POST', 'GET', etc.)
@@ -209,14 +220,20 @@ class MefiClient(BaseIntegration):
             RateLimitError: If the server returns 429.
             httpx.HTTPStatusError: For other 4xx/5xx responses.
         """
+        # Proactive throttle — fires before every request, including retries.
+        # Keeps sustained rate at ~6.7 req/s, well under 10 req/s burst limit.
+        await asyncio.sleep(self._REQUEST_INTERVAL)
+
         response = await self._client.request(method, path, **kwargs)
 
-        # Read rate-limit header before raising — always available on 200 and 429
-        remaining = int(response.headers.get("X-RateLimit-Remaining", 600))
+        # Read rate-limit header before raising — always present on 200 and 429
+        try:
+            remaining = int(response.headers.get("X-RateLimit-Remaining", 600))
+        except (ValueError, TypeError):
+            remaining = 600  # malformed header — assume plenty left
 
         if response.status_code == 429:
             retry_after = int(response.headers.get("Retry-After", 60))
-            # Log safe metrics only
             logger.warning(
                 "mefi.rate_limit_hit",
                 retry_after=retry_after,
@@ -224,10 +241,17 @@ class MefiClient(BaseIntegration):
             )
             raise RateLimitError(retry_after=retry_after)
 
-        # Gentle back-off when getting close to the limit
-        if remaining < 10:
-            logger.info("mefi.rate_limit_low", rate_limit_remaining=remaining)
-            await asyncio.sleep(1)
+        # Reactive safety net: extra pause proportional to how close we are to the
+        # burst ceiling. Fires only when remaining < 20 (i.e. < 20% of burst budget).
+        # extra_sleep ramps from 0.0s (at remaining=20) up to 2.0s (at remaining=0).
+        if remaining < 20:
+            extra_sleep = (20 - remaining) * 0.1  # 0.1s per missing credit, max 2.0s
+            logger.info(
+                "mefi.rate_limit_low",
+                rate_limit_remaining=remaining,
+                extra_sleep=round(extra_sleep, 2),
+            )
+            await asyncio.sleep(extra_sleep)
 
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]

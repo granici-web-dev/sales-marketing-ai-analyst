@@ -39,8 +39,10 @@ def get_cf(fields: object, field_id: int) -> object:
 @celery_app.task(
     bind=True,
     autoretry_for=(httpx.TimeoutException, httpx.NetworkError),
-    max_retries=3,
-    default_retry_delay=60,
+    max_retries=20,
+    retry_backoff=True,       # exponential: 2s, 4s, 8s, … capped at retry_backoff_max
+    retry_backoff_max=60,     # cap at 60s so we never wait longer than a minute
+    retry_jitter=True,        # ±random spread to avoid thundering-herd on shared token
     name="tasks.etl.sync_mefi_leads",
 )
 def sync_mefi_leads(self, tenant_id: str) -> dict:  # type: ignore[no-untyped-def]
