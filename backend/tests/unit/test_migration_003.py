@@ -29,7 +29,12 @@ MIGRATION_PATH = Path(__file__).parent.parent.parent / "alembic" / "versions" / 
 
 
 def _load_migration_module():
-    """Load migration 003 as a Python module, skipping if not found."""
+    """Load migration 003 as a Python module, skipping if not found or import fails.
+
+    Falls back gracefully when alembic/sqlalchemy are not installed in the
+    current Python environment (e.g., system Python 3.9 — project requires 3.11+
+    inside Docker; see RESEARCH.md Environment Availability section).
+    """
     if not MIGRATION_PATH.exists():
         return None
     spec = importlib.util.spec_from_file_location("migration_003", MIGRATION_PATH)
@@ -39,6 +44,57 @@ def _load_migration_module():
         return module
     except Exception:
         return None
+
+
+def _load_funnel_config_via_ast() -> dict | None:
+    """Extract FUNNEL_CONFIG dict from migration 003 via AST — no imports needed.
+
+    This approach works without alembic/sqlalchemy installed, making tests
+    runnable on system Python 3.9 while still verifying the config values.
+    """
+    if not MIGRATION_PATH.exists():
+        return None
+
+    source = MIGRATION_PATH.read_text()
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+
+    # Walk top-level assignments to find FUNNEL_CONFIG = { ... }
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "FUNNEL_CONFIG":
+                    # Evaluate the dict literal safely
+                    try:
+                        return ast.literal_eval(node.value)
+                    except (ValueError, TypeError):
+                        return None
+    return None
+
+
+def _get_revision_value(var_name: str) -> str | None:
+    """Extract revision/down_revision string value via AST inspection."""
+    if not MIGRATION_PATH.exists():
+        return None
+    source = MIGRATION_PATH.read_text()
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.AnnAssign):
+            # Handle `revision: str = "003"` (annotated assignment)
+            if isinstance(node.target, ast.Name) and node.target.id == var_name:
+                if node.value and isinstance(node.value, ast.Constant):
+                    return node.value.value
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == var_name:
+                    if isinstance(node.value, ast.Constant):
+                        return node.value.value
+    return None
 
 
 def _require_migration():
@@ -75,23 +131,17 @@ def test_migration_003_parses_as_python() -> None:
 def test_migration_003_revision_id() -> None:
     """revision must be '003'."""
     _require_migration()
-    module = _load_migration_module()
-    if module is None:
-        pytest.fail("Could not load migration 003 module (ImportError during exec)")
-    assert module.revision == "003", (
-        f"Expected revision='003', got '{module.revision}'"
-    )
+    val = _get_revision_value("revision")
+    assert val is not None, "Could not extract 'revision' from migration 003 via AST"
+    assert val == "003", f"Expected revision='003', got {val!r}"
 
 
 def test_migration_003_down_revision() -> None:
     """down_revision must be '002' to chain correctly after seed migration."""
     _require_migration()
-    module = _load_migration_module()
-    if module is None:
-        pytest.fail("Could not load migration 003 module")
-    assert module.down_revision == "002", (
-        f"Expected down_revision='002', got '{module.down_revision}'"
-    )
+    val = _get_revision_value("down_revision")
+    assert val is not None, "Could not extract 'down_revision' from migration 003 via AST"
+    assert val == "002", f"Expected down_revision='002', got {val!r}"
 
 
 # ── FUNNEL_CONFIG dict tests ───────────────────────────────────────────────────
@@ -100,24 +150,19 @@ def test_migration_003_down_revision() -> None:
 def test_migration_003_funnel_config_present() -> None:
     """FUNNEL_CONFIG dict must be defined at module level."""
     _require_migration()
-    module = _load_migration_module()
-    if module is None:
-        pytest.fail("Could not load migration 003 module")
-    assert hasattr(module, "FUNNEL_CONFIG"), (
-        "FUNNEL_CONFIG dict not found in migration 003 module"
+    cfg = _load_funnel_config_via_ast()
+    assert cfg is not None, (
+        "FUNNEL_CONFIG dict not found in migration 003 — could not extract via AST. "
+        "Ensure FUNNEL_CONFIG = {...} is a top-level dict literal assignment."
     )
-    assert isinstance(module.FUNNEL_CONFIG, dict), (
-        f"FUNNEL_CONFIG must be a dict, got {type(module.FUNNEL_CONFIG).__name__}"
-    )
+    assert isinstance(cfg, dict), f"FUNNEL_CONFIG must be a dict, got {type(cfg).__name__}"
 
 
 def test_migration_003_funnel_config_visit_stages() -> None:
     """FUNNEL_CONFIG.funnel_stages.visit must be [17] (SHOWROOM status, D-08)."""
     _require_migration()
-    module = _load_migration_module()
-    if module is None:
-        pytest.fail("Could not load migration 003 module")
-    cfg = module.FUNNEL_CONFIG
+    cfg = _load_funnel_config_via_ast()
+    assert cfg is not None, "Could not extract FUNNEL_CONFIG from migration 003"
     assert "funnel_stages" in cfg, "FUNNEL_CONFIG missing 'funnel_stages' key"
     assert cfg["funnel_stages"]["visit"] == [17], (
         f"visit stages must be [17], got {cfg['funnel_stages']['visit']}"
@@ -127,10 +172,8 @@ def test_migration_003_funnel_config_visit_stages() -> None:
 def test_migration_003_funnel_config_offer_stages() -> None:
     """FUNNEL_CONFIG.funnel_stages.offer must be [3] (Ofertat status, D-08)."""
     _require_migration()
-    module = _load_migration_module()
-    if module is None:
-        pytest.fail("Could not load migration 003 module")
-    cfg = module.FUNNEL_CONFIG
+    cfg = _load_funnel_config_via_ast()
+    assert cfg is not None, "Could not extract FUNNEL_CONFIG from migration 003"
     assert cfg["funnel_stages"]["offer"] == [3], (
         f"offer stages must be [3], got {cfg['funnel_stages']['offer']}"
     )
@@ -139,10 +182,8 @@ def test_migration_003_funnel_config_offer_stages() -> None:
 def test_migration_003_funnel_config_contract_stages() -> None:
     """FUNNEL_CONFIG.funnel_stages.contract must be [1] (Clienți status, D-08)."""
     _require_migration()
-    module = _load_migration_module()
-    if module is None:
-        pytest.fail("Could not load migration 003 module")
-    cfg = module.FUNNEL_CONFIG
+    cfg = _load_funnel_config_via_ast()
+    assert cfg is not None, "Could not extract FUNNEL_CONFIG from migration 003"
     assert cfg["funnel_stages"]["contract"] == [1], (
         f"contract stages must be [1], got {cfg['funnel_stages']['contract']}"
     )
@@ -151,10 +192,8 @@ def test_migration_003_funnel_config_contract_stages() -> None:
 def test_migration_003_funnel_config_offer_sent_flag_field() -> None:
     """FUNNEL_CONFIG.offer_sent_flag_field must be 'form-cf-20' (D-08)."""
     _require_migration()
-    module = _load_migration_module()
-    if module is None:
-        pytest.fail("Could not load migration 003 module")
-    cfg = module.FUNNEL_CONFIG
+    cfg = _load_funnel_config_via_ast()
+    assert cfg is not None, "Could not extract FUNNEL_CONFIG from migration 003"
     assert cfg.get("offer_sent_flag_field") == "form-cf-20", (
         f"offer_sent_flag_field must be 'form-cf-20', got {cfg.get('offer_sent_flag_field')!r}"
     )
@@ -163,10 +202,8 @@ def test_migration_003_funnel_config_offer_sent_flag_field() -> None:
 def test_migration_003_funnel_config_showroom_field() -> None:
     """FUNNEL_CONFIG.showroom_field must be 'form-cf-14' (D-08)."""
     _require_migration()
-    module = _load_migration_module()
-    if module is None:
-        pytest.fail("Could not load migration 003 module")
-    cfg = module.FUNNEL_CONFIG
+    cfg = _load_funnel_config_via_ast()
+    assert cfg is not None, "Could not extract FUNNEL_CONFIG from migration 003"
     assert cfg.get("showroom_field") == "form-cf-14", (
         f"showroom_field must be 'form-cf-14', got {cfg.get('showroom_field')!r}"
     )
@@ -175,10 +212,8 @@ def test_migration_003_funnel_config_showroom_field() -> None:
 def test_migration_003_funnel_config_junk_statuses() -> None:
     """FUNNEL_CONFIG.junk_statuses must be [23] (IRELEVANT status, D-08)."""
     _require_migration()
-    module = _load_migration_module()
-    if module is None:
-        pytest.fail("Could not load migration 003 module")
-    cfg = module.FUNNEL_CONFIG
+    cfg = _load_funnel_config_via_ast()
+    assert cfg is not None, "Could not extract FUNNEL_CONFIG from migration 003"
     assert cfg.get("junk_statuses") == [23], (
         f"junk_statuses must be [23], got {cfg.get('junk_statuses')!r}"
     )
@@ -187,10 +222,8 @@ def test_migration_003_funnel_config_junk_statuses() -> None:
 def test_migration_003_funnel_config_source_categories() -> None:
     """FUNNEL_CONFIG.source_categories must have required category keys (D-08)."""
     _require_migration()
-    module = _load_migration_module()
-    if module is None:
-        pytest.fail("Could not load migration 003 module")
-    cfg = module.FUNNEL_CONFIG
+    cfg = _load_funnel_config_via_ast()
+    assert cfg is not None, "Could not extract FUNNEL_CONFIG from migration 003"
     assert "source_categories" in cfg, "FUNNEL_CONFIG missing 'source_categories' key"
     cats = cfg["source_categories"]
 
@@ -223,10 +256,8 @@ def test_migration_003_funnel_config_source_categories() -> None:
 def test_migration_003_funnel_config_lifecycle_filter() -> None:
     """FUNNEL_CONFIG.lifecycle_filter must contain all three lifecycle values (D-08)."""
     _require_migration()
-    module = _load_migration_module()
-    if module is None:
-        pytest.fail("Could not load migration 003 module")
-    cfg = module.FUNNEL_CONFIG
+    cfg = _load_funnel_config_via_ast()
+    assert cfg is not None, "Could not extract FUNNEL_CONFIG from migration 003"
     assert "lifecycle_filter" in cfg, "FUNNEL_CONFIG missing 'lifecycle_filter' key"
     filter_set = set(cfg["lifecycle_filter"])
     assert filter_set == {"active", "lost", "junk"}, (
