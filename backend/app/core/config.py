@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 30
 
+    # MEFI CRM API read key (lrd_* prefix)
+    mefi_api_key: str
+
     # Multi-tenancy seam (D-05): hardcoded for MVP1-3; replaced by JWT claim in Iteration 4
     sofa_belle_tenant_id: str = "00000000-0000-0000-0000-000000000001"
 
