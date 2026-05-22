@@ -58,6 +58,7 @@ class MefiRepository:
             "showroom", "offer_sent_flag",
             "utm_source", "utm_campaign", "utm_content", "utm_medium",
             "custom_fields_raw", "raw_payload", "synced_at",
+            "updated_at",  # keep updated_at current on every sync
         ]
 
         stmt = pg_insert(RawMefiLead).values(rows)
@@ -106,6 +107,10 @@ class MefiRepository:
             ext_id = row["external_id"]
             new_status_id = row.get("status_id")
             new_status_name = row.get("status_name")
+
+            # Skip leads with no status — to_status_id is NOT NULL in schema (MEFI-06)
+            if new_status_id is None:
+                continue
 
             if ext_id not in stored:
                 # New lead — record initial status as a history entry

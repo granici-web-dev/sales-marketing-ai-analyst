@@ -15,16 +15,24 @@ logger = structlog.get_logger(__name__)
 _LOCK_TTL = 36000  # 10 hours — covers worst-case full backfill runtime
 
 
-def get_cf(fields: list[dict] | None, field_id: int) -> object:
-    """Extract a custom field value by form-cf-ID from MEFI custom_fields list.
+def get_cf(fields: object, field_id: int) -> object:
+    """Extract a custom field value by form-cf-ID from MEFI custom_fields.
 
     None-safe: returns None if fields is None, empty, or the field is absent.
+    Handles both Pydantic MefiCustomField objects (from API response) and
+    plain dicts (from stored custom_fields_raw JSON).
     """
     if not fields:
         return None
-    for f in fields:
-        if f.get("field_id") == field_id or f.get("id") == field_id:
-            return f.get("value")
+    for f in fields:  # type: ignore[union-attr]
+        if hasattr(f, "field_id"):
+            # Pydantic MefiCustomField object — use attribute access
+            if f.field_id == field_id:
+                return f.value
+        else:
+            # Plain dict (from custom_fields_raw or test data)
+            if f.get("field_id") == field_id or f.get("id") == field_id:
+                return f.get("value")
     return None
 
 
@@ -82,7 +90,12 @@ async def _sync_async(tenant_id: UUID) -> dict:
     # ── Step 1: Acquire Redis lock (T-02-09) ─────────────────────────────────
     lock_key = f"sync:mefi:{tenant_id}"
     redis = aioredis.from_url(settings.redis_url, decode_responses=True)
-    acquired = await redis.set(lock_key, "1", nx=True, ex=_LOCK_TTL)
+    try:
+        acquired = await redis.set(lock_key, "1", nx=True, ex=_LOCK_TTL)
+    except Exception:
+        await redis.aclose()
+        raise
+
     if not acquired:
         log.info("sync.lock_held", lock_key=lock_key)
         await redis.aclose()
@@ -266,8 +279,8 @@ async def _sync_async(tenant_id: UUID) -> dict:
                     run.error_msg = str(exc)[:500]
                     run.completed_at = datetime.now(UTC)
                     await err_session.commit()
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as err_exc:  # noqa: BLE001
+            log.warning("sync.error_handler_failed", error=str(err_exc))
         raise
     finally:
         await redis.delete(lock_key)

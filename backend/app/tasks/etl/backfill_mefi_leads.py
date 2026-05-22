@@ -12,17 +12,24 @@ from app.tasks.celery_app import celery_app
 logger = structlog.get_logger(__name__)
 
 
-def get_cf(fields: list[dict] | None, field_id: int) -> object:
-    """Extract a custom field value by form-cf-ID from MEFI custom_fields list.
+def get_cf(fields: object, field_id: int) -> object:
+    """Extract a custom field value by form-cf-ID from MEFI custom_fields.
 
-    Duplicated from sync_mefi_leads to avoid circular imports and satisfy
-    fork-safety (no module-level cross-task imports allowed — Pitfall 8).
+    None-safe: returns None if fields is None, empty, or the field is absent.
+    Handles both Pydantic MefiCustomField objects (from API response) and
+    plain dicts (from stored custom_fields_raw JSON).
+
+    Duplicated from sync_mefi_leads to avoid circular imports (Pitfall 8).
     """
     if not fields:
         return None
-    for f in fields:
-        if f.get("field_id") == field_id or f.get("id") == field_id:
-            return f.get("value")
+    for f in fields:  # type: ignore[union-attr]
+        if hasattr(f, "field_id"):
+            if f.field_id == field_id:
+                return f.value
+        else:
+            if f.get("field_id") == field_id or f.get("id") == field_id:
+                return f.get("value")
     return None
 
 
