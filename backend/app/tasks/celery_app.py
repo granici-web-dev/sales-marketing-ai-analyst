@@ -23,7 +23,13 @@ celery_app = Celery(
     "sales_analyst",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.tasks", "app.tasks.etl"],
+    # List explicit task modules — pointing to the package alone (app.tasks.etl)
+    # only imports the empty __init__.py and discovers no tasks.
+    include=[
+        "app.tasks",
+        "app.tasks.etl.sync_mefi_leads",
+        "app.tasks.etl.backfill_mefi_leads",
+    ],
 )
 
 celery_app.conf.update(
