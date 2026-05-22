@@ -118,14 +118,14 @@ async def _backfill_async(tenant_id: UUID) -> dict:
                         order="asc",
                     )
 
-                    if not response.leads:
+                    if not response.data:
                         break
 
                     rows = []
                     salesperson_pairs: list[tuple[int, str]] = []
                     now = datetime.now(UTC)
 
-                    for lead in response.leads:
+                    for lead in response.data:
                         cf = lead.custom_fields if lead.custom_fields else []
                         offer_raw = get_cf(cf, 20)
                         offer_flag: bool | None = None
@@ -145,7 +145,7 @@ async def _backfill_async(tenant_id: UUID) -> dict:
                             "assigned_to_id": lead.assigned_to.id if lead.assigned_to else None,
                             "assigned_to_name": lead.assigned_to.name if lead.assigned_to else None,
                             "estimated_value": lead.estimated_value,
-                            "priority": lead.priority,
+                            "priority": lead.priority.get("name") if isinstance(lead.priority, dict) else lead.priority,
                             "is_duplicate": lead.is_duplicate or False,
                             "created_at_source": lead.created_at,
                             "last_contact_at": lead.last_contact_at,
@@ -170,7 +170,7 @@ async def _backfill_async(tenant_id: UUID) -> dict:
                     await repo.upsert_salespeople(salesperson_pairs)
                     month_count += len(rows)
 
-                    if len(response.leads) < 100:
+                    if len(response.data) < 100:
                         break
                     page += 1
 
