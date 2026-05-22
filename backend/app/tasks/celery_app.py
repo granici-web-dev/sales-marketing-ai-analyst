@@ -23,7 +23,7 @@ celery_app = Celery(
     "sales_analyst",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.tasks"],
+    include=["app.tasks", "app.tasks.etl"],
 )
 
 celery_app.conf.update(
@@ -64,7 +64,38 @@ celery_app.conf.update(
     task_acks_late=True,
     task_reject_on_worker_lost=True,
     worker_prefetch_multiplier=1,
+
+    # Task routing — backfill runs on a dedicated queue to avoid blocking
+    # the default queue during 12-month historical data fetch (MEFI-12).
+    task_routes={
+        "tasks.etl.backfill_mefi_leads": {"queue": "backfill"},
+    },
 )
+
+
+# ── Daily pipeline beat schedule ─────────────────────────────────────────────
+# Registered after conf.update() so redbeat_key_prefix is already set.
+# Phase 3 will extend daily_pipeline() in sync_mefi_leads.py instead of
+# modifying this file — the beat entry here stays stable across phases.
+#
+# Schedule: 04:00 Europe/Bucharest daily (INFRA-04, PIPE-01).
+# Uses redbeat.RedBeatSchedulerEntry for Redis persistence.
+try:
+    from redbeat import RedBeatSchedulerEntry
+    from celery.schedules import crontab
+
+    _entry = RedBeatSchedulerEntry(
+        name="daily-mefi-sync",
+        task="tasks.etl.sync_mefi_leads",
+        schedule=crontab(hour=4, minute=0),
+        args=[settings.sofa_belle_tenant_id],
+        app=celery_app,
+    )
+    _entry.save()
+except Exception:  # noqa: BLE001
+    # Beat schedule registration is best-effort at import time;
+    # the beat container registers it authoritatively on startup.
+    pass
 
 
 @worker_process_init.connect
