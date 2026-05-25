@@ -670,22 +670,13 @@ async def _calc_async(tenant_id: UUID, calculation_date: str | None) -> dict:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **WoW/MoM delta column naming convention**
-   - What we know: METR-05 and SC#5 require deltas; SPEC.md §7 has no delta columns
-   - What's unclear: Exact suffix and which metrics get deltas
-   - Recommendation: Planner picks `{metric}_wow_delta` / `{metric}_mom_delta` for all 5 conversion rates + leads_total + revenue. Lock in PLAN.md.
+1. **WoW/MoM delta column naming convention** — RESOLVED in Plan 03-02 T1: `{metric}_wow_delta` / `{metric}_mom_delta` suffix for 8 metrics × 2 deltas = 16 columns (leads_total, 5 conversion rates, revenue, avg_deal_size). See Plan 03-02 T1 acceptance_criteria for exact column list.
 
-2. **Updated `v_mefi_leads_active` view — migration 004 or separate plan?**
-   - What we know: The current view uses current-status-only funnel logic; Phase 3 metrics need history-based "ever reached"
-   - What's unclear: Whether updating the view should be Wave 0 (schema) or integrated with service implementation
-   - Recommendation: Include view update in the Alembic migration 004 task (Wave 0). This ensures metric service tests can rely on correct funnel booleans from the start.
+2. **Updated `v_mefi_leads_active` view — migration 004 or separate plan?** — RESOLVED: included in Plan 03-02 T2 (Wave 1, same migration). View update is part of Alembic migration 004 so metric service tests can rely on correct funnel booleans from the start.
 
-3. **`salesperson_daily_kpi` rows: filter to only active salespeople or emit NULL rows for inactive?**
-   - What we know: D-17 says filter on `mefi_salespeople.is_active = true` for per-salesperson metrics
-   - What's unclear: Sofa Belle has 11 MEFI users but only 6 confirmed salespeople; `is_active` is NULL for unconfirmed
-   - Recommendation: Only emit rows where `is_active = true` (not NULL). This matches D-17. ROADMAP SC#1 says "6 rows for Sofa Belle" which aligns with 6 active salespeople.
+3. **`salesperson_daily_kpi` rows: filter to only active salespeople or emit NULL rows for inactive?** — RESOLVED by D-17: only emit rows where `is_active = true` (not NULL). Aligns with ROADMAP SC#1 "6 rows for Sofa Belle". Implemented in Plan 03-03 T2 via `is_active.is_(True)` filter.
 
 ---
 

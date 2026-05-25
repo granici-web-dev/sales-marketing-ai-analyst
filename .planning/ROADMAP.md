@@ -76,13 +76,18 @@ Plans:
 **Depends on:** Phase 2
 **Requirements:** METR-01, METR-02, METR-03, METR-04, METR-05, METR-06
 **Success Criteria:**
-1. Running `calculate_daily_kpis` Celery task for date D populates `daily_kpi`, `salesperson_daily_kpi` (6 rows for Sofa Belle), and `source_daily_kpi` (6 rows for 6 source categories); re-running for the same date does not duplicate rows (UPSERT on `(tenant_id, date, ...)`).
+1. Running `calculate_daily_kpis` Celery task for date D populates `daily_kpi`, `salesperson_daily_kpi` (6 rows for Sofa Belle), and `source_daily_kpi` (7 rows for 7 source categories per CONTEXT D-04); re-running for the same date does not duplicate rows (UPSERT on `(tenant_id, date, ...)`).
 2. `SELECT l_to_v_pct, v_to_o_pct, l_to_o_pct, o_to_c_pct, l_to_c_pct FROM daily_kpi WHERE date = CURRENT_DATE` returns five rates between 0 and 1 with zero-division guards (no NULL/error when a denominator is 0).
 3. `salesperson_daily_kpi` for each rep contains `leads_assigned`, `visits_scheduled`, `offers_sent`, `contracts_closed`, `time_to_first_touch_minutes`, and `data_completeness_pct` (% leads with `estimated_value IS NOT NULL`).
 4. Computed values for a sample day match a hand-rolled SQL aggregation of `v_mefi_leads_active` within 1 RON (Decimal precision preserved end-to-end; no float drift).
 5. `daily_kpi` for date D contains `wow_delta_pct` and `mom_delta_pct` for every numeric KPI, computed as `(current - prior) / prior` against the same weekday 7d ago and same date 30d ago.
 6. All date grouping in metric queries uses `AT TIME ZONE 'Europe/Bucharest'` (verified by SQL inspection); a lead created at 23:30 EEST on day D is attributed to day D in `daily_kpi`, not day D+1.
-**Plans:** TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 03-01-PLAN.md — Wave 0 test stubs: 8 unit test files + metrics_factory.py (RED contracts for services, repository, models, migration, task, business_hours util)
+- [ ] 03-02-PLAN.md — Alembic migration 004 (3 metric tables full SPEC.md §7 + WoW/MoM delta cols + data_completeness_pct + business_hours seed + v_mefi_leads_active history-join update) + SQLAlchemy models
+- [ ] 03-03-PLAN.md — business_hours util (zoneinfo, DST-correct) + DailyKpiService + SalespersonKpiService + SourceKpiService (7 categories, designer detection) + MetricsRepository (2-col and 3-col UPSERT)
+- [ ] 03-04-PLAN.md — calculate_daily_kpis Celery task (NullPool, yesterday default per D-10, ISO-date backfill per D-12) + daily_pipeline chain extension (sync_mefi_leads → calculate_daily_kpis per D-18) + celery_app include registration
 
 ---
 
@@ -192,7 +197,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Executed | 2026-05-21 |
 | 2. MEFI ETL | 0/5 | Not started | — |
-| 3. Metrics Engine | 0/? | Not started | — |
+| 3. Metrics Engine | 0/4 | Not started | — |
 | 4. Anomaly Detection | 0/? | Not started | — |
 | 5. AI Insights | 0/? | Not started | — |
 | 6. Backend HTTP API | 0/? | Not started | — |

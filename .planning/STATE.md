@@ -18,7 +18,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 |-------|------|--------|-------|
 | 1 | Foundation | ✓ Complete (2026-05-21) | 7/7 |
 | 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
-| 3 | Metrics Engine | ○ Pending | — |
+| 3 | Metrics Engine | ◆ Ready to execute | 0/4 |
 | 4 | Anomaly Detection | ○ Pending | — |
 | 5 | AI Insights | ○ Pending | — |
 | 6 | Backend HTTP API | ○ Pending | — |
@@ -53,3 +53,5 @@ None currently.
 **2026-05-23 session:** Phase 2 APPROVED COMPLETE. 1000/1155 leads ingested (KI-02: burst rate limit on initial backfill — remaining 155 will be picked up by nightly syncs over a few days; deferred fix to Phase 9). All success criteria met: UPSERT idempotent, rate-limit detection+retry working, async event loop bug fixed, custom fields extracted. Advancing to Phase 3 — Metrics Engine.
 
 **2026-05-25 session:** Phase 3 context gathered. Key decisions: 7 source categories (funnel_config names + google), time_to_first_touch from mefi_lead_history first status change with business-hours adjustment (Mon–Sun 09:00–19:00 Bucharest), full SPEC.md §7 schema with nullable ad-spend columns, calculate for yesterday with NULL deltas on missing prior data, date-parameterizable task for backfill. Resume file: .planning/phases/03-metrics-engine/03-CONTEXT.md
+
+**2026-05-25 session (continued):** Phase 3 planning complete. 4 plans in 4 waves: Wave 0 (test stubs), Wave 1 (migration 004 + models), Wave 2 (metric services + MetricsRepository), Wave 3 (calculate_daily_kpis Celery task + chain). All 6 METR requirements covered. Status: Ready to execute.
