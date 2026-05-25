@@ -2,7 +2,7 @@
 
 **Project:** Sales & Marketing AI Analyst
 **Initialized:** 2026-05-19
-**Current Phase:** Phase 2 — MEFI ETL
+**Current Phase:** Phase 3 — Metrics Engine
 **Milestone:** Iteration 1 (MVP1: MEFI-only)
 
 ## Project Reference
@@ -10,14 +10,14 @@
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Every morning, Sofa Belle gets a clear answer to "where are we losing money?" and 5–7 specific tasks for the day.
-**Current focus:** Phase 2 — MEFI ETL
+**Current focus:** Phase 3 — Metrics Engine
 
 ## Phase Progress
 
 | Phase | Name | Status | Plans |
 |-------|------|--------|-------|
 | 1 | Foundation | ✓ Complete (2026-05-21) | 7/7 |
-| 2 | MEFI ETL | ◐ In Progress (4/5 plans) | 4/5 |
+| 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
 | 3 | Metrics Engine | ○ Pending | — |
 | 4 | Anomaly Detection | ○ Pending | — |
 | 5 | AI Insights | ○ Pending | — |
@@ -49,3 +49,7 @@ None currently.
 **Last session:** 2026-05-21 — Phase 1 complete ✓. Known issue: KI-01 CSS/Tailwind not loading (fix in Phase 7 or parallel). Advancing to Phase 2 MEFI ETL.
 
 **2026-05-21 session:** Phase 2 context gathered. Key decisions: store all lifecycle states (active/lost/junk) in raw_mefi_leads, two conformed views (v_mefi_leads_active + v_mefi_leads_junk), auto-detect backfill on first sync, auto-upsert salespeople, new Alembic migration 003 for funnel_config JSONB.
+
+**2026-05-23 session:** Phase 2 APPROVED COMPLETE. 1000/1155 leads ingested (KI-02: burst rate limit on initial backfill — remaining 155 will be picked up by nightly syncs over a few days; deferred fix to Phase 9). All success criteria met: UPSERT idempotent, rate-limit detection+retry working, async event loop bug fixed, custom fields extracted. Advancing to Phase 3 — Metrics Engine.
+
+**2026-05-25 session:** Phase 3 context gathered. Key decisions: 7 source categories (funnel_config names + google), time_to_first_touch from mefi_lead_history first status change with business-hours adjustment (Mon–Sun 09:00–19:00 Bucharest), full SPEC.md §7 schema with nullable ad-spend columns, calculate for yesterday with NULL deltas on missing prior data, date-parameterizable task for backfill. Resume file: .planning/phases/03-metrics-engine/03-CONTEXT.md
