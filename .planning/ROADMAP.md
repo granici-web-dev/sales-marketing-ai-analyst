@@ -84,7 +84,7 @@ Plans:
 6. All date grouping in metric queries uses `AT TIME ZONE 'Europe/Bucharest'` (verified by SQL inspection); a lead created at 23:30 EEST on day D is attributed to day D in `daily_kpi`, not day D+1.
 **Plans:** 4 plans
 Plans:
-- [ ] 03-01-PLAN.md — Wave 0 test stubs: 8 unit test files + metrics_factory.py (RED contracts for services, repository, models, migration, task, business_hours util)
+- [x] 03-01-PLAN.md — Wave 0 test stubs: 8 unit test files + metrics_factory.py (RED contracts for services, repository, models, migration, task, business_hours util)
 - [ ] 03-02-PLAN.md — Alembic migration 004 (3 metric tables full SPEC.md §7 + WoW/MoM delta cols + data_completeness_pct + business_hours seed + v_mefi_leads_active history-join update) + SQLAlchemy models
 - [ ] 03-03-PLAN.md — business_hours util (zoneinfo, DST-correct) + DailyKpiService + SalespersonKpiService + SourceKpiService (7 categories, designer detection) + MetricsRepository (2-col and 3-col UPSERT)
 - [ ] 03-04-PLAN.md — calculate_daily_kpis Celery task (NullPool, yesterday default per D-10, ISO-date backfill per D-12) + daily_pipeline chain extension (sync_mefi_leads → calculate_daily_kpis per D-18) + celery_app include registration
@@ -197,7 +197,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Foundation | 7/7 | Executed | 2026-05-21 |
 | 2. MEFI ETL | 0/5 | Not started | — |
-| 3. Metrics Engine | 0/4 | Not started | — |
+| 3. Metrics Engine | 1/4 | In progress | — |
 | 4. Anomaly Detection | 0/? | Not started | — |
 | 5. AI Insights | 0/? | Not started | — |
 | 6. Backend HTTP API | 0/? | Not started | — |
