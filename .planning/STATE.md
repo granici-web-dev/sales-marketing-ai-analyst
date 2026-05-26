@@ -18,7 +18,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 |-------|------|--------|-------|
 | 1 | Foundation | ✓ Complete (2026-05-21) | 7/7 |
 | 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
-| 3 | Metrics Engine | ◆ In progress | 3/4 |
+| 3 | Metrics Engine | ◆ In progress | 4/4 |
 | 4 | Anomaly Detection | ○ Pending | — |
 | 5 | AI Insights | ○ Pending | — |
 | 6 | Backend HTTP API | ○ Pending | — |
@@ -60,4 +60,6 @@ None currently.
 
 **2026-05-26 session (03-02 executed):** Phase 3 Plan 02 (schema foundation) COMPLETE. Migration 004 + 3 SQLAlchemy models + metrics package. 24 Wave 0 model/migration tests GREEN.
 
-**2026-05-26 session (03-03 executed):** Phase 3 Plan 03 (service layer) COMPLETE. 6 files: business_hours util, DailyKpiService, SalespersonKpiService, SourceKpiService, MetricsRepository, services/metrics/__init__.py. 40/40 service layer tests GREEN. Advancing to Plan 04 (calculate_daily_kpis Celery task + pipeline chain).
+**2026-05-26 session (03-03 executed):** Phase 3 Plan 03 (service layer) COMPLETE. 6 files: business_hours util, DailyKpiService, SalespersonKpiService, SourceKpiService, MetricsRepository, services/metrics/__init__.py. 40/40 service layer tests GREEN.
+
+**2026-05-26 session (03-04 executed):** Phase 3 Plan 04 (Celery task) COMPLETE. calculate_daily_kpis task + daily_pipeline chain extension + celery_app registration. 71/71 Phase 3 tests GREEN. All METR requirements covered. Phase 3 execution complete — running verification.
