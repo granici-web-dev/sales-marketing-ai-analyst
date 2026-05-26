@@ -29,6 +29,7 @@ celery_app = Celery(
         "app.tasks",
         "app.tasks.etl.sync_mefi_leads",
         "app.tasks.etl.backfill_mefi_leads",
+        "app.tasks.etl.calculate_daily_kpis",
     ],
 )
 
