@@ -18,7 +18,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 |-------|------|--------|-------|
 | 1 | Foundation | ✓ Complete (2026-05-21) | 7/7 |
 | 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
-| 3 | Metrics Engine | ◆ In progress | 1/4 |
+| 3 | Metrics Engine | ◆ In progress | 3/4 |
 | 4 | Anomaly Detection | ○ Pending | — |
 | 5 | AI Insights | ○ Pending | — |
 | 6 | Backend HTTP API | ○ Pending | — |
@@ -56,8 +56,8 @@ None currently.
 
 **2026-05-25 session (continued):** Phase 3 planning complete. 4 plans in 4 waves: Wave 0 (test stubs), Wave 1 (migration 004 + models), Wave 2 (metric services + MetricsRepository), Wave 3 (calculate_daily_kpis Celery task + chain). All 6 METR requirements covered. Status: Ready to execute.
 
-**2026-05-25 session (03-01 executed):** Phase 3 Plan 01 (Wave 0 test stubs) COMPLETE. 9 files created: 8 RED-state test files + metrics factory. All acceptance criteria met. Contracts locked for D-04 (7 sources), D-11 (NULL deltas), Pitfall 5 (3-col source UPSERT), Pitfall 6 (tenant_id validation), D-07 (DST-safe business hours), Schema Gaps 1-5 (migration 004 contracts). Advancing to Plan 02 (migration + models).
-- D-04 locked: 7 source categories per day (test_source_kpi_service.py)
-- D-11 locked: NULL deltas on missing prior row (test_daily_kpi_service.py)
-- Pitfall 5 locked: SourceDailyKpi 3-col conflict target (test_metrics_repository.py)
-- D-07 locked: Mon-Sun 09:00-19:00 Bucharest DST-safe (test_business_hours.py)
+**2026-05-25 session (03-01 executed):** Phase 3 Plan 01 (Wave 0 test stubs) COMPLETE. 9 files created: 8 RED-state test files + metrics factory. All acceptance criteria met.
+
+**2026-05-26 session (03-02 executed):** Phase 3 Plan 02 (schema foundation) COMPLETE. Migration 004 + 3 SQLAlchemy models + metrics package. 24 Wave 0 model/migration tests GREEN.
+
+**2026-05-26 session (03-03 executed):** Phase 3 Plan 03 (service layer) COMPLETE. 6 files: business_hours util, DailyKpiService, SalespersonKpiService, SourceKpiService, MetricsRepository, services/metrics/__init__.py. 40/40 service layer tests GREEN. Advancing to Plan 04 (calculate_daily_kpis Celery task + pipeline chain).
