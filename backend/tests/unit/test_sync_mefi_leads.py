@@ -202,3 +202,38 @@ class TestTaskChainHalt:
             mock_asyncio.run = MagicMock()
             with pytest.raises((ValueError, AttributeError)):
                 sync_mefi_leads.run("not-a-valid-uuid")
+
+
+class TestDailyPipeline:
+    """Tests for daily_pipeline() chain composition — D-18, PIPE-01."""
+
+    def test_daily_pipeline_chains_calculate_daily_kpis(self) -> None:
+        """daily_pipeline() returns a 2-task chain with calculate_daily_kpis second (D-18).
+
+        D-18: calculate_daily_kpis is second in the chain:
+        sync_mefi_leads → calculate_daily_kpis → (Phase 4: detect_anomalies)
+
+        Both tasks use .si() (immutable signature). The second task name must be
+        'tasks.etl.calculate_daily_kpis' exactly — this name is used in beat
+        schedule and chain wiring.
+        """
+        from uuid import UUID
+
+        from app.tasks.etl.sync_mefi_leads import daily_pipeline
+
+        TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
+        chain_obj = daily_pipeline(str(TENANT_ID))
+
+        # Celery 5.x chain exposes .tasks as a list of Signature objects
+        tasks = chain_obj.tasks
+        assert len(tasks) == 2, (
+            f"daily_pipeline() must return a 2-task chain, got {len(tasks)} tasks: "
+            f"{[t.name for t in tasks]}"
+        )
+        assert tasks[0].name == "tasks.etl.sync_mefi_leads", (
+            f"First task must be 'tasks.etl.sync_mefi_leads', got '{tasks[0].name}'"
+        )
+        assert tasks[1].name == "tasks.etl.calculate_daily_kpis", (
+            f"Second task must be 'tasks.etl.calculate_daily_kpis', got '{tasks[1].name}' "
+            "(D-18 chain position)"
+        )
