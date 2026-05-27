@@ -61,10 +61,12 @@ def calculate_daily_kpis(
     Returns:
         Dict with status, kpi_date, records_written, duration_ms.
     """
-    try:
-        return asyncio.run(_calc_async(UUID(tenant_id), calculation_date))
-    except Exception as exc:
-        raise self.retry(exc=exc) from exc
+    # CR-05 FIX: removed manual try/except + self.retry(). The task already declares
+    # autoretry_for=(Exception,), so the manual retry was redundant and caused a
+    # double-retry hazard: when max_retries was exhausted, self.retry() re-raised
+    # the original exception which autoretry_for then caught again, allowing up to
+    # 2× the intended retry budget and leaving stale SyncRun("running") rows.
+    return asyncio.run(_calc_async(UUID(tenant_id), calculation_date))
 
 
 async def _calc_async(tenant_id: UUID, calculation_date: str | None) -> dict:
@@ -124,6 +126,23 @@ async def _calc_async(tenant_id: UUID, calculation_date: str | None) -> dict:
     try:
         async with TaskSession() as session:
             # ── Step 1: Write SyncRun at start (PIPE-04 / T-03-04-06) ──────────
+            # WR-06 FIX: Mark any stale running SyncRun as failed before creating a new one.
+            # Without this, each retry creates a new SyncRun(status="running") row;
+            # the error handler only updates the latest one (LIMIT 1 ORDER BY started_at DESC),
+            # leaving older ones permanently stuck at status="running" in audit queries.
+            from sqlalchemy import update as _update  # deferred — fork-safe
+
+            await session.execute(
+                _update(SyncRun)
+                .where(
+                    SyncRun.tenant_id == tenant_id,
+                    SyncRun.source == "metrics",
+                    SyncRun.status == "running",
+                )
+                .values(status="failed", completed_at=datetime.now(UTC))
+            )
+            await session.flush()
+
             sync_run = SyncRun(
                 tenant_id=tenant_id,
                 source="metrics",  # "metrics" distinguishes from "mefi" / "backfill"
