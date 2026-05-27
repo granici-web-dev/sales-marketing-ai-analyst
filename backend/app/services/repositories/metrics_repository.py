@@ -61,8 +61,12 @@ class MetricsRepository:
             index_elements=["tenant_id", "date"],
             set_={col: stmt.excluded[col] for col in update_cols},
         )
+        # WR-04 FIX: removed self._session.commit() here. The task in
+        # calculate_daily_kpis.py commits after all three upserts complete,
+        # making the three metric table writes atomic. A commit here breaks
+        # atomicity: a failure between upsert_daily_kpi and upsert_salesperson_kpis
+        # would leave daily_kpi updated but salesperson_daily_kpi stale.
         await self._session.execute(stmt)
-        await self._session.commit()
 
     async def upsert_salesperson_kpi(self, row: dict) -> int:
         """Upsert a single salesperson_daily_kpi row.
@@ -94,8 +98,8 @@ class MetricsRepository:
             index_elements=["tenant_id", "salesperson_external_id", "date"],
             set_={col: stmt.excluded[col] for col in update_cols},
         )
+        # WR-04 FIX: removed self._session.commit() — caller (task) commits atomically.
         result = await self._session.execute(stmt)
-        await self._session.commit()
         return result.rowcount
 
     async def upsert_salesperson_kpis(self, rows: list[dict]) -> int:
@@ -169,8 +173,8 @@ class MetricsRepository:
             index_elements=["tenant_id", "source", "date"],
             set_={col: stmt.excluded[col] for col in update_cols},
         )
+        # WR-04 FIX: removed self._session.commit() — caller (task) commits atomically.
         result = await self._session.execute(stmt)
-        await self._session.commit()
         return result.rowcount
 
     async def upsert_source_kpis(self, rows: list[dict]) -> int:
