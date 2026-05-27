@@ -160,18 +160,18 @@ class DailyKpiService:
             )
             SELECT
                 COUNT(*) AS leads_total,
+                -- WR-01: leads_google is not stored in daily_kpi (no column for it); Google leads
+                -- appear only in source_daily_kpi. leads_total INCLUDES Google leads — this means
+                -- sum(per-category) != leads_total. Tracked for future migration (see WR-01).
                 COUNT(CASE WHEN v.source_id = 1 THEN 1 END) AS leads_google,
                 COUNT(CASE WHEN v.source_id = ANY(:mail_fb_ig_ids) AND d.lead_external_id IS NULL THEN 1 END) AS leads_mail_fb_ig,
                 COUNT(CASE WHEN v.source_id = ANY(:telefon_ids) AND d.lead_external_id IS NULL THEN 1 END) AS leads_telefon,
                 COUNT(CASE WHEN v.source_id = ANY(:whatsapp_ids) AND d.lead_external_id IS NULL THEN 1 END) AS leads_whatsapp,
                 COUNT(CASE WHEN v.source_id = ANY(:site_ids) AND d.lead_external_id IS NULL THEN 1 END) AS leads_site,
                 COUNT(CASE WHEN d.lead_external_id IS NOT NULL THEN 1 END) AS leads_designer,
-                COUNT(CASE WHEN v.source_id != 1
-                           AND (v.source_id IS NULL OR v.source_id != ALL(:mail_fb_ig_ids))
-                           AND (v.source_id IS NULL OR v.source_id != ALL(:telefon_ids))
-                           AND (v.source_id IS NULL OR v.source_id != ALL(:whatsapp_ids))
-                           AND (v.source_id IS NULL OR v.source_id != ALL(:site_ids))
-                           AND d.lead_external_id IS NULL THEN 1 END) AS leads_alte,
+                -- CR-03 FIX: use explicit :alte_ids binding instead of residual catch-all.
+                -- The catch-all ignored tenants with custom alte_ids in funnel_config.
+                COUNT(CASE WHEN v.source_id = ANY(:alte_ids) AND d.lead_external_id IS NULL THEN 1 END) AS leads_alte,
                 COUNT(CASE WHEN v.reached_visit THEN 1 END) AS visits_count,
                 COUNT(CASE WHEN v.reached_offer THEN 1 END) AS offers_count,
                 COUNT(CASE WHEN v.reached_contract THEN 1 END) AS contracts_count,
@@ -187,6 +187,7 @@ class DailyKpiService:
             telefon_ids=telefon_ids,
             whatsapp_ids=whatsapp_ids,
             site_ids=site_ids,
+            alte_ids=alte_ids,  # CR-03 FIX: was fetched from funnel_config but never bound to SQL
         )
 
         result = await self._session.execute(query_sql)
@@ -196,7 +197,9 @@ class DailyKpiService:
         visits_count = int(agg.visits_count) if agg and agg.visits_count is not None else 0
         offers_count = int(agg.offers_count) if agg and agg.offers_count is not None else 0
         contracts_count = int(agg.contracts_count) if agg and agg.contracts_count is not None else 0
-        leads_google = int(agg.leads_google) if agg and agg.leads_google is not None else 0
+        # WR-01: leads_google computed by SQL but not stored in daily_kpi (no column).
+        # Google leads appear only in source_daily_kpi. Variable not extracted here to
+        # avoid ruff/mypy unused-variable warning. See SQL comment above for full context.
         leads_mail_fb_ig = int(agg.leads_mail_fb_ig) if agg and agg.leads_mail_fb_ig is not None else 0
         leads_telefon = int(agg.leads_telefon) if agg and agg.leads_telefon is not None else 0
         leads_whatsapp = int(agg.leads_whatsapp) if agg and agg.leads_whatsapp is not None else 0

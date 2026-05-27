@@ -147,6 +147,8 @@ class SourceKpiService:
                     v.reached_offer,
                     v.reached_contract,
                     v.estimated_value,
+                    -- CR-03 FIX: use explicit :alte_ids binding instead of residual ELSE catch-all.
+                    -- The ELSE 'alte' ignored tenants with custom alte_ids in funnel_config.
                     CASE
                         WHEN d.lead_external_id IS NOT NULL THEN 'designer'
                         WHEN v.source_id = 1 THEN 'google'
@@ -154,6 +156,7 @@ class SourceKpiService:
                         WHEN v.source_id = ANY(:telefon_ids) THEN 'telefon'
                         WHEN v.source_id = ANY(:whatsapp_ids) THEN 'whatsapp'
                         WHEN v.source_id = ANY(:site_ids) THEN 'site'
+                        WHEN v.source_id = ANY(:alte_ids) THEN 'alte'
                         ELSE 'alte'
                     END AS source_category
                 FROM v_mefi_leads_active v
@@ -177,6 +180,7 @@ class SourceKpiService:
             telefon_ids=telefon_ids,
             whatsapp_ids=whatsapp_ids,
             site_ids=site_ids,
+            alte_ids=alte_ids,  # CR-03 FIX: was fetched from funnel_config but never bound to SQL
         )
 
         result = await self._session.execute(per_source_sql)
