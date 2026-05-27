@@ -91,6 +91,13 @@ def business_minutes_between(
     if tz is None:
         tz = ZoneInfo("Europe/Bucharest")
 
+    # CR-04 FIX: defence-in-depth guard against empty work_days.
+    # _next_open loops forever when work_days is [] (while True: weekday() in [] → always False).
+    # The primary guard is in salesperson_kpi_service._get_business_hours which raises
+    # ValueError for empty work_days; this guard catches any other call paths.
+    if not work_days:
+        return 0
+
     # Guard: data quality — first touch before creation time returns 0.
     if end_utc <= start_utc:
         return 0
