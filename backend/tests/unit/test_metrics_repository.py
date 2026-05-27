@@ -113,7 +113,12 @@ class TestUpsertDailyKpi:
 
     @pytest.mark.asyncio
     async def test_calls_execute_with_valid_row(self) -> None:
-        """upsert_daily_kpi calls session.execute with a valid row."""
+        """upsert_daily_kpi calls session.execute with a valid row.
+
+        WR-04: upsert_daily_kpi no longer commits internally — the task commits
+        atomically after all three upsert operations complete. The test verifies
+        execute is called but NOT commit (commit is the caller's responsibility).
+        """
         session = AsyncMock()
         mock_result = MagicMock()
         mock_result.rowcount = 1
@@ -123,7 +128,7 @@ class TestUpsertDailyKpi:
         await repo.upsert_daily_kpi(_daily_kpi_row())  # type: ignore[attr-defined]
 
         session.execute.assert_called_once()
-        session.commit.assert_called_once()
+        session.commit.assert_not_called()  # WR-04: commit moved to caller (task)
 
     @pytest.mark.asyncio
     async def test_upsert_idempotent_same_date(self) -> None:
@@ -131,6 +136,7 @@ class TestUpsertDailyKpi:
 
         ON CONFLICT DO UPDATE is idempotent: second call updates same row,
         does NOT insert a duplicate. Total row count must remain 1 after two calls.
+        WR-04: commit is now caller's responsibility — not called by upsert_daily_kpi.
         """
         session = AsyncMock()
         mock_result = MagicMock()
@@ -148,7 +154,7 @@ class TestUpsertDailyKpi:
             "upsert_daily_kpi called twice for same (tenant_id, date) must not raise "
             "UniqueViolationError — ON CONFLICT DO UPDATE handles it (METR-01 SC#1)"
         )
-        assert session.commit.call_count == 2
+        session.commit.assert_not_called()  # WR-04: commit moved to caller (task)
 
 
 class TestUpsertSalespersonKpi:
@@ -161,6 +167,7 @@ class TestUpsertSalespersonKpi:
         salesperson_daily_kpi has a 3-column UNIQUE constraint unlike daily_kpi (2 cols).
         MetricsRepository must use index_elements=["tenant_id", "salesperson_external_id", "date"]
         to avoid UniqueViolationError when upserting for multiple salespeople.
+        WR-04: upsert_salesperson_kpi no longer commits — caller (task) commits atomically.
         """
         session = AsyncMock()
         mock_result = MagicMock()
@@ -173,7 +180,7 @@ class TestUpsertSalespersonKpi:
 
         # Verify execute was called (conflict target correctness verified by integration test)
         session.execute.assert_called_once()
-        session.commit.assert_called_once()
+        session.commit.assert_not_called()  # WR-04: commit moved to caller (task)
 
     @pytest.mark.asyncio
     async def test_raises_when_salesperson_id_missing(self) -> None:

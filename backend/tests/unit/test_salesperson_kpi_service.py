@@ -97,24 +97,19 @@ class TestPerSalespersonMetrics:
 class TestTimeToFirstTouch:
     """Tests for time_to_first_touch calculation — METR-04, D-05, D-06."""
 
-    @pytest.mark.asyncio
-    async def test_no_history_returns_null(self) -> None:
+    def test_no_history_returns_null(self) -> None:
         """Lead with no mefi_lead_history rows → time_to_first_touch = NULL (D-05).
 
         D-05: "First touch" = first row in mefi_lead_history. Leads with no history
         rows get NULL — not imputed from any other field. This is an incomplete
         history case, not a data error.
+        WR-05: _compute_time_to_first_touch is now synchronous (no I/O inside).
         """
         session = AsyncMock()
-        # No history rows
-        mock_result = MagicMock()
-        mock_result.__iter__ = MagicMock(return_value=iter([]))
-        session.execute = AsyncMock(return_value=mock_result)
-
         service, _ = _make_service(session)
 
         # Method _compute_time_to_first_touch with empty history must return None
-        result = await service._compute_time_to_first_touch(  # type: ignore[attr-defined]
+        result = service._compute_time_to_first_touch(  # type: ignore[attr-defined]
             "lead-1",
             history_rows=[],
         )
@@ -123,9 +118,11 @@ class TestTimeToFirstTouch:
             "never impute a value when history is missing"
         )
 
-    @pytest.mark.asyncio
-    async def test_first_history_row_determines_touch_time(self) -> None:
-        """Earliest history row determines first_touch timestamp (D-05)."""
+    def test_first_history_row_determines_touch_time(self) -> None:
+        """Earliest history row determines first_touch timestamp (D-05).
+
+        WR-05: _compute_time_to_first_touch is now synchronous (no I/O inside).
+        """
         from datetime import datetime, timezone
 
         session = AsyncMock()
@@ -136,7 +133,7 @@ class TestTimeToFirstTouch:
 
         history_rows = [{"changed_at": first_touch}]
 
-        result = await service._compute_time_to_first_touch(  # type: ignore[attr-defined]
+        result = service._compute_time_to_first_touch(  # type: ignore[attr-defined]
             "lead-1",
             history_rows=history_rows,
             lead_created_at=created_at,
