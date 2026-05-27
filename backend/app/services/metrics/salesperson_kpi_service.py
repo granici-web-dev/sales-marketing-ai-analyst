@@ -67,7 +67,7 @@ class SalespersonKpiService:
             return row[0]["business_hours"]
         return dict(_DEFAULT_BH)
 
-    async def _compute_time_to_first_touch(
+    def _compute_time_to_first_touch(
         self,
         lead_external_id: str,
         history_rows: list[dict],
@@ -99,11 +99,16 @@ class SalespersonKpiService:
             return None
 
         # Find first touch (earliest changed_at)
-        first_touch = min(
+        # CR-02 FIX: collect to list first so we can check emptiness before calling min().
+        # min() on an empty generator raises ValueError, not returns None — the guard
+        # below it was dead code. A non-empty history_rows where all changed_at are None
+        # is a valid data-quality condition (history row written before timestamp available).
+        valid_timestamps = [
             row["changed_at"] for row in history_rows if row.get("changed_at") is not None
-        )
-        if first_touch is None:
+        ]
+        if not valid_timestamps:
             return None
+        first_touch = min(valid_timestamps)
 
         from app.services.metrics.business_hours import business_minutes_between  # deferred
 
@@ -158,6 +163,11 @@ class SalespersonKpiService:
             open_time = time(int(bh["open"].split(":")[0]), int(bh["open"].split(":")[1]))
             close_time = time(int(bh["close"].split(":")[0]), int(bh["close"].split(":")[1]))
             work_days = list(bh["days"])
+            if not work_days:
+                # CR-04 FIX: empty work_days would cause _next_open to loop forever
+                # (while True: candidate_date.weekday() in [] → always False → infinite loop).
+                # Raise ValueError so the except block below falls back to the safe default.
+                raise ValueError("business_hours.days must not be empty")
             tz = ZoneInfo(bh.get("tz", "Europe/Bucharest"))
         except (KeyError, ValueError, AttributeError):
             # T-03-03-04: malformed config falls back to D-07 default
@@ -226,6 +236,12 @@ class SalespersonKpiService:
                 non_null_count = sum(1 for l in leads if l.estimated_value is not None)
                 data_completeness_pct = Decimal(str(non_null_count)) / Decimal(str(leads_assigned)) * Decimal("100")
 
+            # WR-03 FIX: Initialize history_by_lead unconditionally to avoid implicit
+            # scoping dependency between two separate `if leads_assigned > 0` blocks.
+            # Without this, the `leads_contacted` block below silently depends on
+            # history_by_lead being set in the first block — fragile after refactors.
+            history_by_lead: dict[str, list[dict]] = {}
+
             # Time to first touch — fetch lead history for this rep's leads (D-05, D-06)
             ttft_minutes: int | None = None
             if leads_assigned > 0:
@@ -240,8 +256,7 @@ class SalespersonKpiService:
                 hist_result = await self._session.execute(history_sql)
                 history_rows_all = hist_result.all()
 
-                # Build per-lead history map
-                history_by_lead: dict[str, list[dict]] = {}
+                # Build per-lead history map (initialized unconditionally above)
                 for h in history_rows_all:
                     lid = str(h.lead_external_id)
                     if lid not in history_by_lead:
@@ -254,7 +269,7 @@ class SalespersonKpiService:
                     if l.created_at_source is None:
                         continue
                     lead_history = history_by_lead.get(str(l.lead_external_id), [])
-                    ttft = await self._compute_time_to_first_touch(
+                    ttft = self._compute_time_to_first_touch(
                         str(l.lead_external_id),
                         lead_history,
                         lead_created_at=l.created_at_source,
@@ -285,13 +300,13 @@ class SalespersonKpiService:
                 avg_deal_size = revenue / Decimal(str(deals_won))
 
             # leads_contacted — count leads that have at least one history row
+            # history_by_lead is always defined (initialized unconditionally above)
             if leads_assigned > 0:
                 leads_contacted = sum(
                     1 for l in leads
                     if str(l.lead_external_id) in history_by_lead
                 )
             else:
-                history_by_lead = {}
                 leads_contacted = 0
 
             row: dict = {
