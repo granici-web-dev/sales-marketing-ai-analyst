@@ -73,89 +73,46 @@ BUSINESS_HOURS_PATCH = {
 # D-13: "ever reached" funnel logic via mefi_lead_history JOIN.
 # Supersedes migration 003 current-status-only approximation.
 #
-# reached_visit:    current status IN (17,3,1) OR ever had status 17 in history
+# CR-01 FIX: Use pre-aggregated subquery (h_agg) instead of window functions
+# on a flat LEFT JOIN. The original window-function approach produced N rows per
+# lead when N history rows existed, inflating all COUNT(*) KPI values ~N×.
+# The subquery collapses mefi_lead_history to one row per (tenant_id, lead_external_id)
+# before joining, so the view always emits exactly one row per lead.
+#
+# reached_visit:    current status IN (17,3,1) OR ever reached visit-or-later stage (17, 3, or 1) in history
 # reached_offer:    current status IN (3,1) OR offer_sent_flag=true OR ever had status 3 in history
 # reached_contract: current status = 1 (WON — only counts as contract if currently WON)
 #
-# T-03-02-03: JOIN includes h.tenant_id = r.tenant_id — prevents cross-tenant history bleed.
+# T-03-02-03: JOIN includes h_agg.tenant_id = r.tenant_id — prevents cross-tenant history bleed.
 # D-15: AT TIME ZONE 'Europe/Bucharest' preserved for local timestamp computed columns.
 # Explicit column list — no SELECT * (CLAUDE.md: never use SELECT *).
 
 V_MEFI_LEADS_ACTIVE_V004 = """
 CREATE OR REPLACE VIEW v_mefi_leads_active AS
 SELECT
-    -- TenantScopedMixin columns
-    r.tenant_id,
-    r.id,
-    r.created_at,
-    r.updated_at,
-
-    -- MEFI standard fields
-    r.external_id,
-    r.status_id,
-    r.status_name,
-    r.source_id,
-    r.source_name,
-    r.lifecycle,
-    r.assigned_to_id,
-    r.assigned_to_name,
-    r.estimated_value,
-    r.priority,
-    r.is_duplicate,
-
-    -- MEFI timestamps (UTC storage)
-    r.created_at_source,
-    r.last_contact_at,
-    r.status_changed_at,
-
-    -- Extracted custom fields (DATA-02)
-    r.showroom,
-    r.offer_sent_flag,
-    r.utm_source,
-    r.utm_campaign,
-    r.utm_content,
-    r.utm_medium,
-
-    -- Raw preservation
-    r.custom_fields_raw,
-    r.raw_payload,
-    r.synced_at,
-
-    -- Computed: Bucharest-local timestamps (DATA-03, D-15)
-    -- AT TIME ZONE converts TIMESTAMPTZ -> TIMESTAMP in the named zone
+    r.tenant_id, r.id, r.created_at, r.updated_at,
+    r.external_id, r.status_id, r.status_name, r.source_id, r.source_name,
+    r.lifecycle, r.assigned_to_id, r.assigned_to_name, r.estimated_value,
+    r.priority, r.is_duplicate, r.created_at_source, r.last_contact_at,
+    r.status_changed_at, r.showroom, r.offer_sent_flag,
+    r.utm_source, r.utm_campaign, r.utm_content, r.utm_medium,
+    r.custom_fields_raw, r.raw_payload, r.synced_at,
     r.created_at_source AT TIME ZONE 'Europe/Bucharest' AS created_at_local,
     r.status_changed_at AT TIME ZONE 'Europe/Bucharest' AS status_changed_at_local,
-
-    -- Computed: funnel stage flags (D-13 "ever reached" via history JOIN)
-    -- D-13: ever-reached funnel logic via history JOIN — supersedes 003 current-status-only
-    -- T-03-02-03: JOIN condition includes h.tenant_id = r.tenant_id — no cross-tenant bleed
-
-    -- Visit: current status IN (17,3,1) OR ever had status 17 in history
-    (
-        r.status_id IN (17, 3, 1)
-        OR COALESCE(
-            BOOL_OR(h.to_status_id IN (17, 3, 1)) OVER (PARTITION BY r.tenant_id, r.external_id),
-            FALSE
-        )
-    ) AS reached_visit,
-
-    -- Offer: current status IN (3,1) OR offer_sent_flag=true OR ever had status 3 in history
-    (
-        r.status_id IN (3, 1)
-        OR r.offer_sent_flag = TRUE
-        OR COALESCE(
-            BOOL_OR(h.to_status_id IN (3, 1)) OVER (PARTITION BY r.tenant_id, r.external_id),
-            FALSE
-        )
-    ) AS reached_offer,
-
-    -- Contract: current status = 1 (WON — only currently WON counts)
+    (r.status_id IN (17, 3, 1) OR COALESCE(h_agg.reached_visit, FALSE)) AS reached_visit,
+    (r.status_id IN (3, 1) OR r.offer_sent_flag = TRUE OR COALESCE(h_agg.reached_offer, FALSE)) AS reached_offer,
     (r.status_id = 1) AS reached_contract
-
 FROM raw_mefi_leads r
-LEFT JOIN mefi_lead_history h
-    ON h.tenant_id = r.tenant_id
-    AND h.lead_external_id = r.external_id
+LEFT JOIN (
+    SELECT
+        tenant_id,
+        lead_external_id,
+        -- Visit: current status IN (17,3,1) OR ever reached any visit-or-later stage (status 17, 3, or 1) in history
+        BOOL_OR(to_status_id IN (17, 3, 1)) AS reached_visit,
+        BOOL_OR(to_status_id IN (3, 1))     AS reached_offer
+    FROM mefi_lead_history
+    GROUP BY tenant_id, lead_external_id
+) h_agg ON h_agg.tenant_id = r.tenant_id AND h_agg.lead_external_id = r.external_id
 WHERE r.lifecycle IN ('active', 'lost')
 """
 
