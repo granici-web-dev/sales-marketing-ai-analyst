@@ -74,6 +74,11 @@ celery_app.conf.update(
 
     # Task routing — backfill runs on a dedicated queue to avoid blocking
     # the default queue during 12-month historical data fetch (MEFI-12).
+    #
+    # WR-07: Task route keys must match the explicit name= kwarg in @celery_app.task
+    # decorator. All tasks in app/tasks/etl/ MUST declare name="tasks.etl.<task_name>"
+    # to match these routes. Without an explicit name=, Celery uses the module-dotted
+    # path (e.g. "app.tasks.etl.backfill_mefi_leads") which does NOT match the route key.
     task_routes={
         "tasks.etl.backfill_mefi_leads": {"queue": "backfill"},
     },
