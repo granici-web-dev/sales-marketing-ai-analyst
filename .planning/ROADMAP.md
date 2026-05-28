@@ -15,7 +15,7 @@
 - [ ] **Phase 2: MEFI ETL** — MEFI API client, raw tables, conformed views, "ever reached" funnel logic, idempotent nightly sync with rate limits and backfill
 - [ ] **Phase 3: Metrics Engine** — Daily KPI calculation, funnel conversion rates, salesperson and source KPIs, WoW/MoM deltas
 - [x] **Phase 4: Anomaly Detection** *(completed 2026-05-28)* — Rule-based anomaly engine writing detected_problems with severity and estimated_loss_ron
-- [ ] **Phase 5: AI Insights** — Claude Sonnet 4.5 integration with structured Pydantic schema, prompt caching, post-validation, daily insights table
+- [x] **Phase 5: AI Insights** *(completed 2026-05-28)* — Claude Sonnet 4.5 integration with structured Pydantic schema, prompt caching, post-validation, daily insights table
 - [ ] **Phase 6: Backend HTTP API** — FastAPI endpoints for all dashboards and insights with Pydantic response schemas
 - [ ] **Phase 7: Frontend Dashboards** — Next.js UI pages (Sales → Salespeople → Marketing → Insights) with Romanian locale
 - [ ] **Phase 8: AI Chat** — Interactive Romanian AI chat with Tool Use, conversation history, streaming responses, and number cross-check validation
@@ -128,8 +128,8 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md — Wave 1 test stubs: insight_factory.py + 6 RED-state test files (schema, prompt_builder, insight_service, number_validator, repository, task)
 - [x] 05-02-PLAN.md — Wave 2 migration 008 (daily_insights table, D-16 columns, UNIQUE tenant+date) + DailyInsight ORM model
-- [ ] 05-03-PLAN.md — Wave 3 DailyInsightResponse Pydantic schema + prompt_builder + number_validator + InsightService (Claude API, retry, fallback) + InsightRepository (UPSERT)
-- [ ] 05-04-PLAN.md — Wave 4 generate_daily_insights Celery task + chain extension (4th link) + beat entry 06:00 + anthropic SDK dependency + Settings.anthropic_api_key
+- [x] 05-03-PLAN.md — Wave 3 DailyInsightResponse Pydantic schema + prompt_builder + number_validator + InsightService (Claude API, retry, fallback) + InsightRepository (UPSERT)
+- [x] 05-04-PLAN.md — Wave 4 generate_daily_insights Celery task + chain extension (4th link) + beat entry 06:00 + anthropic SDK dependency + Settings.anthropic_api_key
 
 ---
 
@@ -209,7 +209,7 @@ Plans:
 | 2. MEFI ETL | 0/5 | Not started | — |
 | 3. Metrics Engine | 1/4 | In progress | — |
 | 4. Anomaly Detection | 3/4 | In progress | — |
-| 5. AI Insights | 2/4 | In progress | — |
+| 5. AI Insights | 4/4 | Executed | 2026-05-28 |
 | 6. Backend HTTP API | 0/? | Not started | — |
 | 7. Frontend Dashboards | 0/? | Not started | — |
 | 8. AI Chat | 0/? | Not started | — |

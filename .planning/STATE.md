@@ -2,7 +2,7 @@
 
 **Project:** Sales & Marketing AI Analyst
 **Initialized:** 2026-05-19
-**Current Phase:** Phase 5 — AI Insights
+**Current Phase:** Phase 6 — Backend HTTP API
 **Milestone:** Iteration 1 (MVP1: MEFI-only)
 
 ## Project Reference
@@ -10,7 +10,7 @@
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Every morning, Sofa Belle gets a clear answer to "where are we losing money?" and 5–7 specific tasks for the day.
-**Current focus:** Phase 5 — AI Insights
+**Current focus:** Phase 6 — Backend HTTP API
 
 ## Phase Progress
 
@@ -20,7 +20,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
 | 3 | Metrics Engine | ✓ Complete (2026-05-28) | 4/4 |
 | 4 | Anomaly Detection | ✓ Complete (2026-05-28) | 5/5 |
-| 5 | AI Insights | ◆ In Progress | 3/4 |
+| 5 | AI Insights | ✓ Complete (2026-05-28) | 4/4 |
 | 6 | Backend HTTP API | ○ Pending | — |
 | 7 | Frontend Dashboards | ○ Pending | — |
 | 8 | AI Chat | ○ Pending | — |
@@ -93,6 +93,8 @@ None currently.
 **2026-05-28 session (05-02 executed):** Phase 5 Plan 02 (schema foundation) COMPLETE. Migration 008 creates daily_insights table with all 12 D-16 columns (including cost_usd NUMERIC(10,6), raw_response TEXT), UNIQUE(tenant_id, date), FK to tenants.id. DailyInsight SQLAlchemy 2.x ORM model with all 8 domain columns. app/models/insights package + app/models/__init__.py updated for Alembic autogenerate discovery. All 4 plan verifications passed. Key decisions: status validation in application layer (no DDL CHECK constraint), 2-column UPSERT conflict target (tenant_id, date). Advancing to Phase 5 Plan 03 (Wave 2: Pydantic schema + services + repository).
 
 **2026-05-28 session (05-03 executed):** Phase 5 Plan 03 (service layer) COMPLETE. 7 new files: DailyInsightResponse Pydantic schema, build_system_prompt() + build_user_message() with Sofa Belle roster and PII guard, extract_numbers_from_text() + cross_check() Romanian number validator, InsightService (run/fallback/cost/retry), InsightRepository (2-col UPSERT). anthropic>=0.30,<1 added to pyproject.toml (installed 0.104.1). anthropic_api_key added to Settings. 36/36 Wave 0 unit tests GREEN. Key deviations: NUMBER_PATTERN regex bug fixed (5050→505 truncation), anthropic_api_key missing from Settings added, anthropic package installed. Advancing to Phase 5 Plan 04 (Celery task wiring).
+
+**2026-05-28 session (05-04 executed):** Phase 5 Plan 04 (Celery task wiring) COMPLETE. generate_daily_insights task created (NullPool + deferred imports + WR-06 + PIPE-04 + soft_time_limit=120 + time_limit=180). PIPE-01 chain fully closed: sync_mefi_leads → calculate_daily_kpis → detect_anomalies → generate_daily_insights. Beat entry 'daily-insights-generation' at 06:00 Europe/Bucharest registered. ANTHROPIC_API_KEY wired to backend + worker in docker-compose.yml. 37/37 tests pass (4 DB-dependent skipped). Phase 5 AI Insights COMPLETE — advancing to Phase 6 Backend HTTP API.
 
 ## Known Issues
 
