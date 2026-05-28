@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     # MEFI CRM API read key (lrd_* prefix)
     mefi_api_key: str
 
+    # Anthropic API key for Claude Sonnet 4.5 (Phase 5 AI Insights, Phase 8 AI Chat)
+    # Required for production; tests mock AsyncAnthropic so this field is optional in test env.
+    anthropic_api_key: str = ""
+
     # Multi-tenancy seam (D-05): hardcoded for MVP1-3; replaced by JWT claim in Iteration 4
     sofa_belle_tenant_id: str = "00000000-0000-0000-0000-000000000001"
 
