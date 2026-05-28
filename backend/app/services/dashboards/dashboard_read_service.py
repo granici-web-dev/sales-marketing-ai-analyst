@@ -29,25 +29,21 @@ from app.models.mefi import MefiSalesperson
 
 logger = structlog.get_logger(__name__)
 
-# MEFI source_id → source category name mapping.
-# Derived from docs/SOFABELLE.md and docs/api-references/mefi/enums.md.
-# Source IDs verified from 1219 ingested leads (2026-05-28).
-# If source_id is not in mapping, str(source_id) is used as fallback.
+# MEFI source_id → source category name mapping (canonical 11-category).
+# Mirrors app/services/metrics/source_kpi_service.py so Marketing junk-by-source
+# uses the same buckets as Sales source breakdown. Source IDs verified from
+# 1219 ingested leads (2026-05-28). Unmapped IDs fall back to "other".
 MEFI_SOURCE_ID_TO_NAME: dict[int, str] = {
-    1: "mail_fb_ig",    # Mail / FB / IG (legacy)
-    2: "alte",          # Meta (in "alte" bucket per Sofa Belle funnel_config)
-    3: "alte",          # Teren / Recomandare bucket
-    4: "alte",          # Colaborare bucket
-    5: "showroom",      # Showroom walk-in — "Vizita" in Sofa Belle Excel
-    6: "site",          # Site / web leads
-    7: "alte",          # Arhitect bucket
-    8: "alte",          # misc alte
-    9: "whatsapp",      # WhatsApp
-    10: "telefon",      # Phone/Telefon
-    11: "mail_fb_ig",   # Mail / FB / IG (current primary)
-    12: "alte",         # Recomandare (direct referral)
-    13: "alte",         # Client Fidel
-    24: "designer",     # Designer leads (status_id=24 in mefi_lead_history)
+    5: "showroom",      # Walk-in to physical showroom — "Vizita" in client Excel
+    11: "mail",         # Email leads
+    10: "telefon",      # Inbound phone calls
+    9: "whatsapp",      # WhatsApp Business
+    6: "site",          # Website contact forms
+    2: "meta",          # Facebook/Instagram paid ads
+    3: "recomandare",   # Word-of-mouth referrals
+    12: "colaborare",   # Partner/collaboration
+    7: "arhitect",      # Interior architect referrals
+    13: "client_fidel", # Repeat customers
 }
 
 
@@ -452,26 +448,33 @@ class DashboardReadService:
             {"tid": tid_str, "from_d": from_date, "to_d_plus1": to_d_plus1},
         )
 
-        junk_by_src_id: dict[int | None, int] = {
-            r.source_id: int(r.junk_count) for r in junk_result.all()
-        }
-        total_by_src_id: dict[int | None, int] = {
-            r.source_id: int(r.total) for r in total_result.all()
-        }
+        # Aggregate raw source_id rows by canonical category so each category
+        # appears once (e.g. multiple unmapped IDs all collapse to "other").
+        junk_by_category: dict[str, int] = {}
+        total_by_category: dict[str, int] = {}
+        for r in junk_result.all():
+            category = MEFI_SOURCE_ID_TO_NAME.get(r.source_id, "other")
+            junk_by_category[category] = (
+                junk_by_category.get(category, 0) + int(r.junk_count)
+            )
+        for r in total_result.all():
+            category = MEFI_SOURCE_ID_TO_NAME.get(r.source_id, "other")
+            total_by_category[category] = (
+                total_by_category.get(category, 0) + int(r.total)
+            )
 
-        # Build junk_by_source with source name mapping
         junk_by_source: list[dict] = []
-        all_src_ids = set(junk_by_src_id.keys()) | set(total_by_src_id.keys())
-        for src_id in sorted(s for s in all_src_ids if s is not None):
-            junk_count = junk_by_src_id.get(src_id, 0)
-            total = total_by_src_id.get(src_id, 0)
-            src_name = MEFI_SOURCE_ID_TO_NAME.get(src_id, str(src_id))
+        all_categories = sorted(
+            set(junk_by_category.keys()) | set(total_by_category.keys())
+        )
+        for category in all_categories:
+            junk_count = junk_by_category.get(category, 0)
+            total = total_by_category.get(category, 0)
             junk_pct: Decimal | None = None
             if total > 0:
                 junk_pct = Decimal(str(junk_count)) / Decimal(str(total))
             junk_by_source.append({
-                "source": src_name,
-                "source_id": src_id,
+                "source": category,
                 "junk_count": junk_count,
                 "total_leads": total,
                 "junk_pct": junk_pct,
