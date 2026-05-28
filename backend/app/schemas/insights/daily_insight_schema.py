@@ -28,7 +28,7 @@ class ActionItem(BaseModel):
     order: int
     description: str
     owner: str  # real Sofa Belle name or role (D-09)
-    deadline: str  # relative Romanian label (D-10)
+    deadline: Literal["Azi", "Mâine", "Săptămâna aceasta", "Luna aceasta"]  # D-10 enforced
     expected_outcome: str  # measurable metric + target (D-12)
 
 
@@ -85,5 +85,5 @@ class DailyInsightResponse(BaseModel):
     problems: list[Problem] = Field(max_length=3)  # hard cap at 3 (D-02)
     positives: list[Positive]  # 0-3, Claude decides count
     warnings: list[Warning]  # 0-N weak signals, Claude decides
-    weekly_action_plan: list[str]  # 5-7 flat action strings (D-03)
+    weekly_action_plan: list[str] = Field(min_length=1)  # D-03: at least 1 item (5-7 expected)
     generated_at: datetime  # set server-side in InsightService, not by Claude

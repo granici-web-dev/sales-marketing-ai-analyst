@@ -257,7 +257,7 @@ class InsightService:
             problems=problems,
             positives=[],
             warnings=[],
-            weekly_action_plan=[],
+            weekly_action_plan=["Revizuiți anomaliile detectate automat și contactați echipa de vânzări."],
             generated_at=datetime.now(UTC),
         )
 
