@@ -20,7 +20,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
 | 3 | Metrics Engine | ✓ Complete (2026-05-28) | 4/4 |
 | 4 | Anomaly Detection | ✓ Complete (2026-05-28) | 5/5 |
-| 5 | AI Insights | ◆ In Progress | 2/4 |
+| 5 | AI Insights | ◆ In Progress | 3/4 |
 | 6 | Backend HTTP API | ○ Pending | — |
 | 7 | Frontend Dashboards | ○ Pending | — |
 | 8 | AI Chat | ○ Pending | — |
@@ -48,6 +48,9 @@ None currently.
 - Phase 4 detect_* methods: optional pre-fetched data params (None triggers DB fetch) — testable without DB, AsyncMock-friendly
 - Phase 4 close rate fallback: CLOSE_RATE_FALLBACK=0.15 when no trailing conversion_o_to_c data
 - Phase 4 underperforming salesperson loss: conservative proxy count × avg_deal_size × 0.30 (contracts_closed not available per day)
+- Phase 5 AsyncAnthropic: imported at module level in insight_service.py for test patchability; instantiated inside run() body only (INFRA-05 fork safety)
+- Phase 5 NUMBER_PATTERN: greedy \b(\d[\d.,]*\d|\d)\b — handles Romanian thousands (23.400→23400) and 4+ digit integers (5050 not truncated to 505)
+- Phase 5 anthropic_api_key in Settings: optional empty default — tests mock AsyncAnthropic; production needs real ANTHROPIC_API_KEY in .env
 
 **Last session:** 2026-05-21 — Phase 1 complete ✓. Known issue: KI-01 CSS/Tailwind not loading (fix in Phase 7 or parallel). Advancing to Phase 2 MEFI ETL.
 
@@ -88,6 +91,8 @@ None currently.
 **2026-05-28 session (05-01 executed):** Phase 5 Plan 01 (Wave 0 test stubs) COMPLETE. 7 files created: insight_factory.py (GREEN) + 6 RED-state test files. 41 total tests: 36 unit tests (across schema, prompt_builder, insight_service, number_validator, insight_repository) + 5 integration tests (4 skipped without TEST_DATABASE_URL, 1 AI-09 grep gate PASSING immediately). Key decision: per-test @_integration_skip decorator instead of module-level pytestmark — allows AI-09 grep gate to run without TEST_DATABASE_URL. Advancing to Phase 5 Plan 02 (Wave 1: schema foundation + migration 008).
 
 **2026-05-28 session (05-02 executed):** Phase 5 Plan 02 (schema foundation) COMPLETE. Migration 008 creates daily_insights table with all 12 D-16 columns (including cost_usd NUMERIC(10,6), raw_response TEXT), UNIQUE(tenant_id, date), FK to tenants.id. DailyInsight SQLAlchemy 2.x ORM model with all 8 domain columns. app/models/insights package + app/models/__init__.py updated for Alembic autogenerate discovery. All 4 plan verifications passed. Key decisions: status validation in application layer (no DDL CHECK constraint), 2-column UPSERT conflict target (tenant_id, date). Advancing to Phase 5 Plan 03 (Wave 2: Pydantic schema + services + repository).
+
+**2026-05-28 session (05-03 executed):** Phase 5 Plan 03 (service layer) COMPLETE. 7 new files: DailyInsightResponse Pydantic schema, build_system_prompt() + build_user_message() with Sofa Belle roster and PII guard, extract_numbers_from_text() + cross_check() Romanian number validator, InsightService (run/fallback/cost/retry), InsightRepository (2-col UPSERT). anthropic>=0.30,<1 added to pyproject.toml (installed 0.104.1). anthropic_api_key added to Settings. 36/36 Wave 0 unit tests GREEN. Key deviations: NUMBER_PATTERN regex bug fixed (5050→505 truncation), anthropic_api_key missing from Settings added, anthropic package installed. Advancing to Phase 5 Plan 04 (Celery task wiring).
 
 ## Known Issues
 
