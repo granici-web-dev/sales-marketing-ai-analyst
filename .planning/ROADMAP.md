@@ -106,7 +106,7 @@ Plans:
 **Plans:** 4 plans
 Plans:
 - [x] 04-01-PLAN.md — Wave 0 test stubs (RED tests for service, repository, task + anomaly_factory)
-- [ ] 04-02-PLAN.md — Alembic migration 007 (detected_problems table) + DetectedProblem SQLAlchemy model
+- [x] 04-02-PLAN.md — Alembic migration 007 (detected_problems table) + DetectedProblem SQLAlchemy model
 - [ ] 04-03-PLAN.md — AnomalyService (5 rules + run_all_rules) + AnomalyRepository (UPSERT writer)
 - [ ] 04-04-PLAN.md — detect_anomalies Celery task + daily_pipeline chain extension + celery_app registration
 

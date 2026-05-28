@@ -19,7 +19,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 1 | Foundation | ✓ Complete (2026-05-21) | 7/7 |
 | 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
 | 3 | Metrics Engine | ✓ Complete (2026-05-28) | 4/4 |
-| 4 | Anomaly Detection | ◆ In progress | 1/4 |
+| 4 | Anomaly Detection | ◆ In progress | 2/4 |
 | 5 | AI Insights | ○ Pending | — |
 | 6 | Backend HTTP API | ○ Pending | — |
 | 7 | Frontend Dashboards | ○ Pending | — |
@@ -71,6 +71,8 @@ None currently.
 **2026-05-28 session:** Phase 4 context gathered. Key decisions: one aggregate detected_problems row per rule per day (UPSERT on tenant_id+date+rule_id), context_json holds count+IDs, trailing 30-day close rate from daily_kpi for loss formulas, lost-opportunity formulas for trend rules, single AnomalyService in app/services/anomaly/ (Phase 3 pattern), 7-day minimum baseline window, slow_first_touch checks yesterday-only leads. Resume file: .planning/phases/04-anomaly-detection/04-CONTEXT.md
 
 **2026-05-28 session (04-01 executed):** Phase 4 Plan 01 (Wave 0 test stubs) COMPLETE. 4 files created: anomaly_factory.py (GREEN) + 3 RED-state test files. 28 total tests: 23 unit (18 service + 5 repository) + 5 integration (2 non-DB RED + 3 skipped without TEST_DATABASE_URL). All tests collect cleanly with ModuleNotFoundError confirming RED state. Decision: 25% junk threshold (D-20/ROADMAP SC#6 overrides REQUIREMENTS.md 20% baseline).
+
+**2026-05-28 session (04-02 executed):** Phase 4 Plan 02 (schema foundation) COMPLETE. Migration 007 creates detected_problems table with UNIQUE(tenant_id, date, rule_id), 2 performance indexes, FK to tenants.id. DetectedProblem ORM model with 8 domain columns (date, rule_id, severity, metric, current_value NUMERIC(12,4), expected_value NUMERIC(12,4), estimated_loss_ron NUMERIC(12,2), context_json JSONB) + detected_at TIMESTAMPTZ. app/models/anomaly package + app/models/__init__.py updated for Alembic autogenerate discovery.
 
 ## Known Issues
 
