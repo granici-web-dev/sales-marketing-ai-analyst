@@ -104,17 +104,19 @@ class AnomalyService:
     # ── Private DB helpers ────────────────────────────────────────────────────
 
     async def _get_junk_ids(self, kpi_date: date) -> set[str]:
-        """Fetch external_ids of junk leads for current tenant.
+        """Fetch external_ids of junk leads created on kpi_date for current tenant.
 
-        Used by run_all_rules() to compute junk set once (D-11).
+        Scoped to kpi_date via AND created_date_local = :kpi_date to avoid returning
+        all-time junk leads (CR-02 fix — ROADMAP SC#6 correctness requirement).
 
         T-04-03-02: Explicit tenant_id filter in WHERE clause.
         """
         from sqlalchemy import text  # deferred — fork-safe
 
         stmt = text(
-            "SELECT external_id FROM v_mefi_leads_junk WHERE tenant_id = :tenant_id"
-        ).bindparams(tenant_id=self._tenant_id)
+            "SELECT external_id FROM v_mefi_leads_junk"
+            " WHERE tenant_id = :tenant_id AND created_date_local = :kpi_date"
+        ).bindparams(tenant_id=self._tenant_id, kpi_date=kpi_date)
         result = await self._session.execute(stmt)
         rows = result.fetchall()
         return {row[0] for row in rows}
@@ -656,8 +658,8 @@ class AnomalyService:
             "expected_value": JUNK_RATE_THRESHOLD,
             "estimated_loss_ron": estimated_loss,
             "context_json": {
-                "count": junk_count,
-                "total": total_leads,
+                "junk_count": junk_count,
+                "total_leads": total_leads,
                 "junk_rate": float(junk_rate),
             },
         }
