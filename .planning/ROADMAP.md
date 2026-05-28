@@ -124,7 +124,12 @@ Plans:
 5. `usage.input_tokens`, `usage.output_tokens`, and `cost_usd` are logged per call; second invocation with the same system prompt shows `cache_read_input_tokens > 0` (prompt caching active).
 6. Grep of HTTP handler code (`app/api/`) for `anthropic.Anthropic` / `client.messages` returns zero matches — Claude is invoked exclusively from Celery task code.
 7. With `daily_insights.status='failed'`, the Insights page query returns the algorithmic anomaly list (fallback) with the failure notice flag set.
-**Plans:** TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 05-01-PLAN.md — Wave 1 test stubs: insight_factory.py + 6 RED-state test files (schema, prompt_builder, insight_service, number_validator, repository, task)
+- [ ] 05-02-PLAN.md — Wave 2 migration 008 (daily_insights table, D-16 columns, UNIQUE tenant+date) + DailyInsight ORM model
+- [ ] 05-03-PLAN.md — Wave 3 DailyInsightResponse Pydantic schema + prompt_builder + number_validator + InsightService (Claude API, retry, fallback) + InsightRepository (UPSERT)
+- [ ] 05-04-PLAN.md — Wave 4 generate_daily_insights Celery task + chain extension (4th link) + beat entry 06:00 + anthropic SDK dependency + Settings.anthropic_api_key
 
 ---
 
@@ -204,7 +209,7 @@ Plans:
 | 2. MEFI ETL | 0/5 | Not started | — |
 | 3. Metrics Engine | 1/4 | In progress | — |
 | 4. Anomaly Detection | 3/4 | In progress | — |
-| 5. AI Insights | 0/? | Not started | — |
+| 5. AI Insights | 0/4 | Planned | — |
 | 6. Backend HTTP API | 0/? | Not started | — |
 | 7. Frontend Dashboards | 0/? | Not started | — |
 | 8. AI Chat | 0/? | Not started | — |
