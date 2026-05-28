@@ -1,20 +1,266 @@
 "use client";
 
+import { Suspense, useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { Lightbulb } from "lucide-react";
+import { RefreshCw, Loader2, Lightbulb } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  useInsightsToday,
+  useInsightsByDate,
+  useInsightsRefresh,
+} from "@/hooks/useInsights";
+import { InsightSummary } from "@/components/dashboards/insights/insight-summary";
+import { ProblemCard } from "@/components/dashboards/insights/problem-card";
+import { GenerationFailedBanner } from "@/components/dashboards/insights/generation-failed-banner";
+import { FallbackAnomalyList } from "@/components/dashboards/insights/fallback-anomaly-list";
+import { formatTimestamp } from "@/lib/formatters";
 
-export default function InsightsPage() {
-  const t = useTranslations("placeholder");
+// ─── Countdown helper ───────────────────────────────────────────────────────
+
+function formatCountdown(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+// ─── Main content component ─────────────────────────────────────────────────
+
+function InsightsPageContent() {
+  const t = useTranslations("insights");
+
+  // INSI-01: today's insight (default view)
+  const {
+    data: insightsToday,
+    isLoading: isTodayLoading,
+    isError: isTodayError,
+    refetch: refetchToday,
+  } = useInsightsToday();
+
+  // INSI-02: historical date picker
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  // useInsightsByDate for historical navigation
+  const {
+    data: insightsByDate,
+    isLoading: isByDateLoading,
+    isError: isByDateError,
+    refetch: refetchByDate,
+  } = useInsightsByDate(selectedDate);
+
+  // Derived active data — use historical when a date is selected
+  const activeData = selectedDate !== null ? insightsByDate : insightsToday;
+  const isLoading = selectedDate !== null ? isByDateLoading : isTodayLoading;
+  const isError = selectedDate !== null ? isByDateError : isTodayError;
+  const refetch = selectedDate !== null ? refetchByDate : refetchToday;
+
+  // INSI-03: rate-limit state
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState<number | null>(
+    null,
+  );
+  const [countdownDisplay, setCountdownDisplay] = useState<string>("");
+
+  // W10 fix: useInsightsRefresh returns useMutation result
+  const refreshMutation = useInsightsRefresh();
+
+  // Watch mutation result for rate-limit response
+  useEffect(() => {
+    if (
+      refreshMutation.data &&
+      !refreshMutation.data.ok &&
+      refreshMutation.data.retryAfterSeconds !== null
+    ) {
+      setRetryAfterSeconds(refreshMutation.data.retryAfterSeconds);
+    }
+  }, [refreshMutation.data]);
+
+  // Countdown timer — counts down retryAfterSeconds to 0
+  useEffect(() => {
+    if (retryAfterSeconds === null) {
+      setCountdownDisplay("");
+      return;
+    }
+    setCountdownDisplay(formatCountdown(retryAfterSeconds));
+    const interval = setInterval(() => {
+      setRetryAfterSeconds((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          setCountdownDisplay("");
+          return null;
+        }
+        const next = prev - 1;
+        setCountdownDisplay(formatCountdown(next));
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [retryAfterSeconds]);
+
+  // T-7-15: validate date format before passing to hook
+  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    if (!value) {
+      setSelectedDate(null);
+      return;
+    }
+    const parsed = new Date(value);
+    if (isNaN(parsed.getTime())) {
+      // Invalid date — ignore
+      return;
+    }
+    setSelectedDate(value);
+    // Clear rate-limit countdown when switching dates
+    setRetryAfterSeconds(null);
+  }
+
+  function handleRefresh() {
+    refreshMutation.mutate();
+  }
+
+  const isRateLimited = retryAfterSeconds !== null;
+  const refreshDisabled = isRateLimited || refreshMutation.isPending;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-56px-64px)]">
-      <Lightbulb size={48} className="text-[#71717A] mb-4" aria-hidden="true" />
-      <h1 className="text-xl font-semibold mb-2 text-[hsl(240_10%_4%)]">
-        {t("comingSoon")}
-      </h1>
-      <p className="text-sm text-[#71717A] max-w-sm text-center">
-        {t("insights")}
-      </p>
+    <div className="space-y-6">
+      {/* ── Header row ─────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-xl font-semibold">{t("title")}</h1>
+        <div className="flex gap-2 items-center flex-wrap">
+          {/* INSI-02: historical date picker */}
+          <input
+            type="date"
+            className="min-h-11 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            value={selectedDate ?? ""}
+            onChange={handleDateChange}
+            aria-label={t("datePicker")}
+          />
+          {/* Reset to today */}
+          {selectedDate !== null && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="min-h-11"
+              onClick={() => setSelectedDate(null)}
+            >
+              Astăzi
+            </Button>
+          )}
+          {/* INSI-03: Reîmprospătează button */}
+          <Button
+            variant="default"
+            className="min-h-11"
+            disabled={refreshDisabled}
+            onClick={handleRefresh}
+          >
+            {refreshMutation.isPending ? (
+              <Loader2 size={16} className="mr-2 animate-spin" />
+            ) : (
+              <RefreshCw size={16} className="mr-2" />
+            )}
+            {isRateLimited
+              ? t("refreshCountdown", { remaining: countdownDisplay })
+              : t("refreshButton")}
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Loading state ──────────────────────────────────────────────── */}
+      {isLoading && (
+        <div className="space-y-3">
+          <Skeleton className="h-8 w-full mb-4" />
+          <Skeleton className="h-20 w-full rounded-lg" />
+          <Skeleton className="h-20 w-full rounded-lg" />
+          <Skeleton className="h-20 w-full rounded-lg" />
+        </div>
+      )}
+
+      {/* ── Error state ────────────────────────────────────────────────── */}
+      {!isLoading && isError && (
+        <div className="flex flex-col items-center gap-2 py-8">
+          <p className="text-sm text-destructive">
+            A apărut o eroare la încărcarea analizei. Încearcă din nou.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            Încearcă din nou
+          </Button>
+        </div>
+      )}
+
+      {/* ── No data state (404 from history query) ─────────────────────── */}
+      {!isLoading && !isError && selectedDate !== null && activeData === null && (
+        <div className="flex flex-col items-center py-12 text-center">
+          <Lightbulb
+            size={32}
+            className="text-muted-foreground mb-3"
+            aria-hidden="true"
+          />
+          <p className="text-sm font-medium">{t("noInsight")}</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {t("noInsightDesc")}
+          </p>
+        </div>
+      )}
+
+      {/* ── Success path: insight data present ─────────────────────────── */}
+      {!isLoading && !isError && activeData !== null && activeData !== undefined && (
+        <div className="space-y-4">
+          {/* INSI-05 Case: generation failed */}
+          {activeData.generation_failed ? (
+            <div className="space-y-4">
+              {/* B6 fix: always show GenerationFailedBanner when generation_failed=true */}
+              <GenerationFailedBanner />
+              {/* FallbackAnomalyList handles Case A (fallback+problems) vs Case B (failed/empty) */}
+              <FallbackAnomalyList
+                problems={activeData.payload?.problems ?? null}
+                status={activeData.status}
+              />
+            </div>
+          ) : (
+            <>
+              {/* Normal success path */}
+              {activeData.payload !== null && activeData.payload !== undefined && (
+                <div className="space-y-4">
+                  {/* INSI-01: AI summary paragraph */}
+                  {/* B3 fix: pass payload.summary NOT payload.summary_ro */}
+                  <InsightSummary
+                    summary={activeData.payload.summary}
+                    insightDate={activeData.date}
+                  />
+
+                  {/* Up to 3 problem cards — collapsed by default */}
+                  {activeData.payload.problems.length > 0 && (
+                    <div className="space-y-3">
+                      {activeData.payload.problems.map((p) => (
+                        <ProblemCard key={p.id} problem={p} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* INSI-06: Footer metadata — InsightEnvelope.date (not new Date()) */}
+          <div className="pt-2 border-t">
+            <p className="text-xs text-muted-foreground">
+              {t("summary.dataFor")}{" "}
+              {activeData.generated_at
+                ? formatTimestamp(activeData.generated_at)
+                : "—"}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+// ─── Page export ────────────────────────────────────────────────────────────
+
+export default function InsightsPage() {
+  return (
+    <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+      <InsightsPageContent />
+    </Suspense>
   );
 }
