@@ -705,32 +705,37 @@ nyquist_validation is enabled (not set to false in config.json).
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Revenue series granularity for date ranges**
    - What we know: `DailyKpi.revenue` is per-day. For a 30d range, return 30 data points.
    - What's unclear: For 90d or custom ranges, does the frontend need daily granularity or weekly aggregation?
    - Recommendation: Always return daily granularity. Frontend decides grouping. [ASSUMED]
+   - **RESOLVED:** Always daily granularity — one row per day. The frontend handles grouping/display. Locked user decision.
 
 2. **Salesperson name lookup performance**
    - What we know: `mefi_salespeople` table has 6 rows (Sofa Belle). JOIN is trivial at this scale.
    - What's unclear: At Iteration 4 scale with many tenants, N+1 risk.
    - Recommendation: JOIN in SQL for Phase 6. No optimization needed for 6-row table.
+   - **RESOLVED:** JOIN in SQL (same as recommendation). 6-row table; no optimization concern for Iteration 1.
 
 3. **Junk by source query — which table?**
    - What we know: `raw_mefi_leads` has all leads including `lifecycle='junk'` and `source_id`.
    - What's unclear: Should we use `raw_mefi_leads` directly or a new view? CLAUDE.md says metric services never query `raw_mefi_*` directly — but this is the API layer, not a metric service, and there's no pre-computed junk-by-source table.
    - Recommendation: Create a junk-by-source query in `DashboardReadService.get_marketing_dashboard()` that queries `raw_mefi_leads WHERE lifecycle='junk'` grouped by source_id. Document the exception in code comments.
+   - **RESOLVED:** Query `raw_mefi_leads` directly in `DashboardReadService`. This is a confirmed documented exception to the no-raw-table rule: no pre-computed junk-by-source table exists and this is read-only aggregation in the API (not metric) service layer. Comment the exception in code.
 
 4. **POST /insights/refresh — should it trigger full pipeline or insights-only?**
    - What we know: ROADMAP SC#5 says "enqueues a pipeline run". The chain is sync→kpis→anomaly→insights. Triggering sync on manual refresh would re-pull from MEFI (correct if data is stale).
    - What's unclear: Should "refresh" mean "regenerate insights from existing data" or "full pipeline re-run"?
    - Recommendation: Trigger `generate_daily_insights.si(tenant_id).delay()` directly (insights-only) rather than the full pipeline chain. This matches "refresh the insights page" semantics. The full pipeline runs on schedule. [ASSUMED — confirm with user if needed]
+   - **RESOLVED:** Trigger full `daily_pipeline(tenant_id_str).delay()` chain — the complete sync→kpis→anomaly→insights sequence. Locked decision per ROADMAP SC#5 and user confirmation. The partial insights-only path is superseded.
 
 5. **`pipeline_run_id` in refresh response**
    - What we know: The refresh endpoint should return a `pipeline_run_id`. Celery tasks return `AsyncResult.id` (the task ID). There is no row created in `pipeline_runs` at enqueue time — it's created when the task runs.
    - What's unclear: Should the response contain the Celery task ID or a pre-created `pipeline_runs.id`?
    - Recommendation: Return the Celery `task_id` (str UUID) as `pipeline_run_id`. The client can use it to poll if a polling endpoint is added later. [ASSUMED]
+   - **RESOLVED:** Return Celery task ID string as `pipeline_run_id` — i.e. `task.id` from the `AsyncResult` returned by `.delay()`. No pre-created DB row needed.
 
 ---
 

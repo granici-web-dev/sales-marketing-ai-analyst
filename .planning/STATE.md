@@ -21,7 +21,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 3 | Metrics Engine | ✓ Complete (2026-05-28) | 4/4 |
 | 4 | Anomaly Detection | ✓ Complete (2026-05-28) | 5/5 |
 | 5 | AI Insights | ✓ Complete (2026-05-28) | 4/4 |
-| 6 | Backend HTTP API | ○ Pending | — |
+| 6 | Backend HTTP API | ◆ Planned (2026-05-28) | 4 plans ready |
 | 7 | Frontend Dashboards | ○ Pending | — |
 | 8 | AI Chat | ○ Pending | — |
 | 9 | Polish & Deploy | ○ Pending | — |
@@ -95,6 +95,8 @@ None currently.
 **2026-05-28 session (05-03 executed):** Phase 5 Plan 03 (service layer) COMPLETE. 7 new files: DailyInsightResponse Pydantic schema, build_system_prompt() + build_user_message() with Sofa Belle roster and PII guard, extract_numbers_from_text() + cross_check() Romanian number validator, InsightService (run/fallback/cost/retry), InsightRepository (2-col UPSERT). anthropic>=0.30,<1 added to pyproject.toml (installed 0.104.1). anthropic_api_key added to Settings. 36/36 Wave 0 unit tests GREEN. Key deviations: NUMBER_PATTERN regex bug fixed (5050→505 truncation), anthropic_api_key missing from Settings added, anthropic package installed. Advancing to Phase 5 Plan 04 (Celery task wiring).
 
 **2026-05-28 session (05-04 executed):** Phase 5 Plan 04 (Celery task wiring) COMPLETE. generate_daily_insights task created (NullPool + deferred imports + WR-06 + PIPE-04 + soft_time_limit=120 + time_limit=180). PIPE-01 chain fully closed: sync_mefi_leads → calculate_daily_kpis → detect_anomalies → generate_daily_insights. Beat entry 'daily-insights-generation' at 06:00 Europe/Bucharest registered. ANTHROPIC_API_KEY wired to backend + worker in docker-compose.yml. 37/37 tests pass (4 DB-dependent skipped). Phase 5 AI Insights COMPLETE — advancing to Phase 6 Backend HTTP API.
+
+**2026-05-28 session (Phase 5 UAT + number_validator fix):** Live round-trip verified on real Sofa Belle data (2026-05-27). status=success, 668 input tokens, $0.044 per call. Romanian insight quality confirmed: all numbers grounded in real KPI data (17 leads, 85.000 RON, 80% V→O, 29.4%/45.8% showroom, 82 stuck offers). Prompt caching confirmed active: 1,051 tokens written on first call, 1,051 cache_read_input_tokens on second call. Number validator fixed: (1) added current_value/expected_value/context_json scalar values to reference set with minutes→hours and fraction→percent forms; (2) added date day-of-month to reference; (3) skip year range 1900-2100 in cross-check; (4) check summary text only (not problem descriptions which contain domain-knowledge figures). Phase 5 HUMAN-UAT complete (3/3 live tests passed, 1 deferred to Phase 6). Phase 5 FULLY COMPLETE.
 
 ## Known Issues
 
