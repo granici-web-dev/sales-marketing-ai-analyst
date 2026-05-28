@@ -6,7 +6,9 @@ Implements 5 rule methods + run_all_rules() orchestrator called by the Celery ta
 
 Design decisions:
   D-09: Single AnomalyService class with all 5 rule methods + orchestrator
-  D-11: junk_ids computed ONCE in run_all_rules() and passed to all non-junk rules
+  D-11: junk_ids computed ONCE in run_all_rules() and passed to detect_slow_first_touch
+        (the only rule that processes leads not pre-filtered by v_mefi_leads_active).
+        Other rules query v_mefi_leads_active which already excludes lifecycle='junk' at DB level.
   D-14: slow_first_touch checks yesterday-only leads (kpi_date leads, not prior days)
   D-20: Thresholds locked — slow_first_touch 5h (300min), stuck_offer 15d, drop 35%, sp 30%, junk 25%
 
@@ -59,7 +61,10 @@ class AnomalyService:
     Each detect_* method accepts pre-fetched data as optional kwargs (for unit tests)
     and fetches from DB when called without data (from run_all_rules()).
 
-    run_all_rules() orchestrates: fetches junk_ids ONCE (D-11), calls each detect method.
+    run_all_rules() orchestrates: fetches junk_ids ONCE (D-11) and passes them only to
+    detect_slow_first_touch (the only rule that queries leads not already filtered by
+    v_mefi_leads_active). All other rules query v_mefi_leads_active, which excludes
+    lifecycle='junk' at the DB view level.
 
     All monetary calculations use Decimal (D-19).
     No PII logged — only counts and rule names (T-04-03-01).
@@ -91,14 +96,18 @@ class AnomalyService:
         return CLOSE_RATE_FALLBACK
 
     def _extract_avg_deal_size(self, baseline_rows: list[dict]) -> Decimal:
-        """Extract avg_deal_size from baseline rows (first non-None value).
+        """Extract trailing average of avg_deal_size from baseline rows.
 
-        Falls back to AVG_DEAL_SIZE_FALLBACK (20000 RON) if unavailable.
+        Averages all non-None avg_deal_size values — consistent with _extract_close_rate.
+        Falls back to AVG_DEAL_SIZE_FALLBACK (20000 RON) if no values are available.
         """
-        for row in baseline_rows:
-            val = row.get("avg_deal_size")
-            if val is not None:
-                return Decimal(str(val))
+        values = [
+            Decimal(str(row["avg_deal_size"]))
+            for row in baseline_rows
+            if row.get("avg_deal_size") is not None
+        ]
+        if values:
+            return sum(values, Decimal("0")) / Decimal(str(len(values)))
         return AVG_DEAL_SIZE_FALLBACK
 
     # ── Private DB helpers ────────────────────────────────────────────────────
@@ -685,7 +694,9 @@ class AnomalyService:
         """
         self._log.info("anomaly.run_start", kpi_date=str(kpi_date))
 
-        # D-11: compute junk IDs ONCE and pass to all non-junk rules
+        # D-11: compute junk IDs ONCE and pass to detect_slow_first_touch (the only rule
+        # that processes leads not pre-filtered by v_mefi_leads_active).
+        # Other rules query v_mefi_leads_active which already excludes lifecycle='junk' at DB level.
         junk_ids = await self._get_junk_ids(kpi_date)
 
         results: list[dict] = []

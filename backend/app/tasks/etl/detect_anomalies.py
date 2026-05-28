@@ -92,6 +92,9 @@ async def _detect_async(tenant_id: UUID) -> dict:
     from zoneinfo import ZoneInfo
     from datetime import date as date_type, timedelta
 
+    # WR-04: minimum staleness threshold — only clean rows older than 30 minutes
+    _STALE_SYNCRUN_THRESHOLD_MINUTES = 30
+
     # ── Security: set tenant context ────────────────────────────────────────────
     set_tenant_id(tenant_id)
     detect_start_at = datetime.now(UTC)
@@ -121,6 +124,9 @@ async def _detect_async(tenant_id: UUID) -> dict:
                     SyncRun.tenant_id == tenant_id,
                     SyncRun.source == "anomaly",
                     SyncRun.status == "running",
+                    # WR-04: age threshold prevents marking a legitimately concurrent
+                    # run as failed — only rows older than 30 minutes are truly stale.
+                    SyncRun.started_at < datetime.now(UTC) - timedelta(minutes=_STALE_SYNCRUN_THRESHOLD_MINUTES),
                 )
                 .values(status="failed", completed_at=datetime.now(UTC))
             )
