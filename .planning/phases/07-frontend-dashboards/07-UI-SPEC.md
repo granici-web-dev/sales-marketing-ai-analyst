@@ -1,7 +1,7 @@
 ---
 phase: 7
 slug: frontend-dashboards
-status: draft
+status: approved
 shadcn_initialized: true
 preset: "new-york / zinc / cssVariables:true"
 created: 2026-05-28
@@ -68,8 +68,21 @@ Exceptions:
 Notes:
 - Page title in topbar: 20px / semibold (existing: `text-xl font-semibold` in topbar.tsx)
 - Sidebar nav items: 14px / 400 inactive, 600 active (existing pattern in sidebar.tsx)
-- Insight `summary_ro` paragraph: 16px / 400 / line-height 1.6 — body reading text, wider line-height for longer prose
+- Insight `summary_ro` paragraph: 14px / 400 / line-height 1.6 — same size as body; wider line-height differentiates prose from compact body text
 - Revenue formatted display: 28px display where it is the primary KPI card value; 14px body in table cells
+
+---
+
+## Visual Hierarchy — Per-Page Focal Points
+
+| Page | Primary Focal Point | Secondary | Tertiary |
+|------|--------------------|-----------|---------| 
+| Sales `/sales` | KPI card grid — 28px Display metric numbers at top of page, 4 cards spanning full width | Funnel visualization — horizontal bar chart immediately below KPI cards | Source breakdown chart |
+| Salespeople `/salespeople` | Leaderboard table — top-ranked row is visually distinct; contracts column sorted desc by default | Per-rep funnel below table | Time-to-first-touch red cell highlights |
+| Marketing `/marketing` | Lead volume line chart by source — multi-series chart as page opener | Junk % by source table | Ad spend placeholder section |
+| Insights `/insights` | `summary_ro` headline paragraph — rendered first, largest prose block on page | Top problem card (severity badge, estimated loss in Display size) | Remaining problem cards + Reîmprospătează button |
+
+Focal point is achieved by: (1) placement at top of page, (2) 28px Display size for primary metric numbers, (3) full-width layout on desktop, and (4) visual weight from KPI card grid (`grid-cols-4` desktop, `grid-cols-1` mobile).
 
 ---
 
@@ -125,7 +138,7 @@ Source: CONTEXT.md D-13, D-14, D-15, D-16, REQUIREMENTS.md UI-01. All strings in
 | Insights manual refresh button | `Reîmprospătează` | `insights.refreshButton` |
 | Rate-limited refresh countdown | `Reîmprospătează (N:SS)` — countdown replacing button label | `insights.refreshCountdown` |
 | Error state retry button | `Încearcă din nou` | `common.retry` |
-| Date range apply | `Aplică` | `common.apply` |
+| Date range apply | `Aplică perioada` | `common.apply` |
 | Mobile sidebar open | (icon-only, aria-label) `Deschide meniu` | `common.openMenu` |
 | Mobile sidebar close | (icon-only, aria-label) `Închide meniu` | `common.closeMenu` |
 
@@ -385,14 +398,14 @@ No third-party shadcn registries declared. Registry vetting gate: not triggered.
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-05-28
 
 ---
 
