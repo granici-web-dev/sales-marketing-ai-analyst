@@ -80,7 +80,10 @@ class DetectedProblem(Base, TenantScopedMixin):
     # Structured context: count + offending IDs + key metric values.
     # slow_first_touch:        {"count": 3, "lead_ids": ["ext-001"], "worst_hours_elapsed": 8.5}
     # stuck_offer:             {"count": 2, "lead_ids": ["ext-007"], "max_days_stuck": 21}
-    # showroom_traffic_drop:   {"actual_visits": 2, "expected_visits": 5.4, "baseline_days": 30}
+    # showroom_traffic_drop:   {"baseline_days": 30, "drop_pct": 37.5}
+    #   baseline_days: number of non-null conversion_l_to_v days in the 30-day window
+    #   drop_pct: percentage drop from baseline (e.g., 37.5 = 37.5% below baseline)
+    #   Note: actual_visits / expected_visits are NOT present — conversion_l_to_v ratio is used.
     # underperforming_salesperson: {"count": 1, "salesperson_ids": [7], "details": [...]}
     # junk_lead_quality:       {"junk_count": 45, "total_leads": 150, "junk_rate": 0.30}
     # T-04-02-01: external_ids only — no PII (no names, phones, emails)
