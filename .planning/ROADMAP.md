@@ -103,7 +103,12 @@ Plans:
 5. Forcing one salesperson's win rate to 30% below team average produces an `underperforming_salesperson` row identifying that salesperson by `salesperson_id`.
 6. Seeding 25% of leads as `lifecycle='junk'` produces a `junk_lead_quality` row referencing source breakdown; junk leads themselves are excluded from all other rule evaluations (verified — no false-positive `slow_first_touch` on junk leads).
 7. Each `detected_problems` row has a populated `estimated_loss_ron` computed deterministically from the rule (e.g., stuck_offer = sum(estimated_value of stuck offers) × historical close rate).
-**Plans:** TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 04-01-PLAN.md — Wave 0 test stubs (RED tests for service, repository, task + anomaly_factory)
+- [ ] 04-02-PLAN.md — Alembic migration 007 (detected_problems table) + DetectedProblem SQLAlchemy model
+- [ ] 04-03-PLAN.md — AnomalyService (5 rules + run_all_rules) + AnomalyRepository (UPSERT writer)
+- [ ] 04-04-PLAN.md — detect_anomalies Celery task + daily_pipeline chain extension + celery_app registration
 
 ---
 
@@ -198,7 +203,7 @@ Plans:
 | 1. Foundation | 7/7 | Executed | 2026-05-21 |
 | 2. MEFI ETL | 0/5 | Not started | — |
 | 3. Metrics Engine | 1/4 | In progress | — |
-| 4. Anomaly Detection | 0/? | Not started | — |
+| 4. Anomaly Detection | 0/4 | In progress | — |
 | 5. AI Insights | 0/? | Not started | — |
 | 6. Backend HTTP API | 0/? | Not started | — |
 | 7. Frontend Dashboards | 0/? | Not started | — |
@@ -232,3 +237,33 @@ Plans:
 ---
 
 *Roadmap created: 2026-05-19*
+
+---
+
+## Iteration 2 Backlog
+
+*Not in MVP1 scope. These items require Sofa Belle real-world validation before scheduling.*
+
+### IT2-01: MEFI Status History Tracking (visits metric)
+
+**Problem (KI-03):** MEFI API returns only the current lead status. The "ever reached SHOWROOM" signal needed for `visits_count` cannot be reconstructed for historical dates — computing it from current status produces cohort-contaminated numbers (~7 leads currently in showroom vs. ~180-200/month Sofa Belle reports from their own tracking).
+
+**Impact:** `visits_count`, `conversion_l_to_v`, `conversion_v_to_o` are NULL in all KPI tables for MVP1. Offer- and contract-based metrics (`conversion_l_to_o`, `conversion_o_to_c`, `conversion_l_to_c`) are unaffected.
+
+**Solution:** During each nightly sync (`sync_mefi_leads`), compare the incoming current status of each lead against its last-known status stored in `raw_mefi_leads`. When a status change is detected, write a row to a new `lead_status_history` table:
+
+```
+lead_status_history(
+  tenant_id      UUID NOT NULL,
+  external_id    TEXT NOT NULL,       -- lead external_id
+  from_status_id INT,
+  to_status_id   INT NOT NULL,
+  observed_at    TIMESTAMPTZ NOT NULL  -- timestamp of the nightly sync that detected the change
+)
+```
+
+After a few weeks of accumulated transitions, `reached_visit` can be computed as `BOOL_OR(to_status_id IN (17, 3, 1))` from `lead_status_history` — the same join already scaffolded in `v_mefi_leads_active` (the `h_agg` subquery in migration 004).
+
+**Also unlocks:** time-in-stage metrics (how long a lead spent in each stage), per-salesperson average time from lead to visit, visit-to-offer lag analysis.
+
+**Question for Sofa Belle:** How do they count "Vizita" in their Excel — manual tracking, or a MEFI UI report not exposed via the public API? This will determine whether IT2-01 is sufficient or whether a MEFI data-export endpoint needs to be negotiated.
