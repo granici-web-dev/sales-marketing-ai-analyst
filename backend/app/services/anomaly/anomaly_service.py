@@ -41,6 +41,7 @@ from decimal import Decimal
 from uuid import UUID
 
 import structlog
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Module-level constants — all thresholds locked per D-20
@@ -115,17 +116,21 @@ class AnomalyService:
     async def _get_junk_ids(self, kpi_date: date) -> set[str]:
         """Fetch external_ids of junk leads created on kpi_date for current tenant.
 
-        Scoped to kpi_date via AND created_date_local = :kpi_date to avoid returning
-        all-time junk leads (CR-02 fix — ROADMAP SC#6 correctness requirement).
+        Scoped to kpi_date to avoid returning all-time junk leads (CR-02 fix).
+        v_mefi_leads_junk uses created_at_source; date is localised to Europe/Bucharest.
 
         T-04-03-02: Explicit tenant_id filter in WHERE clause.
         """
-        from sqlalchemy import text  # deferred — fork-safe
+        from sqlalchemy import bindparam, text  # deferred — fork-safe
 
         stmt = text(
             "SELECT external_id FROM v_mefi_leads_junk"
-            " WHERE tenant_id = :tenant_id AND created_date_local = :kpi_date"
-        ).bindparams(tenant_id=self._tenant_id, kpi_date=kpi_date)
+            " WHERE tenant_id = :tenant_id"
+            " AND DATE(created_at_source AT TIME ZONE 'Europe/Bucharest') = :kpi_date"
+        ).bindparams(
+            bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
+            kpi_date=kpi_date,
+        ).bindparams(tenant_id=self._tenant_id)
         result = await self._session.execute(stmt)
         rows = result.fetchall()
         return {row[0] for row in rows}
@@ -188,39 +193,63 @@ class AnomalyService:
         }
 
     async def _db_fetch_slow_leads(self, kpi_date: date) -> list[dict]:
-        """Fetch leads created on kpi_date for slow_first_touch from DB."""
-        from sqlalchemy import text  # deferred — fork-safe
+        """Fetch leads created on kpi_date with per-lead first-touch time from DB.
+
+        time_to_first_touch_minutes is derived from mefi_lead_history (first change
+        recorded for each lead) relative to the lead's created_at_source timestamp.
+        Leads with no history entry yet have NULL first-touch and are excluded.
+        """
+        from sqlalchemy import bindparam, text  # deferred — fork-safe
 
         stmt = text("""
-            SELECT external_id, time_to_first_touch_minutes
-            FROM v_mefi_leads_active
-            WHERE tenant_id = :tenant_id
-              AND created_date_local = :kpi_date
-              AND lifecycle = 'active'
-        """).bindparams(tenant_id=self._tenant_id, kpi_date=kpi_date)
+            SELECT
+                r.external_id,
+                EXTRACT(EPOCH FROM (MIN(h.changed_at) - r.created_at_source)) / 60.0
+                    AS time_to_first_touch_minutes
+            FROM v_mefi_leads_active r
+            JOIN mefi_lead_history h
+                ON h.tenant_id = r.tenant_id AND h.lead_external_id = r.external_id
+            WHERE r.tenant_id = :tenant_id
+              AND DATE(r.created_at_local) = :kpi_date
+              AND r.lifecycle = 'active'
+            GROUP BY r.external_id, r.created_at_source
+        """).bindparams(
+            bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
+            kpi_date=kpi_date,
+        ).bindparams(tenant_id=self._tenant_id)
         result = await self._session.execute(stmt)
         rows = result.fetchall()
         return [
             {
                 "external_id": row[0],
-                "time_to_first_touch_minutes": row[1],
+                "time_to_first_touch_minutes": float(row[1]) if row[1] is not None else None,
             }
             for row in rows
+            if row[1] is not None
         ]
 
     async def _db_fetch_stuck_leads(self, kpi_date: date) -> list[dict]:
-        """Fetch leads in oferta stage stuck 15+ days from DB."""
-        from sqlalchemy import text  # deferred — fork-safe
+        """Fetch leads in offer stage stuck 15+ days from DB.
+
+        Uses reached_offer=true AND NOT reached_contract as the offer-stage proxy
+        (v_mefi_leads_active has no funnel_stage column; reached_* flags are the
+        equivalent). status_changed_at is used for the cutoff comparison.
+        """
+        from sqlalchemy import bindparam, text  # deferred — fork-safe
 
         cutoff = kpi_date - timedelta(days=STUCK_OFFER_DAYS)
         stmt = text("""
-            SELECT external_id, last_status_changed_at, estimated_value
+            SELECT external_id, status_changed_at, estimated_value
             FROM v_mefi_leads_active
             WHERE tenant_id = :tenant_id
-              AND funnel_stage = 'oferta'
-              AND last_status_changed_at < :cutoff
+              AND reached_offer = true
+              AND NOT reached_contract
               AND lifecycle = 'active'
-        """).bindparams(tenant_id=self._tenant_id, cutoff=cutoff)
+              AND status_changed_at < :cutoff
+        """).bindparams(
+            bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
+            cutoff=cutoff,
+        ).bindparams(tenant_id=self._tenant_id)
         result = await self._session.execute(stmt)
         rows = result.fetchall()
         return [
@@ -240,7 +269,7 @@ class AnomalyService:
         stmt = select(
             SalespersonDailyKpi.salesperson_external_id,
             SalespersonDailyKpi.conversion_o_to_c,
-            SalespersonDailyKpi.contracts_count,
+            SalespersonDailyKpi.deals_won,
         ).where(
             SalespersonDailyKpi.tenant_id == self._tenant_id,
             SalespersonDailyKpi.date == kpi_date,
@@ -252,21 +281,24 @@ class AnomalyService:
             {
                 "salesperson_external_id": row.salesperson_external_id,
                 "conversion_o_to_c": Decimal(str(row.conversion_o_to_c)),
-                "deals_won": row.contracts_count or 0,
+                "deals_won": row.deals_won or 0,
             }
             for row in rows
         ]
 
     async def _db_fetch_junk_counts(self, kpi_date: date) -> tuple[int, int]:
         """Fetch (junk_count, total_leads) for kpi_date from DB."""
-        from sqlalchemy import text  # deferred — fork-safe
+        from sqlalchemy import bindparam, text  # deferred — fork-safe
 
         junk_stmt = text("""
             SELECT COUNT(*)
             FROM v_mefi_leads_junk
             WHERE tenant_id = :tenant_id
-              AND created_date_local = :kpi_date
-        """).bindparams(tenant_id=self._tenant_id, kpi_date=kpi_date)
+              AND DATE(created_at_source AT TIME ZONE 'Europe/Bucharest') = :kpi_date
+        """).bindparams(
+            bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
+            kpi_date=kpi_date,
+        ).bindparams(tenant_id=self._tenant_id)
         junk_result = await self._session.execute(junk_stmt)
         junk_count = int(junk_result.scalar() or 0)
 
@@ -274,8 +306,11 @@ class AnomalyService:
             SELECT COUNT(*)
             FROM v_mefi_leads_active
             WHERE tenant_id = :tenant_id
-              AND created_date_local = :kpi_date
-        """).bindparams(tenant_id=self._tenant_id, kpi_date=kpi_date)
+              AND DATE(created_at_local) = :kpi_date
+        """).bindparams(
+            bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
+            kpi_date=kpi_date,
+        ).bindparams(tenant_id=self._tenant_id)
         active_result = await self._session.execute(active_stmt)
         active_count = int(active_result.scalar() or 0)
 
