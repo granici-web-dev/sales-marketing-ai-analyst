@@ -19,7 +19,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 1 | Foundation | ✓ Complete (2026-05-21) | 7/7 |
 | 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
 | 3 | Metrics Engine | ✓ Complete (2026-05-28) | 4/4 |
-| 4 | Anomaly Detection | ✓ Complete (2026-05-28) | 4/4 |
+| 4 | Anomaly Detection | ◆ Gap Closure (2026-05-28) | 5/5 |
 | 5 | AI Insights | ○ Pending | — |
 | 6 | Backend HTTP API | ○ Pending | — |
 | 7 | Frontend Dashboards | ○ Pending | — |
