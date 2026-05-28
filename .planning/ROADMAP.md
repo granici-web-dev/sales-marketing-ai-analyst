@@ -171,7 +171,7 @@ Plans:
 Plans:
 - [x] 07-01-PLAN.md — Infrastructure + Foundations (KI-01 fix, packages, QueryClientProvider, formatters, mobile layout, i18n namespaces) ← **Wave 1 — all others depend on this**
 - [x] 07-02-PLAN.md — Sales Dashboard (funnel chart, KPI cards, source breakdown, revenue trend, stuck offers) ← Wave 2 (parallel with 03, 04)
-- [ ] 07-03-PLAN.md — Salespeople Dashboard (sortable leaderboard table, per-rep funnel, TTFT red highlight) ← Wave 2 (parallel with 02, 04)
+- [x] 07-03-PLAN.md — Salespeople Dashboard (sortable leaderboard table, per-rep funnel, TTFT red highlight) ← Wave 2 (parallel with 02, 04)
 - [ ] 07-04-PLAN.md — Marketing Dashboard (source volume line chart, junk % table, ad-spend placeholder) ← Wave 2 (parallel with 02, 03)
 - [ ] 07-05-PLAN.md — Insights Dashboard (problem cards, refresh rate-limit, historical picker, fallback) ← **Wave 3 — depends on 01..04; contains blocking mobile checkpoint**
 **Wave dependency:** 01 → {02, 03, 04} → 05 (02/03/04 parallelisable)
@@ -224,7 +224,7 @@ Plans:
 | 4. Anomaly Detection | 3/4 | In progress | — |
 | 5. AI Insights | 4/4 | Executed | 2026-05-28 |
 | 6. Backend HTTP API | 3/4 | In progress | — |
-| 7. Frontend Dashboards | 1/5 | In progress | — |
+| 7. Frontend Dashboards | 3/5 | In progress | — |
 | 8. AI Chat | 0/? | Not started | — |
 | 9. Polish & Deploy | 0/? | Not started | — |
 
