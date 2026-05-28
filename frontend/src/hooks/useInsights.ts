@@ -89,32 +89,51 @@ export function useInsightsByDate(date: string | null) {
 }
 
 /**
- * INSI-03: Trigger a manual pipeline refresh.
- * W10 fix — uses useMutation (not a raw async function).
+ * INSI-03: Trigger an on-demand AI insight generation.
+ *
+ * Accepts an optional YYYY-MM-DD date string. When `null`, the backend
+ * generates for the default day (yesterday in Europe/Bucharest, matching the
+ * /today endpoint). When a date is provided, that day's existing KPIs +
+ * anomalies are passed to Claude for a fresh narrative.
+ *
  * On 429: returns { ok: false, retryAfterSeconds } from Retry-After header.
- * On 2xx: invalidates the "insights today" query.
+ * On 2xx: waits ~10s for Claude to finish, then invalidates the relevant
+ * insights query so the page re-renders with the new payload.
  */
 export function useInsightsRefresh() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (): Promise<{
+    mutationFn: async (
+      date: string | null,
+    ): Promise<{
       ok: boolean;
       retryAfterSeconds: number | null;
+      date: string | null;
     }> => {
-      const res = await apiClient.post("/api/v1/insights/refresh", {});
+      const url =
+        date !== null
+          ? `/api/v1/insights/refresh?date=${date}`
+          : "/api/v1/insights/refresh";
+      const res = await apiClient.post(url, {});
       if (res.status === 429) {
-        // Parse Retry-After header (in seconds) per INSI-03
         const retryAfter = parseInt(
           res.headers.get("Retry-After") ?? "0",
           10,
         );
-        return { ok: false, retryAfterSeconds: retryAfter };
+        return { ok: false, retryAfterSeconds: retryAfter, date };
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return { ok: true, retryAfterSeconds: null };
+      // Claude generation typically takes 6–8s. Wait before resolving so the
+      // mutation stays `isPending` (button spinner stays visible) until the
+      // new payload is ready to fetch.
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+      return { ok: true, retryAfterSeconds: null, date };
     },
     onSuccess: (data) => {
-      if (data.ok) {
+      if (!data.ok) return;
+      if (data.date !== null) {
+        queryClient.invalidateQueries({ queryKey: ["insights", data.date] });
+      } else {
         queryClient.invalidateQueries({ queryKey: ["insights", "today"] });
       }
     },

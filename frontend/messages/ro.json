@@ -135,9 +135,9 @@
       "medium": "Ridicată",
       "low": "Medie"
     },
-    "refreshButton": "Reîmprospătează",
-    "refreshCountdown": "Reîmprospătează ({remaining})",
-    "rateLimitMessage": "Poți reîmprospăta o dată pe oră. Mai ai {minutes} minute.",
+    "refreshButton": "Generează insight",
+    "refreshCountdown": "Generează insight ({remaining})",
+    "rateLimitMessage": "Poți regenera această zi o dată pe oră. Mai ai {minutes} minute.",
     "generationFailed": "Generarea automată a eșuat. Se afișează problemele detectate automat.",
     "noInsight": "Analiză indisponibilă",
     "noInsightDesc": "Nu există o analiză generată pentru data selectată.",
@@ -154,7 +154,12 @@
     "noData": "Fără date disponibile",
     "noDataDesc": "Nu există date disponibile pentru perioada selectată.",
     "dataStale": "Datele nu au fost actualizate recent. Ultima sincronizare: {lastSync}.",
-    "never": "niciodată"
+    "never": "niciodată",
+    "refreshData": "Actualizează date",
+    "refreshDataLoading": "Sincronizare în curs...",
+    "refreshDataSuccess": "Actualizat",
+    "refreshDataRateLimited": "Prea multe cereri",
+    "refreshDataError": "Eroare la actualizare"
   },
   "errors": {
     "networkError": "Eroare de rețea. Verifică conexiunea.",

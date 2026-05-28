@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { DayPicker, type DateRange } from "react-day-picker";
 import { format, subDays, startOfMonth, startOfYear } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, RefreshCw, Loader2, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,14 +18,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { formatDate } from "@/lib/formatters";
 import { useUrlDateRange } from "@/hooks/useUrlDateRange";
+import { useSyncTrigger } from "@/hooks/useSyncTrigger";
 import { cn } from "@/lib/utils";
 
 // Detect hydration-safe viewport
@@ -194,25 +189,45 @@ export function DateRangePicker() {
         </Popover>
       )}
 
-      {/* SALE-06 shape: disabled YoY toggle — Phase 9 feature placeholder */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span>
-              <Button
-                variant="outline"
-                disabled
-                className="min-h-[44px] opacity-60 cursor-not-allowed"
-              >
-                Comparare An/An
-              </Button>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Disponibil în curând</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <RefreshDataButton />
     </div>
+  );
+}
+
+function RefreshDataButton() {
+  const t = useTranslations("common");
+  const { trigger, state, isRunning } = useSyncTrigger();
+
+  let label = t("refreshData");
+  let icon = <RefreshCw size={16} />;
+  let variant: "outline" | "default" = "outline";
+  let title: string | undefined;
+
+  if (isRunning || state.kind === "running") {
+    label = t("refreshDataLoading");
+    icon = <Loader2 size={16} className="animate-spin" />;
+  } else if (state.kind === "success") {
+    label = t("refreshDataSuccess");
+    icon = <Check size={16} className="text-green-600" />;
+    variant = "default";
+  } else if (state.kind === "rate-limited") {
+    label = t("refreshDataRateLimited");
+    title = `${state.retryAfterSeconds}s`;
+  } else if (state.kind === "error") {
+    label = t("refreshDataError");
+    title = state.message;
+  }
+
+  return (
+    <Button
+      variant={variant}
+      onClick={trigger}
+      disabled={isRunning || state.kind === "rate-limited"}
+      title={title}
+      className="min-h-[44px] gap-2 text-sm font-normal"
+    >
+      {icon}
+      {label}
+    </Button>
   );
 }

@@ -45,7 +45,7 @@ logger = structlog.get_logger(__name__)
     soft_time_limit=120,
     time_limit=180,
 )
-def generate_daily_insights(self, tenant_id: str) -> dict:
+def generate_daily_insights(self, tenant_id: str, kpi_date_iso: str | None = None) -> dict:
     """Generate AI insights for the given tenant.
 
     Fourth and final link in the PIPE-01 daily pipeline chain (D-17).
@@ -53,12 +53,22 @@ def generate_daily_insights(self, tenant_id: str) -> dict:
 
     Args:
         tenant_id: UUID string for the tenant (T-05-04-01 — validated as UUID at entry).
+        kpi_date_iso: Optional ISO-8601 date string (YYYY-MM-DD). When None,
+            defaults to yesterday in Europe/Bucharest. Used by on-demand
+            generation from the Insights dashboard refresh button so the CEO
+            can regenerate any historical day's narrative.
 
     Returns:
         Dict with status, kpi_date, duration_ms.
     """
+    from datetime import date as _date_type
+
+    parsed_date: _date_type | None = None
+    if kpi_date_iso is not None:
+        parsed_date = _date_type.fromisoformat(kpi_date_iso)
+
     # CR-05 pattern: no manual try/except self.retry() — autoretry_for handles it.
-    return asyncio.run(_generate_async(UUID(tenant_id)))
+    return asyncio.run(_generate_async(UUID(tenant_id), kpi_date=parsed_date))
 
 
 async def _generate_async(

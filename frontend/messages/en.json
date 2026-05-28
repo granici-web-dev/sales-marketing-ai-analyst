@@ -135,9 +135,9 @@
       "medium": "High",
       "low": "Medium"
     },
-    "refreshButton": "Refresh",
-    "refreshCountdown": "Refresh ({remaining})",
-    "rateLimitMessage": "You can refresh once per hour. {minutes} minutes remaining.",
+    "refreshButton": "Generate insight",
+    "refreshCountdown": "Generate insight ({remaining})",
+    "rateLimitMessage": "You can regenerate this day once per hour. {minutes} minutes remaining.",
     "generationFailed": "Automatic generation failed. Showing automatically detected issues.",
     "noInsight": "Insight unavailable",
     "noInsightDesc": "No insight has been generated for the selected date.",
@@ -154,7 +154,12 @@
     "noData": "No data available",
     "noDataDesc": "No data available for the selected period.",
     "dataStale": "Data has not been updated recently. Last sync: {lastSync}.",
-    "never": "never"
+    "never": "never",
+    "refreshData": "Refresh data",
+    "refreshDataLoading": "Syncing...",
+    "refreshDataSuccess": "Updated",
+    "refreshDataRateLimited": "Too many requests",
+    "refreshDataError": "Refresh failed"
   },
   "errors": {
     "networkError": "Network error. Check your connection.",

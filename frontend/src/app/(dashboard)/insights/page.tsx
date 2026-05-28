@@ -114,7 +114,7 @@ function InsightsPageContent() {
   }
 
   function handleRefresh() {
-    refreshMutation.mutate();
+    refreshMutation.mutate(selectedDate);
   }
 
   const isRateLimited = retryAfterSeconds !== null;

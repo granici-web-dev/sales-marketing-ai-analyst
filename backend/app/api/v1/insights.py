@@ -66,10 +66,14 @@ async def get_insight_by_date(
 @router.post("/refresh", status_code=202, response_model=RefreshResponse)
 async def refresh_insights(
     response: Response,
+    target_date: date | None = Query(None, alias="date"),
     session: AsyncSession = Depends(get_session),
     current_user: UserOut = Depends(get_current_user),
 ) -> RefreshResponse:
-    rate_key = f"rate_limit:refresh:{current_user.id}"
+    # Rate-limit per (user, date) so the CEO can regenerate different historical
+    # days back-to-back, while still preventing spam on any single day.
+    date_key = target_date.isoformat() if target_date is not None else "default"
+    rate_key = f"rate_limit:refresh:{current_user.id}:{date_key}"
 
     async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:
         was_set = await r.set(rate_key, "1", nx=True, ex=RATE_LIMIT_TTL)
@@ -82,14 +86,21 @@ async def refresh_insights(
                 headers={"Retry-After": str(retry_after)},
             )
 
-    # Per locked decision: trigger the FULL daily_pipeline chain
-    # (sync_mefi_leads → calculate_daily_kpis → detect_anomalies → generate_daily_insights)
-    from app.tasks.etl.sync_mefi_leads import daily_pipeline
+    # Dispatch ONLY the insight-generation step. KPIs and anomalies for past
+    # dates already live in the metric tables (Phase 3 backfill); regenerating
+    # the AI narrative for any historical day just needs a fresh Claude call.
+    from app.tasks.insights.generate_daily_insights import generate_daily_insights
 
     tenant_id_str = str(UUID(settings.sofa_belle_tenant_id))
-    task = daily_pipeline(tenant_id_str).delay()
+    kpi_date_iso = target_date.isoformat() if target_date is not None else None
+    task = generate_daily_insights.delay(tenant_id_str, kpi_date_iso)
 
-    logger.info("insights.refresh_enqueued", user_id=str(current_user.id), task_id=str(task.id))
+    logger.info(
+        "insights.refresh_enqueued",
+        user_id=str(current_user.id),
+        task_id=str(task.id),
+        kpi_date=kpi_date_iso,
+    )
     return RefreshResponse(
         pipeline_run_id=str(task.id),
         enqueued_at=datetime.now(timezone.utc).isoformat(),
