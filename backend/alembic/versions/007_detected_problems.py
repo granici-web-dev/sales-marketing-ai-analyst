@@ -54,6 +54,14 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        # Detection timestamp — when the anomaly was first detected.
+        # Mirrors ORM model: detected_at: Mapped[datetime] = mapped_column(TIMESTAMPTZ, server_default="now()", nullable=False)
+        sa.Column(
+            "detected_at",
+            sa.TIMESTAMP(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         # Business date — NOT NULL; part of 3-column UPSERT conflict target
         sa.Column("date", sa.Date, nullable=False),
         # Rule identifier — TEXT NOT NULL; one of: slow_first_touch | stuck_offer |
