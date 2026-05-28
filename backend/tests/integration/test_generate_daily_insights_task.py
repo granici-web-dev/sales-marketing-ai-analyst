@@ -21,6 +21,7 @@ import os
 import subprocess
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
@@ -258,19 +259,14 @@ def test_no_claude_calls_in_http_handlers() -> None:
     This test does NOT require TEST_DATABASE_URL and runs on every pytest run.
     REQUIRED TO PASS from Wave 0 (no production code exists yet, so trivially true).
     """
-    project_root = "/Users/sergheigranici/Desktop/sofabelle/sales-marketing-ai-analyst"
+    # Navigate from tests/integration/ up to the project root (CR-03 fix: dynamic path)
+    project_root = Path(__file__).resolve().parent.parent.parent.parent
+    api_dir = project_root / "backend" / "app" / "api"
 
     result = subprocess.run(
-        [
-            "grep",
-            "-r",
-            "AsyncAnthropic",
-            "--include=*.py",
-            "backend/app/api/",
-        ],
+        ["grep", "-r", "AsyncAnthropic", "--include=*.py", str(api_dir)],
         capture_output=True,
         text=True,
-        cwd=project_root,
     )
 
     assert result.stdout == "", (
