@@ -57,6 +57,14 @@ class AnomalyRepository:
                 f"AnomalyRepository.upsert_detected_problem: row missing tenant_id — "
                 f"date={row.get('date', '<unknown>')}, rule_id={row.get('rule_id', '<unknown>')}"
             )
+        # Cross-tenant write guard (WR-01, CLAUDE.md Principle #3):
+        # Core INSERT bypasses with_loader_criteria, so validate here that the
+        # caller has not wired the wrong service-to-repository pair.
+        if row["tenant_id"] != self._tenant_id:
+            raise ValueError(
+                f"AnomalyRepository.upsert_detected_problem: cross-tenant write blocked — "
+                f"row.tenant_id={row['tenant_id']!r} != repository.tenant_id={self._tenant_id!r}"
+            )
 
         from app.models.anomaly.detected_problem import DetectedProblem  # deferred — fork-safe
 
