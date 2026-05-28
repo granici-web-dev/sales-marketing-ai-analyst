@@ -29,14 +29,17 @@ def _make_service(mock_session=None):
     return DashboardReadService(session, TENANT_ID), session
 
 
-def _mock_execute_result(rows=None, scalar=None, first=None):
+_SENTINEL = object()
+
+
+def _mock_execute_result(rows=None, scalar=_SENTINEL, first=_SENTINEL):
     """Build a mock result for session.execute() calls."""
     result = MagicMock()
     if rows is not None:
         result.all.return_value = rows
-    if scalar is not None:
+    if scalar is not _SENTINEL:
         result.scalar_one_or_none.return_value = scalar
-    if first is not None:
+    if first is not _SENTINEL:
         result.first.return_value = first
     return result
 
