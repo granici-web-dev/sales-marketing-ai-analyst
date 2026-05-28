@@ -19,7 +19,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 1 | Foundation | ✓ Complete (2026-05-21) | 7/7 |
 | 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
 | 3 | Metrics Engine | ✓ Complete (2026-05-28) | 4/4 |
-| 4 | Anomaly Detection | ◆ Gap Closure (2026-05-28) | 5/5 |
+| 4 | Anomaly Detection | ✓ Complete (2026-05-28) | 5/5 |
 | 5 | AI Insights | ○ Pending | — |
 | 6 | Backend HTTP API | ○ Pending | — |
 | 7 | Frontend Dashboards | ○ Pending | — |
@@ -80,6 +80,8 @@ None currently.
 **2026-05-28 session (04-03 executed):** Phase 4 Plan 03 (service layer) COMPLETE. AnomalyService (5 detect methods + run_all_rules orchestrator) + AnomalyRepository (3-col UPSERT). All 23 unit tests GREEN. Optional-params design: detect_*() methods accept pre-fetched data for testability, auto-fetch from DB when called from run_all_rules(). Key decisions: optional params pattern (AsyncMock-friendly), CLOSE_RATE_FALLBACK=0.15, underperforming sp loss = count × avg_deal_size × 0.30 proxy.
 
 **2026-05-28 session (04-04 executed):** Phase 4 Plan 04 (Celery task wiring) COMPLETE. detect_anomalies task (NullPool, deferred imports, WR-06 stale SyncRun cleanup, PIPE-04 audit trail, WR-04 single commit, CR-05 autoretry). daily_pipeline() extended to 3-link chain: sync_mefi_leads → calculate_daily_kpis → detect_anomalies. celery_app.py include list updated. 45 tests passed (3 skipped live-DB integration). Phase 4 COMPLETE — advancing to Phase 5 AI Insights.
+
+**2026-05-28 session (04-05 executed):** Phase 4 Plan 05 (Gap Closure CR-01, CR-02, INFO) COMPLETE. Two BLOCKER defects closed: (1) CR-01 — migration 007 now includes `detected_at TIMESTAMPTZ NOT NULL DEFAULT now()` between updated_at and date columns (13 columns match ORM model exactly); (2) CR-02 — `_get_junk_ids()` SQL now date-scoped via `AND created_date_local = :kpi_date` (no more all-time junk inflation). INFO closed: context_json keys renamed count→junk_count, total→total_leads per ORM model docstring. All 23 unit tests GREEN. Phase 4 gap-closure complete — Phase 4 FULLY COMPLETE.
 
 ## Known Issues
 
