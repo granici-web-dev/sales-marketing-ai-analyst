@@ -20,6 +20,9 @@ from app.models.mefi import MefiLeadHistory, MefiSalesperson, RawMefiLead  # noq
 # Phase 3 models — metric tables (daily_kpi, salesperson_daily_kpi, source_daily_kpi)
 from app.models.metrics import DailyKpi, SalespersonDailyKpi, SourceDailyKpi  # noqa: F401
 
+# Phase 4 models — anomaly detection (detected_problems)
+from app.models.anomaly import DetectedProblem  # noqa: F401
+
 __all__ = [
     # Phase 1
     "PipelineRun",
@@ -34,4 +37,6 @@ __all__ = [
     "DailyKpi",
     "SalespersonDailyKpi",
     "SourceDailyKpi",
+    # Phase 4
+    "DetectedProblem",
 ]
