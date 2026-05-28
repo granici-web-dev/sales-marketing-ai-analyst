@@ -167,7 +167,13 @@ Plans:
 6. Throttled-network test (slow 3G in DevTools) shows skeleton loading states on every chart/table; mocking 500 from API shows error state with retry; mocking empty-data returns empty state copy (not blank screen).
 7. Data freshness banner appears at the top of every dashboard page when `last_sync_at > 26h ago` or the last pipeline run failed.
 8. Layout renders correctly at 1280px (desktop) and 768px (tablet) widths; grep of frontend source returns zero `@tremor/react` imports.
-**Plans:** TBD
+**Plans:** 5 plans
+Plans:
+- [ ] 07-01-PLAN.md — Infrastructure + Foundations (KI-01 fix, packages, QueryClientProvider, formatters, mobile layout, i18n namespaces)
+- [ ] 07-02-PLAN.md — Sales Dashboard (funnel chart, KPI cards, source breakdown, revenue trend, stuck offers)
+- [ ] 07-03-PLAN.md — Salespeople Dashboard (sortable leaderboard table, per-rep funnel, TTFT red highlight)
+- [ ] 07-04-PLAN.md — Marketing Dashboard (source volume line chart, junk % table, ad-spend placeholder)
+- [ ] 07-05-PLAN.md — Insights Dashboard (problem cards, refresh rate-limit, historical picker, fallback)
 **UI hint:** yes
 
 ---
@@ -216,7 +222,7 @@ Plans:
 | 4. Anomaly Detection | 3/4 | In progress | — |
 | 5. AI Insights | 4/4 | Executed | 2026-05-28 |
 | 6. Backend HTTP API | 3/4 | In progress | — |
-| 7. Frontend Dashboards | 0/? | Not started | — |
+| 7. Frontend Dashboards | 0/5 | Planned (2026-05-28) | — |
 | 8. AI Chat | 0/? | Not started | — |
 | 9. Polish & Deploy | 0/? | Not started | — |
 
