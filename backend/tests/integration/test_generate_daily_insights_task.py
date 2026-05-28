@@ -125,7 +125,7 @@ async def test_task_writes_success_row() -> None:
     mock_response = _make_mock_anthropic_response(_make_valid_insight_payload())
 
     try:
-        with patch("anthropic.AsyncAnthropic") as mock_cls:
+        with patch("app.services.insights.insight_service.AsyncAnthropic") as mock_cls:
             mock_client = AsyncMock()
             mock_cls.return_value = mock_client
             mock_client.messages.create = AsyncMock(return_value=mock_response)
@@ -174,7 +174,7 @@ async def test_token_usage_logged() -> None:
     )
 
     try:
-        with patch("anthropic.AsyncAnthropic") as mock_cls:
+        with patch("app.services.insights.insight_service.AsyncAnthropic") as mock_cls:
             mock_client = AsyncMock()
             mock_cls.return_value = mock_client
             mock_client.messages.create = AsyncMock(return_value=mock_response)
@@ -218,7 +218,7 @@ async def test_upsert_is_idempotent() -> None:
     mock_response = _make_mock_anthropic_response(_make_valid_insight_payload())
 
     try:
-        with patch("anthropic.AsyncAnthropic") as mock_cls:
+        with patch("app.services.insights.insight_service.AsyncAnthropic") as mock_cls:
             mock_client = AsyncMock()
             mock_cls.return_value = mock_client
             mock_client.messages.create = AsyncMock(return_value=mock_response)
@@ -294,7 +294,7 @@ async def test_fallback_on_all_claude_failures() -> None:
     engine = create_async_engine(_TEST_DB_URL)
 
     try:
-        with patch("anthropic.AsyncAnthropic") as mock_cls:
+        with patch("app.services.insights.insight_service.AsyncAnthropic") as mock_cls:
             mock_client = AsyncMock()
             mock_cls.return_value = mock_client
             # Always raises — simulates total API failure
