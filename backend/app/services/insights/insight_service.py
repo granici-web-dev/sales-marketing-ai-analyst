@@ -112,20 +112,24 @@ class InsightService:
             )
 
             if tool_block is None:
+                # WR-02: Capture whatever Claude returned for debugging (not just "")
+                last_raw = json.dumps([
+                    {"type": b.type, "text": getattr(b, "text", "")[:500]}
+                    for b in response.content
+                ])
                 self._log.warning("insight.no_tool_block", attempt=attempt)
                 continue
 
             last_raw = json.dumps(tool_block.input)
 
+            from pydantic import ValidationError  # noqa: PLC0415
+
             try:
-                from pydantic import ValidationError  # noqa: PLC0415
                 parsed = DailyInsightResponse.model_validate(tool_block.input)
-            except Exception as exc:
+            except ValidationError as exc:
+                # WR-04: Only catch ValidationError — non-Pydantic exceptions propagate
                 # Log field paths only — not full error text (may contain business data)
-                try:
-                    error_locs = [str(e.get("loc", "")) for e in exc.errors()]  # type: ignore[attr-defined]
-                except Exception:
-                    error_locs = ["<parse_error>"]
+                error_locs = [str(e.get("loc", "")) for e in exc.errors()]
                 self._log.warning(
                     "insight.pydantic_validation_failed",
                     attempt=attempt,
