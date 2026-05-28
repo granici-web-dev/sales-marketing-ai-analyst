@@ -91,33 +91,30 @@ celery_app.conf.update(
 
 # ── Daily pipeline beat schedule ─────────────────────────────────────────────
 # Registered after conf.update() so redbeat_key_prefix is already set.
-# Phase 3 will extend daily_pipeline() in sync_mefi_leads.py instead of
-# modifying this file — the beat entry here stays stable across phases.
 #
 # Schedule: 04:00 Europe/Bucharest daily (INFRA-04, PIPE-01).
 # Uses redbeat.RedBeatSchedulerEntry for Redis persistence.
+#
+# CR-01 fix: schedule the full daily_pipeline() chain, not standalone tasks.
+# daily_pipeline() chains: sync_mefi_leads → calculate_daily_kpis →
+#   detect_anomalies → generate_daily_insights (PIPE-02 chain halt semantics).
+# If sync fails at 04:00, the chain halts — insights will NOT run against
+# stale data. The standalone daily-insights-generation entry is removed;
+# generate_daily_insights is now the 4th link in the chain.
 try:
-    from redbeat import RedBeatSchedulerEntry
-    from celery.schedules import crontab
+    from redbeat import RedBeatSchedulerEntry  # noqa: PLC0415
+    from celery.schedules import crontab  # noqa: PLC0415
 
+    from app.tasks.etl.sync_mefi_leads import daily_pipeline  # noqa: PLC0415
+
+    _pipeline_sig = daily_pipeline(settings.sofa_belle_tenant_id)
     _entry = RedBeatSchedulerEntry(
-        name="daily-mefi-sync",
-        task="tasks.etl.sync_mefi_leads",
+        name="daily-pipeline",
+        task=_pipeline_sig,  # full chain: sync → kpis → anomaly → insights
         schedule=crontab(hour=4, minute=0),
-        args=[settings.sofa_belle_tenant_id],
         app=celery_app,
     )
     _entry.save()
-
-    # 06:00 Europe/Bucharest — AI Insights after ETL+metrics+anomaly (D-20)
-    _insights_entry = RedBeatSchedulerEntry(
-        name="daily-insights-generation",
-        task="tasks.etl.generate_daily_insights",
-        schedule=crontab(hour=6, minute=0),
-        args=[settings.sofa_belle_tenant_id],
-        app=celery_app,
-    )
-    _insights_entry.save()
 except Exception:  # noqa: BLE001
     # Beat schedule registration is best-effort at import time;
     # the beat container registers it authoritatively on startup.
