@@ -144,18 +144,19 @@ async def _detect_async(tenant_id: UUID) -> dict:
             problems = await svc.run_all_rules(kpi_date)
             log.info("anomaly.rules_done", kpi_date=str(kpi_date), problems_found=len(problems))
 
-            # ── Step 4: Upsert problem rows — NO commit per row (WR-04) ───────
-            # Single commit after all upserts — idempotent (D-01 / Pitfall 5)
+            # ── Step 4+5: Upsert results AND update SyncRun in one atomic transaction ──
+            # WR-02: Merging the two separate commits into one prevents the race window
+            # where all detected_problems rows are durable but SyncRun stays stuck in
+            # "running" if the process is killed between the two commits.
             for problem in problems:
                 await repo.upsert_detected_problem(problem)
-            await session.commit()
 
-            # ── Step 5: Update SyncRun to success ────────────────────────────
             elapsed_ms = int((datetime.now(UTC) - detect_start_at).total_seconds() * 1000)
             sync_run.status = "success"
             sync_run.records_synced = len(problems)
             sync_run.duration_ms = elapsed_ms
             sync_run.completed_at = datetime.now(UTC)
+            # Single atomic commit covers both upserts and SyncRun update (WR-02)
             await session.commit()
 
             log.info(
