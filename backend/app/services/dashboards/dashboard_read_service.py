@@ -398,7 +398,11 @@ class DashboardReadService:
             })
 
         lead_volume_by_source = [
-            {"source": src, "series": series}
+            {
+                "source": src,
+                "series": series,
+                "total_leads": sum(point["leads"] for point in series),
+            }
             for src, series in vol_by_source.items()
         ]
 
