@@ -112,10 +112,23 @@ def cross_check(parsed: object, kpi_snapshot: dict, problems_input: list[dict]) 
     # Build reference set — all numeric values from input data
     reference_values: list[float] = []
 
+    # CR-02: KPI fields stored as decimals (e.g. conversion_l_to_c = 0.1080) but Claude
+    # expresses them as percentages in narrative text (e.g. "10.8% conversie L→C").
+    # Add the percentage-form value alongside the raw decimal so cross_check passes
+    # for both representations.
+    PERCENT_FIELDS = {
+        "conversion_l_to_v", "conversion_v_to_o", "conversion_o_to_c",
+        "conversion_l_to_c", "wow_delta_pct", "mom_delta_pct",
+    }
+
     for key, val in kpi_snapshot.items():
         if val is not None:
             try:
-                reference_values.append(float(str(val)))
+                float_val = float(str(val))
+                reference_values.append(float_val)
+                # Also add percentage form for decimal-fraction KPI fields
+                if key in PERCENT_FIELDS:
+                    reference_values.append(float_val * 100)
             except (ValueError, TypeError):
                 pass
 
