@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import bcrypt
 import structlog
-from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +9,8 @@ from app.models.user import User
 
 logger = structlog.get_logger(__name__)
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt's hard limit is 72 bytes; truncate to avoid ValueError on longer inputs.
+_MAX_BYTES = 72
 
 
 async def authenticate_user(
@@ -24,14 +25,14 @@ async def authenticate_user(
     user = result.scalar_one_or_none()
     if user is None:
         return None
-    if not _pwd_context.verify(password, user.hashed_password):
+    if not verify_password(password, user.hashed_password):
         return None
     return user
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return _pwd_context.verify(plain, hashed)
+    return bcrypt.checkpw(plain.encode()[:_MAX_BYTES], hashed.encode())
 
 
 def hash_password(plain: str) -> str:
-    return _pwd_context.hash(plain)
+    return bcrypt.hashpw(plain.encode()[:_MAX_BYTES], bcrypt.gensalt(rounds=12)).decode()

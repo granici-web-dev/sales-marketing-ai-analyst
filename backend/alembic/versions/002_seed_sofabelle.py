@@ -13,8 +13,8 @@ Security notes (T-04-02):
   - The plaintext password is NEVER stored anywhere in the codebase.
   - Initial password: Admin1234!  (must be changed after first login)
   - Hash was computed using:
-    python -c "from passlib.context import CryptContext; print(CryptContext(['bcrypt']).hash('Admin1234!'))"
-  - Hash value: $2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewFXi0F8lv8mzNqe
+    python -c "import bcrypt; print(bcrypt.hashpw(b'Admin1234!', bcrypt.gensalt(rounds=12)).decode())"
+  - Hash value: $2b$12$NiZht6VcY7E5p2r0aMRtW.ODg6uvd/PvEC78f71SuXbqggJW319vy
 
 This migration does NOT need a downgrade — seed data is not reversed.
 If re-running from scratch, drop and recreate the database.
@@ -40,9 +40,9 @@ ADMIN_USER_ID = "00000000-0000-0000-0000-000000000002"
 ADMIN_EMAIL = "admin@sofabelle.ro"
 
 # bcrypt hash of initial admin password "Admin1234!" (work factor 12).
-# Generated at migration authoring time via passlib. NEVER store plaintext.
+# Generated via: python -c "import bcrypt; print(bcrypt.hashpw(b'Admin1234!', bcrypt.gensalt(rounds=12)).decode())"
 # IMPORTANT: Change this password immediately after first login.
-ADMIN_PASSWORD_HASH = "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewFXi0F8lv8mzNqe"
+ADMIN_PASSWORD_HASH = "$2b$12$NiZht6VcY7E5p2r0aMRtW.ODg6uvd/PvEC78f71SuXbqggJW319vy"
 
 
 def upgrade() -> None:
