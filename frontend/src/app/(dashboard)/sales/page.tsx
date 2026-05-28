@@ -1,10 +1,9 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useSalesDashboard } from "@/hooks/useSalesDashboard";
-import { getDefaultDateRange } from "@/lib/formatters";
+import { useUrlDateRange } from "@/hooks/useUrlDateRange";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { KpiCards } from "@/components/dashboards/sales/kpi-cards";
 import { FunnelChart } from "@/components/dashboards/sales/funnel-chart";
@@ -29,16 +28,9 @@ function InlineError({ onRetry }: { onRetry: () => void }) {
 
 function SalesPageContent() {
   const t = useTranslations("sales");
-  const searchParams = useSearchParams();
-  const defaults = getDefaultDateRange();
-
-  // T-7-01 mitigation: validate URL date params, fall back to defaults on invalid
-  const rawFrom = searchParams.get("from") ?? defaults.from;
-  const rawTo = searchParams.get("to") ?? defaults.to;
-  const fromDate = new Date(rawFrom);
-  const toDate = new Date(rawTo);
-  const from = isNaN(fromDate.getTime()) ? defaults.from : rawFrom;
-  const to = isNaN(toDate.getTime()) ? defaults.to : rawTo;
+  // useUrlDateRange reads window.location.search on mount (bulletproof initial
+  // value) and syncs to searchParams afterwards (T-7-01 + validates YMD format).
+  const { from, to } = useUrlDateRange();
 
   const { data, isLoading, isError, refetch } = useSalesDashboard(from, to);
 

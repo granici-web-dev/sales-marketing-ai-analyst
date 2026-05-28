@@ -1,10 +1,10 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMarketingDashboard } from "@/hooks/useMarketingDashboard";
-import { formatPct, getDefaultDateRange } from "@/lib/formatters";
+import { formatPct } from "@/lib/formatters";
+import { useUrlDateRange } from "@/hooks/useUrlDateRange";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { SourceVolumeChart } from "@/components/dashboards/marketing/source-volume-chart";
 import { JunkPctTable } from "@/components/dashboards/marketing/junk-pct-table";
@@ -27,16 +27,8 @@ function InlineError({ onRetry }: { onRetry: () => void }) {
 
 function MarketingPageContent() {
   const t = useTranslations("marketing");
-  const searchParams = useSearchParams();
-  const defaults = getDefaultDateRange();
-
-  // T-7-10 mitigation: validate URL date params, fall back to defaults on invalid
-  const rawFrom = searchParams.get("from") ?? defaults.from;
-  const rawTo = searchParams.get("to") ?? defaults.to;
-  const fromDate = new Date(rawFrom);
-  const toDate = new Date(rawTo);
-  const from = isNaN(fromDate.getTime()) ? defaults.from : rawFrom;
-  const to = isNaN(toDate.getTime()) ? defaults.to : rawTo;
+  // T-7-10: validates YMD; reads window.location.search on mount (bulletproof).
+  const { from, to } = useUrlDateRange();
 
   const { data, isLoading, isError, refetch } = useMarketingDashboard(from, to);
 

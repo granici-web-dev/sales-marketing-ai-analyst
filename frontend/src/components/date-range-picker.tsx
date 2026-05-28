@@ -24,7 +24,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { formatDate, getDefaultDateRange } from "@/lib/formatters";
+import { formatDate } from "@/lib/formatters";
+import { useUrlDateRange } from "@/hooks/useUrlDateRange";
 import { cn } from "@/lib/utils";
 
 // Detect hydration-safe viewport
@@ -45,21 +46,9 @@ export function DateRangePicker() {
   const t = useTranslations("common");
   const isMobile = useIsMobile();
 
-  const defaults = getDefaultDateRange();
-  const urlFrom = searchParams.get("from");
-  const urlTo = searchParams.get("to");
-
-  // Validate URL params (T-7-01 mitigation): fall back to defaults on invalid dates
-  const validatedFrom = (() => {
-    if (!urlFrom) return defaults.from;
-    const d = new Date(urlFrom);
-    return isNaN(d.getTime()) ? defaults.from : urlFrom;
-  })();
-  const validatedTo = (() => {
-    if (!urlTo) return defaults.to;
-    const d = new Date(urlTo);
-    return isNaN(d.getTime()) ? defaults.to : urlTo;
-  })();
+  // Single source of truth — uses window.location.search on mount, syncs to
+  // searchParams on changes (same hook used by every dashboard page).
+  const { from: validatedFrom, to: validatedTo } = useUrlDateRange();
 
   const [open, setOpen] = useState(false);
   const [range, setRange] = useState<DateRange | undefined>({
@@ -167,7 +156,7 @@ export function DateRangePicker() {
       variant="outline"
       className={cn(
         "min-h-[44px] gap-2 text-sm font-normal",
-        !urlFrom && "text-muted-foreground",
+        !validatedFrom && "text-muted-foreground",
       )}
     >
       <CalendarIcon size={16} />

@@ -1,12 +1,11 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   useSalespeopleDashboard,
 } from "@/hooks/useSalespeopleDashboard";
-import { getDefaultDateRange } from "@/lib/formatters";
+import { useUrlDateRange } from "@/hooks/useUrlDateRange";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { LeaderboardTable } from "@/components/dashboards/salespeople/leaderboard-table";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,16 +25,8 @@ function InlineError({ onRetry }: { onRetry: () => void }) {
 
 function SalespeoplePageContent() {
   const t = useTranslations("salespeople");
-  const searchParams = useSearchParams();
-  const defaults = getDefaultDateRange();
-
-  // T-7-06 mitigation: validate URL date params, fall back to defaults on invalid
-  const rawFrom = searchParams.get("from") ?? defaults.from;
-  const rawTo = searchParams.get("to") ?? defaults.to;
-  const fromDate = new Date(rawFrom);
-  const toDate = new Date(rawTo);
-  const from = isNaN(fromDate.getTime()) ? defaults.from : rawFrom;
-  const to = isNaN(toDate.getTime()) ? defaults.to : rawTo;
+  // T-7-06: validates YMD; reads window.location.search on mount (bulletproof).
+  const { from, to } = useUrlDateRange();
 
   const { data, isLoading, isError, refetch } = useSalespeopleDashboard(
     from,
