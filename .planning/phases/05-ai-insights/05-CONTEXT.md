@@ -207,6 +207,16 @@ Fourth and final link in the PIPE-01 daily pipeline chain. After `detect_anomali
 - `raw_response` column: store the last raw Anthropic API response text on `status='failed'` to assist debugging without re-calling the API.
 - `DailyInsightResponse.generated_at` should be set to `datetime.now(UTC)` by InsightService, not by Claude (avoids timezone issues in Claude's output).
 
+### Real Sofa Belle Data Patterns (from Phase 3 backfill — verified 2026-05-28)
+
+These ground truth patterns MUST inform the system prompt and insight logic:
+
+- **`estimated_value` is NULL for all 1219 leads** — Sofa Belle has not filled deal values in MEFI. Revenue-based insights (`estimated_loss_ron` from anomalies, `avg_deal_size`) use the fallback constant CLOSE_RATE_FALLBACK=0.15 and a heuristic avg_deal_size. Insight text MUST NOT present revenue figures as precise — phrase as "estimat" or avoid until Sofa Belle populates values.
+- **Showroom is the dominant channel**: 360 of 1219 leads (29.5%), but delivers 55% of contracts (39/71) at ~10.8% conversion — the single most important channel to protect. System prompt should acknowledge "Showroom este canalul principal de conversie".
+- **Mail is high-volume, low-quality**: 335 leads (27.5%), only 11 contracts (3.3% conversion). Insight engine should flag mail quality as a structural issue when it fires `junk_lead_quality`.
+- **Salesperson imbalance**: Dragoi Mihaela has the most leads (351, ~29%) but only 10 contracts (2.8% conversion). Raileanu Leon has 265 leads and 22 contracts (8.3% conversion — the best). System prompt roster should note this asymmetry so Claude generates concrete, non-generic actions for underperforming salesperson rules.
+- **Model string**: `claude-sonnet-4-5` (NOT `claude-sonnet-4-6` or any newer string — per CLAUDE.md locked decision). Verify this in `pyproject.toml` when `anthropic` SDK is added.
+
 </specifics>
 
 <deferred>
