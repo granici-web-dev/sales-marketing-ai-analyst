@@ -20,9 +20,10 @@ Patterns tested:
 """
 
 import os
-from datetime import date
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -154,11 +155,14 @@ class TestDetectAnomaliesTask:
         from app.tasks.etl.detect_anomalies import detect_anomalies  # noqa: PLC0415
 
         engine = create_async_engine(_TEST_DB_URL)
-        kpi_date = date.today()
+        # Match the task's exact kpi_date computation (detect_anomalies.py line 106):
+        # datetime.now(BUCHAREST).date() - timedelta(days=1)
+        BUCHAREST = ZoneInfo("Europe/Bucharest")
+        kpi_date = datetime.now(BUCHAREST).date() - timedelta(days=1)
 
         try:
             async with engine.begin() as conn:
-                # Seed 3 junk leads created yesterday with no touch
+                # Seed 3 junk leads created on kpi_date (yesterday) with no touch
                 for i in range(3):
                     await conn.execute(
                         text(
@@ -176,8 +180,7 @@ class TestDetectAnomaliesTask:
                     )
 
                 # Seed 30-day daily_kpi baseline (>= 7 rows required by D-13)
-                from datetime import timedelta
-                from decimal import Decimal
+                from decimal import Decimal  # noqa: PLC0415
 
                 for days_ago in range(1, 31):
                     await conn.execute(
@@ -235,9 +238,47 @@ class TestDetectAnomaliesTask:
         from app.tasks.etl.detect_anomalies import detect_anomalies  # noqa: PLC0415
 
         engine = create_async_engine(_TEST_DB_URL)
-        kpi_date = date.today()
+        # Match the task's exact kpi_date computation (detect_anomalies.py line 106):
+        # datetime.now(BUCHAREST).date() - timedelta(days=1)
+        BUCHAREST = ZoneInfo("Europe/Bucharest")
+        kpi_date = datetime.now(BUCHAREST).date() - timedelta(days=1)
 
         try:
+            async with engine.begin() as conn:
+                # Seed at least one anomaly-triggering condition so rows are actually
+                # written and UPSERT idempotency can be tested (CR-01: without seeded data
+                # the task writes nothing and both runs produce 0 rows, giving a trivial pass).
+                # Seed a slow lead (no first touch) to trigger slow_first_touch rule.
+                await conn.execute(
+                    text(
+                        "INSERT INTO raw_mefi_leads "
+                        "(tenant_id, external_id, lifecycle, created_date_local, "
+                        "time_to_first_touch_minutes, funnel_stage) "
+                        "VALUES (:tenant_id, :ext_id, 'active', :kpi_date, NULL, 'lead') "
+                        "ON CONFLICT (tenant_id, external_id) DO NOTHING"
+                    ),
+                    {
+                        "tenant_id": TENANT_ID,
+                        "ext_id": "upsert-test-slow-lead-0001",
+                        "kpi_date": kpi_date,
+                    },
+                )
+                # Seed 30-day daily_kpi baseline (>= 7 rows required by D-13)
+                for days_ago in range(1, 31):
+                    await conn.execute(
+                        text(
+                            "INSERT INTO daily_kpi "
+                            "(tenant_id, date, leads_total, visits_count, offers_count, "
+                            "contracts_count, conversion_l_to_v, conversion_o_to_c, avg_deal_size) "
+                            "VALUES (:tenant_id, :dt, 10, 3, 2, 1, 0.32, 0.15, 22000) "
+                            "ON CONFLICT (tenant_id, date) DO NOTHING"
+                        ),
+                        {
+                            "tenant_id": TENANT_ID,
+                            "dt": kpi_date - timedelta(days=days_ago),
+                        },
+                    )
+
             # Run detect_anomalies twice
             detect_anomalies.apply(args=[TENANT_ID_STR])
             detect_anomalies.apply(args=[TENANT_ID_STR])
