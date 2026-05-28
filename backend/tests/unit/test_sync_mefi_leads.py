@@ -208,14 +208,13 @@ class TestDailyPipeline:
     """Tests for daily_pipeline() chain composition — D-18, PIPE-01."""
 
     def test_daily_pipeline_chains_calculate_daily_kpis(self) -> None:
-        """daily_pipeline() returns a 2-task chain with calculate_daily_kpis second (D-18).
+        """daily_pipeline() returns a 3-task chain after Phase 4 extension (D-15).
 
-        D-18: calculate_daily_kpis is second in the chain:
-        sync_mefi_leads → calculate_daily_kpis → (Phase 4: detect_anomalies)
+        D-15: Phase 4 extended the chain to:
+        sync_mefi_leads → calculate_daily_kpis → detect_anomalies → (Phase 5: generate_daily_insights)
 
-        Both tasks use .si() (immutable signature). The second task name must be
-        'tasks.etl.calculate_daily_kpis' exactly — this name is used in beat
-        schedule and chain wiring.
+        All tasks use .si() (immutable signature). Task names must match the
+        explicit name= kwargs in @celery_app.task decorators (WR-07).
         """
         from uuid import UUID
 
@@ -226,8 +225,8 @@ class TestDailyPipeline:
 
         # Celery 5.x chain exposes .tasks as a list of Signature objects
         tasks = chain_obj.tasks
-        assert len(tasks) == 2, (
-            f"daily_pipeline() must return a 2-task chain, got {len(tasks)} tasks: "
+        assert len(tasks) == 3, (
+            f"daily_pipeline() must return a 3-task chain (Phase 4 extension), got {len(tasks)} tasks: "
             f"{[t.name for t in tasks]}"
         )
         assert tasks[0].name == "tasks.etl.sync_mefi_leads", (
@@ -236,4 +235,8 @@ class TestDailyPipeline:
         assert tasks[1].name == "tasks.etl.calculate_daily_kpis", (
             f"Second task must be 'tasks.etl.calculate_daily_kpis', got '{tasks[1].name}' "
             "(D-18 chain position)"
+        )
+        assert tasks[2].name == "tasks.etl.detect_anomalies", (
+            f"Third task must be 'tasks.etl.detect_anomalies', got '{tasks[2].name}' "
+            "(D-15 Phase 4 chain extension)"
         )
