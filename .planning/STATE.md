@@ -19,7 +19,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 1 | Foundation | ✓ Complete (2026-05-21) | 7/7 |
 | 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
 | 3 | Metrics Engine | ✓ Complete (2026-05-28) | 4/4 |
-| 4 | Anomaly Detection | ◆ In progress | — |
+| 4 | Anomaly Detection | ◆ In progress | 1/4 |
 | 5 | AI Insights | ○ Pending | — |
 | 6 | Backend HTTP API | ○ Pending | — |
 | 7 | Frontend Dashboards | ○ Pending | — |
@@ -69,6 +69,8 @@ None currently.
 **2026-05-28 session (Phase 3 VERIFIED COMPLETE):** Source categorization rewritten to match real MEFI source_ids verified from 1219 ingested leads. Visits metric now correctly = COUNT(source_id=5) Showroom walk-ins (resolves KI-03 — "Vizita" in Sofa Belle Excel IS the Showroom source, not a funnel stage). MEFI throttle bumped to 0.35s (was 0.15s) to clear burst-limit wall at page 11. All 1219/1222 leads synced (99.8%). Metrics backfilled 148 days (2026-01-23 to 2026-05-06). EXACT MATCH against MEFI Clienți report: total contracts 71 = 71 ✓; per-salesperson contracts all match (Raileanu 22, Roibu 16, Godja 10, Dragoi 10, Zagrian 9, Moaca 3). Funnel: 1219 leads → 360 visits → 417 offers → 71 contracts (5.8% L→C). Sources: showroom 360, mail 335, telefon 208, whatsapp 153, site 124, colaborare 17, meta 9, recomandare 6, arhitect 4, client_fidel 2, other 1. Advancing to Phase 4 — Anomaly Detection.
 
 **2026-05-28 session:** Phase 4 context gathered. Key decisions: one aggregate detected_problems row per rule per day (UPSERT on tenant_id+date+rule_id), context_json holds count+IDs, trailing 30-day close rate from daily_kpi for loss formulas, lost-opportunity formulas for trend rules, single AnomalyService in app/services/anomaly/ (Phase 3 pattern), 7-day minimum baseline window, slow_first_touch checks yesterday-only leads. Resume file: .planning/phases/04-anomaly-detection/04-CONTEXT.md
+
+**2026-05-28 session (04-01 executed):** Phase 4 Plan 01 (Wave 0 test stubs) COMPLETE. 4 files created: anomaly_factory.py (GREEN) + 3 RED-state test files. 28 total tests: 23 unit (18 service + 5 repository) + 5 integration (2 non-DB RED + 3 skipped without TEST_DATABASE_URL). All tests collect cleanly with ModuleNotFoundError confirming RED state. Decision: 25% junk threshold (D-20/ROADMAP SC#6 overrides REQUIREMENTS.md 20% baseline).
 
 ## Known Issues
 

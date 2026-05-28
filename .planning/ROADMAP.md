@@ -105,7 +105,7 @@ Plans:
 7. Each `detected_problems` row has a populated `estimated_loss_ron` computed deterministically from the rule (e.g., stuck_offer = sum(estimated_value of stuck offers) × historical close rate).
 **Plans:** 4 plans
 Plans:
-- [ ] 04-01-PLAN.md — Wave 0 test stubs (RED tests for service, repository, task + anomaly_factory)
+- [x] 04-01-PLAN.md — Wave 0 test stubs (RED tests for service, repository, task + anomaly_factory)
 - [ ] 04-02-PLAN.md — Alembic migration 007 (detected_problems table) + DetectedProblem SQLAlchemy model
 - [ ] 04-03-PLAN.md — AnomalyService (5 rules + run_all_rules) + AnomalyRepository (UPSERT writer)
 - [ ] 04-04-PLAN.md — detect_anomalies Celery task + daily_pipeline chain extension + celery_app registration
@@ -203,7 +203,7 @@ Plans:
 | 1. Foundation | 7/7 | Executed | 2026-05-21 |
 | 2. MEFI ETL | 0/5 | Not started | — |
 | 3. Metrics Engine | 1/4 | In progress | — |
-| 4. Anomaly Detection | 0/4 | In progress | — |
+| 4. Anomaly Detection | 1/4 | In progress | — |
 | 5. AI Insights | 0/? | Not started | — |
 | 6. Backend HTTP API | 0/? | Not started | — |
 | 7. Frontend Dashboards | 0/? | Not started | — |
