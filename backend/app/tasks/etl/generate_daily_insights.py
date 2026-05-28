@@ -187,9 +187,11 @@ async def _generate_async(
             }
             await repo.upsert_daily_insight(final_row)
 
-            # ── Step 5: Update SyncRun to success in same commit (WR-02) ─────────
+            # ── Step 5: Update SyncRun — propagate insight status (WR-01 fix) ─────
+            # status is "success" | "fallback" — both are non-error terminal states.
+            # Previously always "success", which hid fallback events from monitoring.
             elapsed_ms = int((datetime.now(UTC) - task_start_at).total_seconds() * 1000)
-            sync_run.status = "success"
+            sync_run.status = status  # "success" | "fallback" — both non-error terminals
             sync_run.records_synced = 1
             sync_run.duration_ms = elapsed_ms
             sync_run.completed_at = datetime.now(UTC)
