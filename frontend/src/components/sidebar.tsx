@@ -44,7 +44,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[240px] bg-[hsl(240_5%_96%)] border-r border-[hsl(240_6%_90%)] flex flex-col">
+    <aside className="hidden md:flex fixed left-0 top-0 h-screen w-[240px] bg-[hsl(240_5%_96%)] border-r border-[hsl(240_6%_90%)] flex-col">
       {/* Logo / Brand area */}
       <div className="h-14 flex items-center px-4 border-b border-[hsl(240_6%_90%)]">
         <span className="text-base font-semibold text-[hsl(240_10%_4%)]">

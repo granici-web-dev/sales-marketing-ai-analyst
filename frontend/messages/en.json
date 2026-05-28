@@ -37,5 +37,128 @@
   "locale": {
     "ro": "RO",
     "en": "EN"
+  },
+  "sales": {
+    "title": "Sales",
+    "funnel": {
+      "title": "Sales Funnel",
+      "stages": {
+        "lead": "Lead",
+        "visit": "Visit",
+        "offer": "Offer",
+        "contract": "Contract"
+      },
+      "conversion": "Conversion",
+      "noData": "No activity",
+      "noDataDesc": "No leads were recorded in this period.",
+      "noDataIcon": "BarChart3"
+    },
+    "kpi": {
+      "leads": "Leads",
+      "visits": "Visits",
+      "offers": "Offers",
+      "contracts": "Contracts",
+      "revenue": "Revenue",
+      "avgDealSize": "Average deal size"
+    },
+    "sources": {
+      "title": "Lead sources",
+      "leadsColumn": "Leads",
+      "conversionColumn": "Conversion",
+      "noData": "No data",
+      "noDataDesc": "No source data available for the selected period."
+    },
+    "stuckOffers": {
+      "title": "Stuck offers",
+      "days": "{days} days",
+      "noData": "No stuck offers",
+      "noDataDesc": "No stuck offers in this period. Excellent!"
+    },
+    "revenue": {
+      "title": "Revenue trend",
+      "noData": "No revenue recorded",
+      "noDataDesc": "No sales data available for the selected period."
+    }
+  },
+  "salespeople": {
+    "title": "Salespeople",
+    "table": {
+      "rank": "#",
+      "name": "Agent",
+      "leads": "Leads",
+      "visits": "Visits",
+      "offers": "Offers",
+      "contracts": "Contracts",
+      "revenue": "Revenue",
+      "winRate": "Win rate",
+      "ttft": "Time to first touch",
+      "completeness": "Completeness"
+    },
+    "noData": "No active agents",
+    "noDataDesc": "No performance data available for the selected period."
+  },
+  "marketing": {
+    "title": "Marketing",
+    "sourceVolume": {
+      "title": "Lead volume by source",
+      "noData": "No marketing data",
+      "noDataDesc": "No volume data available for the selected period."
+    },
+    "junk": {
+      "title": "Junk leads by source",
+      "source": "Source",
+      "junkCount": "Junk",
+      "totalLeads": "Total",
+      "junkPct": "% Junk"
+    },
+    "siteConversion": {
+      "title": "Site conversion"
+    },
+    "adSpendTitle": "Advertising data",
+    "adSpendComingSoon": "CPL, CAC and ROAS will be available after connecting advertising accounts."
+  },
+  "insights": {
+    "title": "AI Insights",
+    "summary": {
+      "heading": "Daily summary",
+      "dataFor": "Data for:"
+    },
+    "problem": {
+      "estimatedLoss": "Estimated loss",
+      "actions": "Recommended actions",
+      "owner": "Owner",
+      "deadline": "Deadline",
+      "source": "Source"
+    },
+    "severity": {
+      "high": "Critical",
+      "medium": "High",
+      "low": "Medium"
+    },
+    "refreshButton": "Refresh",
+    "refreshCountdown": "Refresh ({remaining})",
+    "rateLimitMessage": "You can refresh once per hour. {minutes} minutes remaining.",
+    "generationFailed": "Automatic generation failed. Showing automatically detected issues.",
+    "noInsight": "Insight unavailable",
+    "noInsightDesc": "No insight has been generated for the selected date.",
+    "datePicker": "Choose date",
+    "fallbackTitle": "Automatically detected issues"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred. Try again.",
+    "retry": "Try again",
+    "apply": "Apply period",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "noData": "No data available",
+    "noDataDesc": "No data available for the selected period.",
+    "dataStale": "Data has not been updated recently. Last sync: {lastSync}.",
+    "never": "never"
+  },
+  "errors": {
+    "networkError": "Network error. Check your connection.",
+    "serverError": "Server error. Please try again.",
+    "pipelineFailed": "Last sync failed. Data may be incomplete."
   }
 }

@@ -37,5 +37,128 @@
   "locale": {
     "ro": "RO",
     "en": "EN"
+  },
+  "sales": {
+    "title": "Vânzări",
+    "funnel": {
+      "title": "Palnie de vânzări",
+      "stages": {
+        "lead": "Lead",
+        "visit": "Vizita",
+        "offer": "Oferta",
+        "contract": "Contract"
+      },
+      "conversion": "Conversie",
+      "noData": "Nicio activitate",
+      "noDataDesc": "Nu au fost înregistrate lead-uri în această perioadă.",
+      "noDataIcon": "BarChart3"
+    },
+    "kpi": {
+      "leads": "Lead-uri",
+      "visits": "Vizite",
+      "offers": "Oferte",
+      "contracts": "Contracte",
+      "revenue": "Venituri",
+      "avgDealSize": "Valoare medie"
+    },
+    "sources": {
+      "title": "Surse lead-uri",
+      "leadsColumn": "Lead-uri",
+      "conversionColumn": "Conversie",
+      "noData": "Fără date",
+      "noDataDesc": "Nu există date de sursă pentru perioada selectată."
+    },
+    "stuckOffers": {
+      "title": "Oferte blocate",
+      "days": "{days} zile",
+      "noData": "Fără oferte blocate",
+      "noDataDesc": "Nu există oferte blocate în acest interval. Excelent!"
+    },
+    "revenue": {
+      "title": "Evoluție venituri",
+      "noData": "Fără venituri înregistrate",
+      "noDataDesc": "Nu există date de vânzări pentru perioada selectată."
+    }
+  },
+  "salespeople": {
+    "title": "Agenți de vânzări",
+    "table": {
+      "rank": "#",
+      "name": "Agent",
+      "leads": "Lead-uri",
+      "visits": "Vizite",
+      "offers": "Oferte",
+      "contracts": "Contracte",
+      "revenue": "Venituri",
+      "winRate": "Rată câștig",
+      "ttft": "Timp prim contact",
+      "completeness": "Completitudine"
+    },
+    "noData": "Niciun agent activ",
+    "noDataDesc": "Nu există date de performanță pentru perioada selectată."
+  },
+  "marketing": {
+    "title": "Marketing",
+    "sourceVolume": {
+      "title": "Volum lead-uri pe sursă",
+      "noData": "Fără date de marketing",
+      "noDataDesc": "Nu există date de volum pentru perioada selectată."
+    },
+    "junk": {
+      "title": "Lead-uri junk pe sursă",
+      "source": "Sursă",
+      "junkCount": "Junk",
+      "totalLeads": "Total",
+      "junkPct": "% Junk"
+    },
+    "siteConversion": {
+      "title": "Conversie site"
+    },
+    "adSpendTitle": "Date publicitate",
+    "adSpendComingSoon": "CPL, CAC și ROAS vor fi disponibile după conectarea conturilor publicitare."
+  },
+  "insights": {
+    "title": "Analize AI",
+    "summary": {
+      "heading": "Rezumat zilnic",
+      "dataFor": "Date pentru:"
+    },
+    "problem": {
+      "estimatedLoss": "Pierdere estimată",
+      "actions": "Acțiuni recomandate",
+      "owner": "Responsabil",
+      "deadline": "Termen",
+      "source": "Sursă"
+    },
+    "severity": {
+      "high": "Critică",
+      "medium": "Ridicată",
+      "low": "Medie"
+    },
+    "refreshButton": "Reîmprospătează",
+    "refreshCountdown": "Reîmprospătează ({remaining})",
+    "rateLimitMessage": "Poți reîmprospăta o dată pe oră. Mai ai {minutes} minute.",
+    "generationFailed": "Generarea automată a eșuat. Se afișează problemele detectate automat.",
+    "noInsight": "Analiză indisponibilă",
+    "noInsightDesc": "Nu există o analiză generată pentru data selectată.",
+    "datePicker": "Alege data",
+    "fallbackTitle": "Probleme detectate automat"
+  },
+  "common": {
+    "loading": "Se încarcă...",
+    "error": "A apărut o eroare. Încearcă din nou.",
+    "retry": "Încearcă din nou",
+    "apply": "Aplică perioada",
+    "openMenu": "Deschide meniu",
+    "closeMenu": "Închide meniu",
+    "noData": "Fără date disponibile",
+    "noDataDesc": "Nu există date disponibile pentru perioada selectată.",
+    "dataStale": "Datele nu au fost actualizate recent. Ultima sincronizare: {lastSync}.",
+    "never": "niciodată"
+  },
+  "errors": {
+    "networkError": "Eroare de rețea. Verifică conexiunea.",
+    "serverError": "Eroare server. Încearcă din nou.",
+    "pipelineFailed": "Ultima sincronizare a eșuat. Datele pot fi incomplete."
   }
 }
