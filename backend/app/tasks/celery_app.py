@@ -30,6 +30,8 @@ celery_app = Celery(
         "app.tasks.etl.sync_mefi_leads",
         "app.tasks.etl.backfill_mefi_leads",
         "app.tasks.etl.calculate_daily_kpis",
+        "app.tasks.etl.backfill_daily_kpis",
+        "app.tasks.etl.detect_anomalies",  # Phase 4
     ],
 )
 
@@ -81,6 +83,7 @@ celery_app.conf.update(
     # path (e.g. "app.tasks.etl.backfill_mefi_leads") which does NOT match the route key.
     task_routes={
         "tasks.etl.backfill_mefi_leads": {"queue": "backfill"},
+        "tasks.etl.backfill_daily_kpis": {"queue": "backfill"},
     },
 )
 

@@ -311,20 +311,21 @@ async def _sync_async(tenant_id: UUID) -> dict:
 def daily_pipeline(tenant_id: str) -> object:
     """Build the daily analytics pipeline chain for a tenant.
 
-    Phase 3 chain: sync_mefi_leads → calculate_daily_kpis (D-18, PIPE-01).
-    Phase 4 will append detect_anomalies.si(tenant_id).
+    chain: sync_mefi_leads → calculate_daily_kpis → detect_anomalies → (Phase 5: generate_daily_insights)
 
-    Both tasks use .si() (immutable signature) — calculate_daily_kpis does NOT
-    consume the ETL result as input; it accepts tenant_id + optional date (D-12).
-    ETL failure halts the chain — calculate_daily_kpis does not run if
-    sync_mefi_leads fails (PIPE-02 chain halt semantics).
+    All tasks use .si() (immutable signature) — downstream tasks do NOT
+    consume preceding task results as input; each accepts only tenant_id (D-12).
+    ETL failure halts the chain — subsequent tasks do not run if a prior task
+    fails (PIPE-02 chain halt semantics).
 
     Defined here so future phases extend this function without touching celery_app.py.
     """
     from celery import chain
     from app.tasks.etl.calculate_daily_kpis import calculate_daily_kpis  # noqa: PLC0415
+    from app.tasks.etl.detect_anomalies import detect_anomalies  # noqa: PLC0415
 
     return chain(
         sync_mefi_leads.si(tenant_id),
         calculate_daily_kpis.si(tenant_id),
+        detect_anomalies.si(tenant_id),
     )
