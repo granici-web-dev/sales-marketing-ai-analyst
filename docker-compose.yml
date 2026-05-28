@@ -37,6 +37,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-analyst}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-analyst}
       REDIS_URL: redis://redis:6379/0
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,6 +64,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-analyst}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-analyst}
       REDIS_URL: redis://redis:6379/0
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -70,7 +72,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
-    command: ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info"]
+    command: ["celery", "-A", "app.tasks.celery_app", "worker", "--queues=celery,backfill", "--loglevel=info"]
 
   beat:
     build:

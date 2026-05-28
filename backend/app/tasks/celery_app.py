@@ -32,6 +32,7 @@ celery_app = Celery(
         "app.tasks.etl.calculate_daily_kpis",
         "app.tasks.etl.backfill_daily_kpis",
         "app.tasks.etl.detect_anomalies",  # Phase 4
+        "app.tasks.etl.generate_daily_insights",  # Phase 5 — AI Insights
     ],
 )
 
@@ -107,6 +108,16 @@ try:
         app=celery_app,
     )
     _entry.save()
+
+    # 06:00 Europe/Bucharest — AI Insights after ETL+metrics+anomaly (D-20)
+    _insights_entry = RedBeatSchedulerEntry(
+        name="daily-insights-generation",
+        task="tasks.etl.generate_daily_insights",
+        schedule=crontab(hour=6, minute=0),
+        args=[settings.sofa_belle_tenant_id],
+        app=celery_app,
+    )
+    _insights_entry.save()
 except Exception:  # noqa: BLE001
     # Beat schedule registration is best-effort at import time;
     # the beat container registers it authoritatively on startup.

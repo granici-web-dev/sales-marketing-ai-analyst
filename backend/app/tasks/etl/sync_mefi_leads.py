@@ -311,7 +311,7 @@ async def _sync_async(tenant_id: UUID) -> dict:
 def daily_pipeline(tenant_id: str) -> object:
     """Build the daily analytics pipeline chain for a tenant.
 
-    chain: sync_mefi_leads → calculate_daily_kpis → detect_anomalies → (Phase 5: generate_daily_insights)
+    chain: sync_mefi_leads → calculate_daily_kpis → detect_anomalies → generate_daily_insights
 
     All tasks use .si() (immutable signature) — downstream tasks do NOT
     consume preceding task results as input; each accepts only tenant_id (D-12).
@@ -323,9 +323,11 @@ def daily_pipeline(tenant_id: str) -> object:
     from celery import chain
     from app.tasks.etl.calculate_daily_kpis import calculate_daily_kpis  # noqa: PLC0415
     from app.tasks.etl.detect_anomalies import detect_anomalies  # noqa: PLC0415
+    from app.tasks.etl.generate_daily_insights import generate_daily_insights  # noqa: PLC0415
 
     return chain(
         sync_mefi_leads.si(tenant_id),
         calculate_daily_kpis.si(tenant_id),
         detect_anomalies.si(tenant_id),
+        generate_daily_insights.si(tenant_id),
     )
