@@ -1,152 +1,249 @@
 ---
 phase: 04-anomaly-detection
-reviewed: 2026-05-28T00:00:00Z
+reviewed: 2026-05-28T12:00:00Z
 depth: standard
 files_reviewed: 15
 files_reviewed_list:
+  - backend/alembic/versions/007_detected_problems.py
+  - backend/app/models/__init__.py
+  - backend/app/models/anomaly/__init__.py
+  - backend/app/models/anomaly/detected_problem.py
+  - backend/app/services/anomaly/__init__.py
+  - backend/app/services/anomaly/anomaly_service.py
+  - backend/app/services/repositories/anomaly_repository.py
+  - backend/app/tasks/celery_app.py
   - backend/app/tasks/etl/detect_anomalies.py
   - backend/app/tasks/etl/sync_mefi_leads.py
-  - backend/app/tasks/celery_app.py
-  - backend/app/services/anomaly/anomaly_service.py
-  - backend/app/services/anomaly/__init__.py
-  - backend/app/services/repositories/anomaly_repository.py
-  - backend/app/models/anomaly/detected_problem.py
-  - backend/app/models/anomaly/__init__.py
-  - backend/app/models/__init__.py
-  - backend/alembic/versions/007_detected_problems.py
-  - backend/tests/unit/test_anomaly_service.py
-  - backend/tests/unit/test_anomaly_repository.py
-  - backend/tests/unit/test_sync_mefi_leads.py
-  - backend/tests/integration/test_detect_anomalies_task.py
   - backend/tests/factories/anomaly_factory.py
+  - backend/tests/integration/test_detect_anomalies_task.py
+  - backend/tests/unit/test_anomaly_repository.py
+  - backend/tests/unit/test_anomaly_service.py
+  - backend/tests/unit/test_sync_mefi_leads.py
 findings:
-  critical: 3
+  critical: 2
   warning: 5
-  info: 3
-  total: 11
+  info: 2
+  total: 9
 status: issues_found
 ---
 
 # Phase 04: Code Review Report
 
-**Reviewed:** 2026-05-28T00:00:00Z
+**Reviewed:** 2026-05-28T12:00:00Z
 **Depth:** standard
 **Files Reviewed:** 15
 **Status:** issues_found
 
 ## Summary
 
-Phase 4 implements a 5-rule anomaly detection engine on top of the Phase 3 metrics
-layer. The overall structure is sound: INFRA-05 deferred imports, NullPool per
-invocation, WR-04 single-commit pattern, and the 3-column UPSERT conflict target are
-all present and correctly applied. However, three critical defects require remediation
-before this code can be trusted in production:
+Reviewed the full Phase 4 anomaly detection implementation: Alembic migration 007, the `DetectedProblem` ORM model and package wiring, `AnomalyService` (5-rule engine + orchestrator), `AnomalyRepository` (UPSERT layer), the `detect_anomalies` Celery task, the extended `sync_mefi_leads` chain, and all unit/integration/factory test files.
 
-1. The migration DDL is missing the `detected_at` column that the ORM model declares,
-   causing runtime `UndefinedColumn` errors at every INSERT.
-2. `_get_junk_ids()` has no date filter: it pulls **all** junk leads for the tenant
-   across all time, making the junk-exclusion set grow unboundedly and causing
-   slow-first-touch and stuck-offer anomalies to be silently suppressed for leads
-   that were junk long ago but whose `external_id` was reused or is coincidentally
-   the same as an active lead today.
-3. In `sync_mefi_leads`, the `liveness_failed` early-return path leaks the Redis
-   lock: it calls `task_engine.dispose()` but returns **without** deleting the lock
-   key, leaving it held for 10 hours and blocking all subsequent sync attempts.
+Core mechanics are well-implemented: INFRA-05 deferred imports, NullPool per invocation, WR-04 single-commit-per-batch, Pitfall 5 three-column conflict target, and Pitfall 6 tenant_id guard are all present and correct. Two critical issues require fixes before this phase can ship:
 
-Five warnings cover a silent test assertion, stored PII in `context_json`, a
-double-dispose on the engine, a float used inside a JSONB column that would be
-reinterpreted by the AI insights layer, and the PIPE-03 guard condition that will
-never fire in normal operation. Three info items cover minor quality concerns.
+1. Both integration tests that claim to verify junk-exclusion and UPSERT idempotency are **vacuously passing** — they seed test data on `date.today()` while the task under test queries for `date.today() - 1` (yesterday). No seeded data is ever found; assertions pass without exercising the actual code paths.
+2. The `showroom_traffic_drop` rule's `context_json` diverges from the schema documented in the ORM model comment. The documented keys `actual_visits` and `expected_visits` are absent; the undocumented key `drop_pct` is present instead. Any Phase 5 AI Insights code that reads the documented schema will fail at runtime.
+
+Five warnings cover: a missing tenant_id cross-check in the repository write path; a two-transaction race window that can leave `SyncRun` stuck in `"running"`; an asymmetric `avg_deal_size` extractor that uses "most-recent" not "average"; a stale SyncRun cleanup with no age guard that could corrupt a legitimately concurrent run; and a misleading D-11 docstring that overstates the scope of junk_ids propagation.
 
 ---
 
 ## Critical Issues
 
-### CR-01: `detected_at` column missing from Alembic migration 007
+### CR-01: Integration tests are vacuously passing — seeded data uses wrong date
 
-**File:** `backend/alembic/versions/007_detected_problems.py:33-89`
+**File:** `backend/tests/integration/test_detect_anomalies_task.py:155-264`
 
-**Issue:** The ORM model `DetectedProblem` declares a `detected_at` column
-(`TIMESTAMPTZ NOT NULL` with `server_default="now()"`, line 91-93 of
-`detected_problem.py`). Migration 007 creates the `detected_problems` table but
-does **not** add this column. When the Celery task calls
-`AnomalyRepository.upsert_detected_problem()`, SQLAlchemy's Core INSERT will include
-`detected_at` from the model metadata — PostgreSQL will respond with
-`UndefinedColumn: column "detected_at" of relation "detected_problems" does not
-exist`, failing every anomaly write at runtime. The `downgrade()` path is also
-inconsistent because the column is tracked in the ORM but not in the DDL.
+**Issue:** Both `test_slow_first_touch_not_triggered_for_junk_leads` and `test_detected_problems_upsert_idempotent` seed test data using `kpi_date = date.today()` (line 157) and insert leads with `created_date_local = kpi_date` (i.e., today). The `detect_anomalies` task under test computes its own `kpi_date` as `datetime.now(BUCHAREST).date() - timedelta(days=1)` (yesterday). The task's `_get_junk_ids()` query includes `AND created_date_local = :kpi_date` (yesterday), and `_db_fetch_slow_leads()` similarly filters `AND created_date_local = :kpi_date` (yesterday). Since the seeded leads are on today's date, neither query finds them. The task runs with empty data, fires no anomalies, writes no `detected_problems` rows, and both assertions — `count == 0` (line 214) and `len(duplicates) == 0` (line 259) — pass trivially.
 
-**Fix:** Add the missing column to `upgrade()` in the migration:
+The junk-exclusion test (`ANOM-07`, `ROADMAP SC#6`) therefore provides **zero coverage** of the actual junk filtering code. A regression that removes junk exclusion entirely would not be caught.
+
+The assertion query on line 207-210 also uses `kpi_date` (today) when checking `detected_problems.date`, while the task would write rows for yesterday — these would never match regardless of what the task does.
+
+**Fix:** Seed data using yesterday's date to match what the task queries. The `kpi_date` local variable should mirror the task's date computation:
+
 ```python
-sa.Column(
-    "detected_at",
-    sa.TIMESTAMP(timezone=True),
-    server_default=sa.text("now()"),
-    nullable=False,
-),
+from datetime import timedelta
+from zoneinfo import ZoneInfo
+
+BUCHAREST = ZoneInfo("Europe/Bucharest")
+# Match the task's exact kpi_date computation (detect_anomalies.py line 106):
+kpi_date = datetime.now(BUCHAREST).date() - timedelta(days=1)
+
+# Then seed junk leads on kpi_date (not date.today()):
+"yesterday": kpi_date,  # was: "yesterday": date.today()
+
+# And assert for kpi_date (not date.today()):
+{"tenant_id": TENANT_ID, "kpi_date": kpi_date}  # was: kpi_date = date.today()
 ```
-Insert it immediately after the `updated_at` block (before the `date` column) to
-mirror the order in which `TenantScopedMixin` columns are typically added. No
-`downgrade()` change is needed because `drop_table` handles the whole table.
+
+For `test_detected_problems_upsert_idempotent`, also seed at least one anomaly-triggering condition (e.g., a slow lead) so that rows are actually written and duplicates can be detected.
 
 ---
 
-### CR-02: `_get_junk_ids()` has no date filter — fetches all-time junk leads
+### CR-02: `detect_showroom_traffic_drop` emits `context_json` with different keys than the documented schema
 
-**File:** `backend/app/services/anomaly/anomaly_service.py:114-120`
+**File:** `backend/app/services/anomaly/anomaly_service.py:512-515`
 
-**Issue:** The query in `_get_junk_ids()` is:
-```sql
-SELECT external_id FROM v_mefi_leads_junk WHERE tenant_id = :tenant_id
+**Issue:** The ORM model docstring (`detected_problem.py:83`) documents the `showroom_traffic_drop` context_json contract as:
+```json
+{"actual_visits": 2, "expected_visits": 5.4, "baseline_days": 30}
 ```
-There is no `AND created_date_local = :kpi_date` predicate. This means the set
-returned includes every junk lead ever recorded for the tenant, not just those from
-`kpi_date`. The set is then used to exclude leads from `detect_slow_first_touch()`
-(line 314). Because `external_id` values are assigned by MEFI and are sequential
-integers rendered as strings, if a junk lead ID from six months ago happens to share
-a value with an active lead from yesterday, that active lead is silently excluded from
-slow-first-touch analysis — a false negative. More practically, as junk accumulates
-over months, the set grows to thousands of entries and the in-memory lookup slows.
-The intent stated in the docstring (D-11, D-14) is to check yesterday's leads, so the
-set should be scoped to `kpi_date`.
+The actual implementation at lines 512–515 emits:
+```python
+"context_json": {
+    "baseline_days": len(non_null_baseline),
+    "drop_pct": float((baseline_rate - current_rate) / baseline_rate * 100),
+}
+```
+The keys `actual_visits` and `expected_visits` are absent; the undocumented key `drop_pct` is present. Phase 5 AI Insights will read `context_json` using the schema as its data contract. Any Phase 5 code that accesses `context_json["actual_visits"]` or `context_json["expected_visits"]` will raise `KeyError` at runtime, or — if using `.get()` — will silently produce `None` values in the AI-generated Romanian-language report, yielding factually incorrect output without an error signal.
+
+**Fix:** Update the model docstring to match the actual implementation, and ensure Phase 5 is written against the correct schema:
+
+In `detected_problem.py` line 83, change:
+```python
+# showroom_traffic_drop:   {"actual_visits": 2, "expected_visits": 5.4, "baseline_days": 30}
+```
+to:
+```python
+# showroom_traffic_drop:   {"baseline_days": 30, "drop_pct": 37.5}
+#   baseline_days: number of non-null conversion_l_to_v days in the 30-day window
+#   drop_pct: percentage drop from baseline (e.g., 37.5 = 37.5% below baseline)
+```
+Verify before Phase 5 work begins that no existing Phase 5 scaffold references `actual_visits` or `expected_visits`.
+
+---
+
+## Warnings
+
+### WR-01: `AnomalyRepository.upsert_detected_problem` does not verify `row["tenant_id"] == self._tenant_id`
+
+**File:** `backend/app/services/repositories/anomaly_repository.py:55-59`
+
+**Issue:** The repository correctly validates that `tenant_id` is present and not `None` (Pitfall 6 guard). It does **not** verify that `row["tenant_id"]` equals `self._tenant_id`. A caller passing a row dict containing a different `tenant_id` (e.g., due to a future code refactor that wires the wrong service-to-repository pair) would silently insert a cross-tenant row, bypassing the multi-tenancy isolation required by CLAUDE.md Core Principle #3. Core INSERT bypasses `with_loader_criteria`, so there is no ORM-level backstop after the repository.
+
+In the current code, `AnomalyService` always sets `"tenant_id": self._tenant_id`, so there is no active exploit path. The gap is a missing defensive layer.
 
 **Fix:**
 ```python
-stmt = text(
-    "SELECT external_id FROM v_mefi_leads_junk "
-    "WHERE tenant_id = :tenant_id "
-    "AND created_date_local = :kpi_date"
-).bindparams(tenant_id=self._tenant_id, kpi_date=kpi_date)
+if row["tenant_id"] != self._tenant_id:
+    raise ValueError(
+        f"AnomalyRepository.upsert_detected_problem: cross-tenant write blocked — "
+        f"row.tenant_id={row['tenant_id']!r} != repository.tenant_id={self._tenant_id!r}"
+    )
 ```
-The `kpi_date` parameter is already passed to `_get_junk_ids()` — it just is not
-used in the SQL. The corresponding unit test (`test_junk_ids_computed_once`) mocks
-`_get_junk_ids` entirely, so this defect would not be caught by existing tests.
+Add this check immediately after the existing `None` check on line 55.
 
 ---
 
-### CR-03: Redis lock leaked when MEFI liveness check fails
+### WR-02: Two-commit transaction window leaves `SyncRun` stuck in `"running"` if second commit fails
 
-**File:** `backend/app/tasks/etl/sync_mefi_leads.py:139-145`
+**File:** `backend/app/tasks/etl/detect_anomalies.py:147-159`
 
-**Issue:** When `client.health_check()` returns `False`, the code sets the SyncRun
-to `failed`, calls `await task_engine.dispose()`, and then returns early:
+**Issue:** The task performs two separate `session.commit()` calls within the same session:
+1. **Line 151:** commits all `detected_problems` upsert rows.
+2. **Line 159:** commits the `SyncRun.status = "success"` update.
+
+If the process is killed, the DB connection drops, or a transient error occurs between these two commits, all `detected_problems` rows are durably persisted but the `SyncRun` row remains in `"running"` state. On the next retry, the WR-06 stale-cleanup UPDATE marks the orphaned `SyncRun` as `"failed"` — so the audit trail records a "failed" run for a task that actually completed all its data work. Monitoring and alerting may trigger a false incident.
+
+**Fix:** Merge both writes into a single atomic commit:
 ```python
-await task_engine.dispose()
-return {"status": "failed", "reason": "liveness_failed"}
+# Step 4+5: upsert results AND update SyncRun in one atomic transaction
+for problem in problems:
+    await repo.upsert_detected_problem(problem)
+
+elapsed_ms = int((datetime.now(UTC) - detect_start_at).total_seconds() * 1000)
+sync_run.status = "success"
+sync_run.records_synced = len(problems)
+sync_run.duration_ms = elapsed_ms
+sync_run.completed_at = datetime.now(UTC)
+await session.commit()  # single atomic commit covers both upserts and SyncRun update
 ```
-This early return exits the inner `try` block but **does not reach the outer
-`finally` block** (line 305-308). The Redis lock key (`sync:mefi:{tenant_id}`) set
-at line 108 is never deleted. The lock has a 10-hour TTL (`_LOCK_TTL = 36000`), so
-for the next 10 hours no nightly sync will run for this tenant — it will silently
-return `{"status": "noop", "reason": "lock_held"}` on every retry attempt. This is a
-silent data-starvation bug that would go unnoticed until the next morning's metrics
-are missing.
 
-Note: the early `task_engine.dispose()` on line 144 is also redundant because the
-outer `finally` on line 308 disposes the engine as well (double-dispose — see WR-03).
+---
 
-**Fix:** Remove the manual `await task_engine.dispose()` on line 144 (it's covered by
-`finally`) and release the Redis lock before returning:
+### WR-03: `_extract_avg_deal_size` takes the first non-None value, not the average — asymmetric with `_extract_close_rate`
+
+**File:** `backend/app/services/anomaly/anomaly_service.py:93-102`
+
+**Issue:** The method is named `_extract_avg_deal_size` and the parameter is `baseline_rows` (implying a window of data), but the implementation takes the **first non-None `avg_deal_size`** from the list (line 99). Because `_db_fetch_trailing_metrics` orders rows by `date DESC`, the first value is the most-recent day's `avg_deal_size`. If deal size has been volatile (e.g., a discounted campaign), all loss estimates for `slow_first_touch`, `stuck_offer`, `underperforming_salesperson`, and `junk_lead_quality` will use an unrepresentative single-day value rather than a trailing average, potentially under- or over-stating financial risk.
+
+The companion `_extract_close_rate` correctly averages all non-None values. The asymmetry is undocumented and surprising to readers.
+
+**Fix (option A — average, consistent with `_extract_close_rate`):**
+```python
+def _extract_avg_deal_size(self, baseline_rows: list[dict]) -> Decimal:
+    values = [
+        Decimal(str(row["avg_deal_size"]))
+        for row in baseline_rows
+        if row.get("avg_deal_size") is not None
+    ]
+    if values:
+        return sum(values, Decimal("0")) / Decimal(str(len(values)))
+    return AVG_DEAL_SIZE_FALLBACK
+```
+
+**Fix (option B — document the intent explicitly):** If "most-recent day" is intentional, rename the method to `_extract_latest_deal_size` and update the docstring to explain why a trailing average is not used.
+
+---
+
+### WR-04: Stale SyncRun cleanup marks ALL running rows failed without an age threshold — unsafe under concurrent execution
+
+**File:** `backend/app/tasks/etl/detect_anomalies.py:118-127`
+
+**Issue:** The WR-06 cleanup UPDATE marks **any** `SyncRun(source="anomaly", status="running")` for the tenant as `"failed"`, with no minimum age guard:
+```python
+_update(SyncRun)
+.where(
+    SyncRun.tenant_id == tenant_id,
+    SyncRun.source == "anomaly",
+    SyncRun.status == "running",  # no age filter
+)
+```
+If two Celery workers legitimately process the same tenant concurrently (e.g., a manual re-run initiated while the scheduled run is mid-flight), the second worker's startup UPDATE marks the first worker's active `SyncRun` as `"failed"`. The first worker then reaches its success-commit path and finds its in-memory `sync_run` object (already committed as `"failed"` by the second worker) being updated to `"success"`, causing the audit trail to show `"success"` for a run that was partially aborted by the competing UPDATE.
+
+**Fix:** Add a minimum-staleness guard so only genuinely stale rows are cleaned up:
+```python
+from datetime import timedelta
+
+await session.execute(
+    _update(SyncRun)
+    .where(
+        SyncRun.tenant_id == tenant_id,
+        SyncRun.source == "anomaly",
+        SyncRun.status == "running",
+        SyncRun.started_at < datetime.now(UTC) - timedelta(minutes=30),
+    )
+    .values(status="failed", completed_at=datetime.now(UTC))
+)
+```
+30 minutes is a safe threshold; the normal detect_anomalies task completes in seconds to low minutes.
+
+---
+
+### WR-05: D-11 docstring claims `junk_ids` is "passed to all non-junk rules" but only `detect_slow_first_touch` receives it
+
+**File:** `backend/app/services/anomaly/anomaly_service.py:9, 62, 688`
+
+**Issue:** The module-level docstring (line 9), class docstring (line 62), and `run_all_rules` inline comment (line 688) all state that `junk_ids` is "computed ONCE and passed to all non-junk rules." In the actual `run_all_rules` implementation (lines 694-710), only `detect_slow_first_touch` receives the `junk_ids` argument. `detect_stuck_offer` and `detect_underperforming_salesperson` do not accept or use it. This is functionally acceptable because `v_mefi_leads_active` already excludes `lifecycle='junk'` at the DB view level. However, the false documentation will mislead future maintainers who might add a new rule and assume junk exclusion is applied at the Python layer for all rules — causing them to omit it for new rules.
+
+**Fix:** Update all three docstring locations to accurately reflect the design:
+```python
+# D-11: compute junk IDs ONCE and pass to detect_slow_first_touch (the only rule
+# that processes leads not pre-filtered by v_mefi_leads_active).
+# Other rules query v_mefi_leads_active which already excludes lifecycle='junk' at DB level.
+```
+
+---
+
+## Info
+
+### IN-01: `sync_mefi_leads` double engine dispose in `liveness_failed` path
+
+**File:** `backend/app/tasks/etl/sync_mefi_leads.py:144`
+
+**Issue:** The `liveness_failed` early-return path (inside the outer `try` block starting line 120) calls `await task_engine.dispose()` explicitly at line 144 before `return`. Python's `finally` clause still executes even when a `return` is reached inside `try`, so the outer `finally` (line 305-308) also calls `await task_engine.dispose()`. The engine is disposed twice. `NullPool.dispose()` is idempotent so this causes no runtime error, but it is unnecessary code noise and may mask future changes to the `finally` structure.
+
+**Fix:** Remove the explicit `await task_engine.dispose()` on line 144. The `finally` block covers all exit paths after the lock has been acquired:
 ```python
 if not alive:
     log.warning("mefi.liveness_failed")
@@ -154,239 +251,28 @@ if not alive:
     sync_run.error_msg = "MEFI liveness check returned total=0"
     sync_run.completed_at = datetime.now(UTC)
     await session.commit()
-    await redis.delete(lock_key)   # release the lock
-    await redis.aclose()           # close Redis connection
+    # No manual dispose — finally handles it
     return {"status": "failed", "reason": "liveness_failed"}
 ```
-Alternatively, restructure so the `liveness_failed` path falls through to the outer
-`finally` (raise a sentinel exception handled locally).
 
 ---
 
-## Warnings
+### IN-02: `showroom_traffic_drop` sets `estimated_loss_ron = Decimal("0")` — will suppress the rule in Phase 5 priority ranking
 
-### WR-01: `lead_ids` stored in `context_json` — potential PII per CLAUDE.md Principle #6
+**File:** `backend/app/services/anomaly/anomaly_service.py:494`
 
-**File:** `backend/app/services/anomaly/anomaly_service.py:358, 435`
+**Issue:** The D-05 formula (module docstring line 25) specifies a lost-opportunity calculation for trend rules. The `detect_showroom_traffic_drop` implementation sets `estimated_loss_ron = Decimal("0")` with the comment "visits data not available per-day." Phase 5 AI Insights will likely use `estimated_loss_ron` to rank anomaly severity and decide which problems to feature in the daily report. A zero loss estimate for a 37%-drop in showroom traffic will place this anomaly below all other rules in priority order, potentially omitting it from the top-3 insights despite being a high-impact signal for Sofa Belle.
 
-**Issue:** Both `detect_slow_first_touch()` (line 358) and `detect_stuck_offer()`
-(line 435) write `"lead_ids": [lead["external_id"] for lead in qualifying]` into
-`context_json`. CLAUDE.md Principle #6 states: "Never log: phone numbers, email,
-names, transcript contents." The spec also says external_ids (MEFI numeric IDs) are
-acceptable to store (T-04-02-01 says "external_ids only — no PII"). However, the
-`_get_junk_ids()` and `_db_fetch_slow_leads()` queries select `external_id` which
-in MEFI's system is the lead's numeric primary key, not a customer identifier. The
-model docstring for `context_json` explicitly says external_ids are OK. This is not
-a clear violation today, but MEFI external IDs are sequential integers — if a future
-consumer maps them back to customer records (names, phones), these stored IDs become
-a vector. The log-time comment at T-04-03-01 ("never log lead_ids") is inconsistently
-applied: logs are safe, but persistence in JSONB is equally durable.
-
-**Fix:** Evaluate with the business owner whether storing lead external_ids is
-required for Phase 5 AI insights. If not, replace with aggregate counts only:
+**Fix:** Either implement a conservative proxy estimate using available data (similar to the `underperforming_salesperson` proxy on line 569):
 ```python
-# Instead of: "lead_ids": [lead["external_id"] for lead in qualifying],
-"affected_count": count,
+# D-05 conservative proxy: estimated_leads_missed × avg_deal_size × close_rate
+leads_missed = baseline_rate * Decimal("10")  # approximate: needs leads_total for kpi_date
+estimated_loss = leads_missed * avg_deal_size * close_rate
 ```
-If lead_ids are required by Phase 5, document explicitly that they are MEFI-internal
-integer IDs (not PII), add a note to CLAUDE.md under Principle #6, and ensure no
-subsequent phase logs or exposes them.
+Or, if a meaningful estimate is not possible, document the limitation explicitly in the Phase 5 AI prompt so the model can acknowledge the missing data rather than silently de-prioritizing the rule.
 
 ---
 
-### WR-02: `assert_called_once()` is a no-op — test silently passes regardless
-
-**File:** `backend/tests/unit/test_anomaly_service.py:676`
-
-**Issue:** The test `test_junk_ids_computed_once` uses:
-```python
-mock_get_junk_ids.assert_called_once(), (
-    "_get_junk_ids must be called exactly once ..."
-)
-```
-`Mock.assert_called_once()` does **not exist** on Python's `unittest.mock.Mock`
-(it was a common typo for `assert_called_once_with()`; the method that exists is
-`assert_called_once_with`). Calling a non-existent method on a `MagicMock` returns
-another `MagicMock` — the expression evaluates to a tuple `(MagicMock(), str)` which
-is truthy and is immediately discarded. The assertion **never runs**. If `run_all_rules`
-were refactored to call `_get_junk_ids` twice, this test would still pass silently.
-
-**Fix:**
-```python
-# Wrong — silently does nothing:
-mock_get_junk_ids.assert_called_once(), ("message")
-
-# Correct — use assert_called_once_with or check call_count:
-assert mock_get_junk_ids.call_count == 1, (
-    "_get_junk_ids must be called exactly once per run_all_rules() — "
-    "not once per rule (D-11 efficiency requirement)"
-)
-```
-
----
-
-### WR-03: Double engine dispose in `sync_mefi_leads` liveness-failed path
-
-**File:** `backend/app/tasks/etl/sync_mefi_leads.py:144`
-
-**Issue:** When the liveness check fails, line 144 calls `await task_engine.dispose()`
-before returning. But the `liveness_failed` path is **inside** the `try` block
-whose `finally` (line 305-308) also calls `await task_engine.dispose()`. Any early
-return from within the `try` block still triggers `finally`, so the engine is
-disposed twice. While SQLAlchemy's `NullPool.dispose()` is idempotent, this is
-incorrect flow and masks the lock-leak bug described in CR-03. The explicit dispose
-on line 144 is the leftover from a draft pattern that was superseded by the `finally`.
-
-**Fix:** Remove line 144 (`await task_engine.dispose()`). The `finally` block covers
-all exit paths after the lock has been acquired. The Redis lock release (CR-03) must
-be added instead.
-
----
-
-### WR-04: PIPE-03 guard condition `date_from == date_to` never fires in normal operation
-
-**File:** `backend/app/tasks/etl/sync_mefi_leads.py:257`
-
-**Issue:** The guard that raises `RuntimeError("No data for today — halting pipeline
-chain")` requires both `total_synced == 0` AND `date_from == date_to`. `date_to` is
-always `sync_start_at.date().isoformat()` (today). `date_from` equals `date_to` only
-when `last_sync_at` is None (no prior sync), because in that case the code sets
-`date_from = date(2025, 1, 1).isoformat()` — which is explicitly different from
-`date_to`. When `last_sync_at` is set, `date_from = (last_sync_at.date() - timedelta(days=1)).isoformat()`.
-For this guard to fire, the last sync must have been exactly yesterday at midnight
-so that `date_from == date_to` AND no leads were modified in that window. In practice
-this condition can never be true: when there's no prior sync, `date_from` is 2025-01-01.
-
-The guard was probably intended to read `date_from == date_to` **or** just
-`total_synced == 0`. The current logic makes the anomaly pipeline's no-data warning
-a dead code path.
-
-**Fix:** Decide on the correct condition. If the intent is "warn when there is no
-data today at all," the condition should be:
-```python
-if total_synced == 0:
-    log.warning("sync.no_data_today", date=date_to)
-    raise RuntimeError("No data for today — halting pipeline chain")
-```
-If it should only warn when the window covers a single day, add the right date check,
-but verify the `date_from` derivation path first.
-
----
-
-### WR-05: `float` used for `junk_rate`, `drop_pct`, `win_rate` stored in `context_json`
-
-**File:** `backend/app/services/anomaly/anomaly_service.py:512, 572-573, 661`
-
-**Issue:** Three places convert `Decimal` values to `float` before storing in
-`context_json` (a JSONB column):
-
-- `"drop_pct": float((baseline_rate - current_rate) / baseline_rate * 100)` (line 512)
-- `"win_rate": float(sp_rate)` and `"team_avg": float(team_avg)` (lines 572-573)
-- `"junk_rate": float(junk_rate)` (line 661)
-
-CLAUDE.md prohibits float for monetary values (D-19). While `drop_pct`, `win_rate`,
-and `junk_rate` are percentages (not currency), the same precision concern applies
-when the Phase 5 AI Insights layer reads these values back from JSONB as Python
-`float` and performs arithmetic on them. `Decimal("0.1") + Decimal("0.2")` is exact;
-`float(0.1) + float(0.2)` is not. For `junk_rate` in particular, storing
-`float(8/30)` = `0.26666666666666666` instead of `Decimal("0.2667")` is inconsistent
-with the `current_value` column which stores the rate as `NUMERIC(12,4)`.
-
-**Fix:** Store ratios as strings or use Python's `json`-safe representation of
-Decimal (PostgreSQL JSONB accepts numeric literals with full precision):
-```python
-# Instead of float():
-"drop_pct": str(round((baseline_rate - current_rate) / baseline_rate * 100, 4)),
-"win_rate": str(sp_rate),
-"junk_rate": str(junk_rate),
-```
-Or accept float only for display fields (`drop_pct`, `win_rate`) while keeping
-`junk_rate` as Decimal-string since it feeds D-08 loss calculation downstream.
-
----
-
-## Info
-
-### IN-01: `context_json` key name inconsistency: `"count"` vs `"junk_count"`
-
-**File:** `backend/app/services/anomaly/anomaly_service.py:659` vs
-`backend/app/models/anomaly/detected_problem.py:85`
-
-**Issue:** The model docstring documents the `junk_lead_quality` context as
-`{"junk_count": 45, "total_leads": 150, "junk_rate": 0.30}`, but the service
-emits `{"count": junk_count, "total": total_leads, "junk_rate": ...}`. The keys
-`count` vs `junk_count` and `total` vs `total_leads` differ. Any Phase 5 consumer
-reading `context_json["junk_count"]` will get a `KeyError` if it trusts the model
-docstring as the schema contract.
-
-**Fix:** Align the service with the documented contract. Either update the docstring
-or the service dict:
-```python
-"context_json": {
-    "junk_count": junk_count,   # was "count"
-    "total_leads": total_leads, # was "total"
-    "junk_rate": float(junk_rate),
-},
-```
-
----
-
-### IN-02: `services/anomaly/__init__.py` breaks the deferred-import pattern
-
-**File:** `backend/app/services/anomaly/__init__.py:3`
-
-**Issue:** The package `__init__.py` imports `AnomalyService` at module load time:
-```python
-from app.services.anomaly.anomaly_service import AnomalyService
-```
-The INFRA-05 pattern requires all `app.services.*` imports to be deferred to inside
-the async coroutine body so they are not executed before Celery forks worker processes.
-`detect_anomalies.py` correctly does its import inside `_detect_async()` at line 91.
-However, if any module imports from `app.services.anomaly` (the package), the
-`__init__.py` runs at that point and transitively imports `AnomalyService`, which
-imports `sqlalchemy.ext.asyncio` and `structlog` at module level. For the current
-codebase this is safe because `detect_anomalies.py` imports from the full path
-`app.services.anomaly.anomaly_service` (bypassing `__init__.py`), but this is
-fragile — any future developer importing `from app.services.anomaly import
-AnomalyService` (the documented public API) will break fork safety.
-
-**Fix:** Remove the module-level import from `__init__.py` or make it lazy:
-```python
-# Option A: Remove __init__.py content entirely — callers import the full path
-# Option B: lazy __init__.py:
-def __getattr__(name: str):
-    if name == "AnomalyService":
-        from app.services.anomaly.anomaly_service import AnomalyService
-        return AnomalyService
-    raise AttributeError(name)
-```
-
----
-
-### IN-03: Integration test seeds leads using `kpi_date = date.today()` (not yesterday)
-
-**File:** `backend/tests/integration/test_detect_anomalies_task.py:158, 176`
-
-**Issue:** In `test_slow_first_touch_not_triggered_for_junk_leads`, the test seeds
-raw_mefi_leads with `"yesterday": kpi_date` where `kpi_date = date.today()`. The
-field name `yesterday` is passed to the INSERT but the value is today's date (not
-yesterday). The `detect_anomalies` task checks for `kpi_date = yesterday` (D-14).
-The seeded leads would be for the wrong date, meaning the test could pass vacuously
-(no leads on yesterday's date at all, so no anomaly fires regardless of junk
-filtering). The variable name `kpi_date = date.today()` is also confusing — the
-task computes `kpi_date = datetime.now(BUCHAREST).date() - timedelta(days=1)`.
-
-**Fix:**
-```python
-from datetime import timedelta
-from zoneinfo import ZoneInfo
-BUCHAREST = ZoneInfo("Europe/Bucharest")
-kpi_date = datetime.now(BUCHAREST).date() - timedelta(days=1)  # match task logic
-```
-And use `kpi_date` consistently in both the seed INSERT and the assertion SELECT.
-
----
-
-_Reviewed: 2026-05-28T00:00:00Z_
+_Reviewed: 2026-05-28T12:00:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
