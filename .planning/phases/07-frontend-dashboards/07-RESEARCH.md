@@ -978,7 +978,7 @@ Plans 02-05 can be parallelized because they share no state and write to distinc
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Is Phase 6 executed (API endpoints live)?**
    - What we know: STATE.md says Phase 6 is "Planned (2026-05-28)" with "4 plans ready" but not "Executed". The plans are complete but execution state is unclear. The recent commits show Phase 6 plans created but no execution entry.

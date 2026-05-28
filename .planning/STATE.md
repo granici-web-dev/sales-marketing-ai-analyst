@@ -2,7 +2,7 @@
 
 **Project:** Sales & Marketing AI Analyst
 **Initialized:** 2026-05-19
-**Current Phase:** Phase 6 — Backend HTTP API
+**Current Phase:** Phase 7 — Frontend Dashboards
 **Milestone:** Iteration 1 (MVP1: MEFI-only)
 
 ## Project Reference
@@ -10,7 +10,7 @@
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Every morning, Sofa Belle gets a clear answer to "where are we losing money?" and 5–7 specific tasks for the day.
-**Current focus:** Phase 6 — Backend HTTP API
+**Current focus:** Phase 7 — Frontend Dashboards
 
 ## Phase Progress
 
@@ -21,8 +21,8 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 3 | Metrics Engine | ✓ Complete (2026-05-28) | 4/4 |
 | 4 | Anomaly Detection | ✓ Complete (2026-05-28) | 5/5 |
 | 5 | AI Insights | ✓ Complete (2026-05-28) | 4/4 |
-| 6 | Backend HTTP API | ◆ Planned (2026-05-28) | 4 plans ready |
-| 7 | Frontend Dashboards | ○ Pending | — |
+| 6 | Backend HTTP API | ✓ Complete (2026-05-28) | 4/4 |
+| 7 | Frontend Dashboards | ◆ Planned (2026-05-28) | 5 plans ready |
 | 8 | AI Chat | ○ Pending | — |
 | 9 | Polish & Deploy | ○ Pending | — |
 
