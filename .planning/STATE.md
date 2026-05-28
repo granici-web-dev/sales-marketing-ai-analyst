@@ -22,7 +22,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 4 | Anomaly Detection | ✓ Complete (2026-05-28) | 5/5 |
 | 5 | AI Insights | ✓ Complete (2026-05-28) | 4/4 |
 | 6 | Backend HTTP API | ✓ Complete (2026-05-28) | 4/4 |
-| 7 | Frontend Dashboards | ◆ In progress (2026-05-28) | 3/5 complete |
+| 7 | Frontend Dashboards | ◆ In progress (2026-05-28) | 4/5 complete |
 | 8 | AI Chat | ○ Pending | — |
 | 9 | Polish & Deploy | ○ Pending | — |
 
@@ -58,7 +58,7 @@ None currently.
 - Phase 7 RevenueTrend: AreaChart (vs LineChart) — gradient fill more visually informative for daily revenue data
 - Phase 7 date URL validation: isNaN(new Date(param).getTime()) check before use per T-7-01 threat mitigation
 
-**Last session:** 2026-05-28 — Phase 7 Plan 03 complete ✓. Salespeople dashboard fully implemented: useSalespeopleDashboard hook (avg_time_to_first_touch_minutes as number|null), LeaderboardTable (sortable, overflow-x-auto, sticky rank+name, red TTFT > 240min), full /salespeople page with Suspense+date range picker. pnpm-workspace.yaml allowBuilds fix for pnpm v11. Plan 07-04 (Marketing) ready to execute.
+**Last session:** 2026-05-28 — Phase 7 Plan 04 complete ✓. Marketing dashboard fully implemented: useMarketingDashboard hook (junk_count/total_leads as number|null, junk_pct as string|null), SourceVolumeChart (multi-series LineChart with pivotData() transformation, toSafeKey() sanitization, desktop 260px+legend / mobile 200px), JunkPctTable (overflow-x-auto, formatPct), AdSpendPlaceholder (MARK-03 always rendered), full /marketing page with Suspense+date range picker. Plan 07-05 (Insights) ready to execute.
 
 **2026-05-21 session:** Phase 2 context gathered. Key decisions: store all lifecycle states (active/lost/junk) in raw_mefi_leads, two conformed views (v_mefi_leads_active + v_mefi_leads_junk), auto-detect backfill on first sync, auto-upsert salespeople, new Alembic migration 003 for funnel_config JSONB.
 

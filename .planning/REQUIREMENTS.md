@@ -107,10 +107,10 @@
 
 ### Marketing Dashboard
 
-- [ ] **MARK-01**: User can view total lead volume by source over time (line chart, date range picker)
-- [ ] **MARK-02**: User can view site conversion rate (leads from site / sessions approximation from MEFI — note: GA4 not yet connected in Iteration 1)
-- [ ] **MARK-03**: Marketing dashboard has placeholder sections for ad spend data (CPL, CAC, ROAS) clearly labeled "Coming in next update" — structure is ready, data is not
-- [ ] **MARK-04**: User can see junk lead percentage by source (marketing hygiene metric)
+- [x] **MARK-01**: User can view total lead volume by source over time (line chart, date range picker)
+- [x] **MARK-02**: User can view site conversion rate (leads from site / sessions approximation from MEFI — note: GA4 not yet connected in Iteration 1)
+- [x] **MARK-03**: Marketing dashboard has placeholder sections for ad spend data (CPL, CAC, ROAS) clearly labeled "Coming in next update" — structure is ready, data is not
+- [x] **MARK-04**: User can see junk lead percentage by source (marketing hygiene metric)
 
 ### AI Insights Page
 
@@ -255,10 +255,10 @@
 | SALES-02 | Phase 6 (API) + Phase 7 (UI) | Pending |
 | SALES-03 | Phase 6 (API) + Phase 7 (UI) | Pending |
 | SALES-04 | Phase 6 (API) + Phase 7 (UI) | Pending |
-| MARK-01 | Phase 6 (API) + Phase 7 (UI) | Pending |
-| MARK-02 | Phase 6 (API) + Phase 7 (UI) | Pending |
-| MARK-03 | Phase 6 (API) + Phase 7 (UI) | Pending |
-| MARK-04 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| MARK-01 | Phase 6 (API) + Phase 7 (UI) | Complete |
+| MARK-02 | Phase 6 (API) + Phase 7 (UI) | Complete |
+| MARK-03 | Phase 6 (API) + Phase 7 (UI) | Complete |
+| MARK-04 | Phase 6 (API) + Phase 7 (UI) | Complete |
 | INSI-01 | Phase 6 (API) + Phase 7 (UI) | Pending |
 | INSI-02 | Phase 6 (API) + Phase 7 (UI) | Pending |
 | INSI-03 | Phase 6 (API) + Phase 7 (UI) | Pending |
