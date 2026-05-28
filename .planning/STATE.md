@@ -22,7 +22,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 4 | Anomaly Detection | ✓ Complete (2026-05-28) | 5/5 |
 | 5 | AI Insights | ✓ Complete (2026-05-28) | 4/4 |
 | 6 | Backend HTTP API | ✓ Complete (2026-05-28) | 4/4 |
-| 7 | Frontend Dashboards | ◆ Planned (2026-05-28) | 5 plans ready |
+| 7 | Frontend Dashboards | ◆ In progress (2026-05-28) | 1/5 complete |
 | 8 | AI Chat | ○ Pending | — |
 | 9 | Polish & Deploy | ○ Pending | — |
 
@@ -51,8 +51,11 @@ None currently.
 - Phase 5 AsyncAnthropic: imported at module level in insight_service.py for test patchability; instantiated inside run() body only (INFRA-05 fork safety)
 - Phase 5 NUMBER_PATTERN: greedy \b(\d[\d.,]*\d|\d)\b — handles Romanian thousands (23.400→23400) and 4+ digit integers (5050 not truncated to 505)
 - Phase 5 anthropic_api_key in Settings: optional empty default — tests mock AsyncAnthropic; production needs real ANTHROPIC_API_KEY in .env
+- Phase 7 QueryClientProvider: getQueryClient() singleton in layout.tsx (NOT useState) — server gets new instance per request, browser reuses single instance
+- Phase 7 KI-01 fix: postcss.config.mjs (ESM .mjs extension) with @tailwindcss/postcss plugin; transpilePackages: ["radix-ui"] in next.config.ts for Radix UI ESM resolution
+- Phase 7 formatters.ts: Intl.NumberFormat('ro-RO') for all monetary/percentage formatting; formatWowDelta returns {label, positive} shape; no .toFixed() anywhere
 
-**Last session:** 2026-05-21 — Phase 1 complete ✓. Known issue: KI-01 CSS/Tailwind not loading (fix in Phase 7 or parallel). Advancing to Phase 2 MEFI ETL.
+**Last session:** 2026-05-28 — Phase 7 Plan 01 complete ✓. KI-01 RESOLVED. Wave 2 plans (07-02, 07-03, 07-04) unblocked and ready to execute in parallel.
 
 **2026-05-21 session:** Phase 2 context gathered. Key decisions: store all lifecycle states (active/lost/junk) in raw_mefi_leads, two conformed views (v_mefi_leads_active + v_mefi_leads_junk), auto-detect backfill on first sync, auto-upsert salespeople, new Alembic migration 003 for funnel_config JSONB.
 
@@ -98,10 +101,12 @@ None currently.
 
 **2026-05-28 session (Phase 5 UAT + number_validator fix):** Live round-trip verified on real Sofa Belle data (2026-05-27). status=success, 668 input tokens, $0.044 per call. Romanian insight quality confirmed: all numbers grounded in real KPI data (17 leads, 85.000 RON, 80% V→O, 29.4%/45.8% showroom, 82 stuck offers). Prompt caching confirmed active: 1,051 tokens written on first call, 1,051 cache_read_input_tokens on second call. Number validator fixed: (1) added current_value/expected_value/context_json scalar values to reference set with minutes→hours and fraction→percent forms; (2) added date day-of-month to reference; (3) skip year range 1900-2100 in cross-check; (4) check summary text only (not problem descriptions which contain domain-knowledge figures). Phase 5 HUMAN-UAT complete (3/3 live tests passed, 1 deferred to Phase 6). Phase 5 FULLY COMPLETE.
 
+**2026-05-28 session (07-01 executed):** Phase 7 Plan 01 (Wave 1 Infrastructure + Foundations) COMPLETE. KI-01 RESOLVED: postcss.config.mjs with @tailwindcss/postcss added; D-03 visual audit APPROVED by user (CSS renders correctly). 18 files created/modified: postcss.config.mjs, formatters.ts (26 unit tests GREEN), useHealthData.ts (staleTime 60s), DataFreshnessBanner, 7 shadcn components installed (card/skeleton/badge/table/chart/collapsible/sheet), recharts + react-day-picker + date-fns installed, dashboard layout.tsx converted to Client Component with getQueryClient singleton + QueryClientProvider, sidebar hidden md:flex, topbar left-0 md:left-[240px] + hamburger Sheet mobile nav, 6 i18n namespaces (sales/salespeople/marketing/insights/common/errors) added to ro.json and en.json. 1 auto-fix: transpilePackages: ["radix-ui"] in next.config.ts (Rule 3 blocking — Radix UI ESM resolution). pnpm typecheck + lint: exit 0. Wave 2 plans (07-02, 07-03, 07-04) now unblocked.
+
 ## Known Issues
 
 | ID | Description | Workaround | Fix milestone |
 |----|-------------|------------|---------------|
-| KI-01 | CSS/Tailwind not loading in frontend dev | Static HTML visible; fix in Phase 7 | Phase 7 |
+| KI-01 | ~~CSS/Tailwind not loading in frontend dev~~ | RESOLVED 2026-05-28: postcss.config.mjs with @tailwindcss/postcss; D-03 visual audit APPROVED | — |
 | KI-02 | ~~Burst rate limit on initial MEFI backfill~~ | RESOLVED 2026-05-28: throttle bumped to 0.35s; 1219/1222 leads synced | — |
 | KI-03 | ~~`visits_count` unreliable from `reached_visit`~~ | RESOLVED 2026-05-28: visits = COUNT(source_id=5) Showroom walk-ins; matches Sofa Belle Excel exactly | — |
