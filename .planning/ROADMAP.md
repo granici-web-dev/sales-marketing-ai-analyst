@@ -147,8 +147,8 @@ Plans:
 7. All endpoints return Pydantic-validated responses; revenue fields serialize as decimal strings (not floats); endpoint OpenAPI schema visible at `/docs` matches actual responses.
 **Plans:** 4 plans
 Plans:
-- [ ] 06-01-PLAN.md — Wave 1: get_current_user dependency + all dashboard/insight Pydantic response schemas + dashboard factory + schema unit tests
-- [ ] 06-02-PLAN.md — Wave 1: DashboardReadService (sales, salespeople, marketing, stuck offers) + InsightReadService + HealthReadService + service unit tests
+- [x] 06-01-PLAN.md — Wave 1: get_current_user dependency + all dashboard/insight Pydantic response schemas + dashboard factory + schema unit tests
+- [x] 06-02-PLAN.md — Wave 1: DashboardReadService (sales, salespeople, marketing, stuck offers) + InsightReadService + HealthReadService + service unit tests
 - [ ] 06-03-PLAN.md — Wave 2: dashboards.py + insights.py + health/data routers + router registration + rate-limit unit tests + auth integration tests
 - [ ] 06-04-PLAN.md — Wave 3: Phase 6 integration test suite (all 7 success criteria) + full suite regression check
 
@@ -215,7 +215,7 @@ Plans:
 | 3. Metrics Engine | 1/4 | In progress | — |
 | 4. Anomaly Detection | 3/4 | In progress | — |
 | 5. AI Insights | 4/4 | Executed | 2026-05-28 |
-| 6. Backend HTTP API | 0/4 | Not started | — |
+| 6. Backend HTTP API | 2/4 | In progress | — |
 | 7. Frontend Dashboards | 0/? | Not started | — |
 | 8. AI Chat | 0/? | Not started | — |
 | 9. Polish & Deploy | 0/? | Not started | — |
