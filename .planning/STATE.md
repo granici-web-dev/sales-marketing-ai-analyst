@@ -2,7 +2,7 @@
 
 **Project:** Sales & Marketing AI Analyst
 **Initialized:** 2026-05-19
-**Current Phase:** Phase 3 — Metrics Engine
+**Current Phase:** Phase 4 — Anomaly Detection
 **Milestone:** Iteration 1 (MVP1: MEFI-only)
 
 ## Project Reference
@@ -10,7 +10,7 @@
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Every morning, Sofa Belle gets a clear answer to "where are we losing money?" and 5–7 specific tasks for the day.
-**Current focus:** Phase 3 — Metrics Engine
+**Current focus:** Phase 4 — Anomaly Detection
 
 ## Phase Progress
 
@@ -18,8 +18,8 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 |-------|------|--------|-------|
 | 1 | Foundation | ✓ Complete (2026-05-21) | 7/7 |
 | 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
-| 3 | Metrics Engine | ◆ In progress | 4/4 |
-| 4 | Anomaly Detection | ○ Pending | — |
+| 3 | Metrics Engine | ✓ Complete (2026-05-28) | 4/4 |
+| 4 | Anomaly Detection | ◆ In progress | — |
 | 5 | AI Insights | ○ Pending | — |
 | 6 | Backend HTTP API | ○ Pending | — |
 | 7 | Frontend Dashboards | ○ Pending | — |
@@ -63,3 +63,17 @@ None currently.
 **2026-05-26 session (03-03 executed):** Phase 3 Plan 03 (service layer) COMPLETE. 6 files: business_hours util, DailyKpiService, SalespersonKpiService, SourceKpiService, MetricsRepository, services/metrics/__init__.py. 40/40 service layer tests GREEN.
 
 **2026-05-26 session (03-04 executed):** Phase 3 Plan 04 (Celery task) COMPLETE. calculate_daily_kpis task + daily_pipeline chain extension + celery_app registration. 71/71 Phase 3 tests GREEN. All METR requirements covered. Phase 3 execution complete — running verification.
+
+**2026-05-28 session (Phase 3 post-execution fixes):** Three bugs found and fixed during backfill run: (1) UUID vs VARCHAR type mismatch — str(tenant_id) passed to text() bindparams; fixed by passing UUID object directly. (2) NUMERIC(5,4) overflow on conversion rates > 9.9999 — migration 005 widens 10 columns across 3 tables to NUMERIC(8,4). (3) KI-03 visits metric unavailable — migration 006 makes daily_kpi.visits_count nullable; all three services set visits to NULL. Also added: backfill_daily_kpis task (date range loop), docker-compose worker now listens to celery,backfill queues.
+
+**2026-05-28 session (Phase 3 VERIFIED COMPLETE):** Source categorization rewritten to match real MEFI source_ids verified from 1219 ingested leads. Visits metric now correctly = COUNT(source_id=5) Showroom walk-ins (resolves KI-03 — "Vizita" in Sofa Belle Excel IS the Showroom source, not a funnel stage). MEFI throttle bumped to 0.35s (was 0.15s) to clear burst-limit wall at page 11. All 1219/1222 leads synced (99.8%). Metrics backfilled 148 days (2026-01-23 to 2026-05-06). EXACT MATCH against MEFI Clienți report: total contracts 71 = 71 ✓; per-salesperson contracts all match (Raileanu 22, Roibu 16, Godja 10, Dragoi 10, Zagrian 9, Moaca 3). Funnel: 1219 leads → 360 visits → 417 offers → 71 contracts (5.8% L→C). Sources: showroom 360, mail 335, telefon 208, whatsapp 153, site 124, colaborare 17, meta 9, recomandare 6, arhitect 4, client_fidel 2, other 1. Advancing to Phase 4 — Anomaly Detection.
+
+**2026-05-28 session:** Phase 4 context gathered. Key decisions: one aggregate detected_problems row per rule per day (UPSERT on tenant_id+date+rule_id), context_json holds count+IDs, trailing 30-day close rate from daily_kpi for loss formulas, lost-opportunity formulas for trend rules, single AnomalyService in app/services/anomaly/ (Phase 3 pattern), 7-day minimum baseline window, slow_first_touch checks yesterday-only leads. Resume file: .planning/phases/04-anomaly-detection/04-CONTEXT.md
+
+## Known Issues
+
+| ID | Description | Workaround | Fix milestone |
+|----|-------------|------------|---------------|
+| KI-01 | CSS/Tailwind not loading in frontend dev | Static HTML visible; fix in Phase 7 | Phase 7 |
+| KI-02 | ~~Burst rate limit on initial MEFI backfill~~ | RESOLVED 2026-05-28: throttle bumped to 0.35s; 1219/1222 leads synced | — |
+| KI-03 | ~~`visits_count` unreliable from `reached_visit`~~ | RESOLVED 2026-05-28: visits = COUNT(source_id=5) Showroom walk-ins; matches Sofa Belle Excel exactly | — |
