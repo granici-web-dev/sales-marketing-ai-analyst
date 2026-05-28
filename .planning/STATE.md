@@ -2,7 +2,7 @@
 
 **Project:** Sales & Marketing AI Analyst
 **Initialized:** 2026-05-19
-**Current Phase:** Phase 7 — Frontend Dashboards
+**Current Phase:** Phase 7 — Frontend Dashboards (COMPLETE — awaiting verification)
 **Milestone:** Iteration 1 (MVP1: MEFI-only)
 
 ## Project Reference
@@ -10,7 +10,7 @@
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Every morning, Sofa Belle gets a clear answer to "where are we losing money?" and 5–7 specific tasks for the day.
-**Current focus:** Phase 7 — Frontend Dashboards
+**Current focus:** Phase 7 complete — ready for /gsd:verify-work or Phase 8 (AI Chat)
 
 ## Phase Progress
 
@@ -22,7 +22,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 4 | Anomaly Detection | ✓ Complete (2026-05-28) | 5/5 |
 | 5 | AI Insights | ✓ Complete (2026-05-28) | 4/4 |
 | 6 | Backend HTTP API | ✓ Complete (2026-05-28) | 4/4 |
-| 7 | Frontend Dashboards | ◆ In progress (2026-05-28) | 4/5 complete |
+| 7 | Frontend Dashboards | ✓ Complete (2026-05-29) | 5/5 |
 | 8 | AI Chat | ○ Pending | — |
 | 9 | Polish & Deploy | ○ Pending | — |
 
@@ -105,6 +105,8 @@ None currently.
 **2026-05-28 session (Phase 5 UAT + number_validator fix):** Live round-trip verified on real Sofa Belle data (2026-05-27). status=success, 668 input tokens, $0.044 per call. Romanian insight quality confirmed: all numbers grounded in real KPI data (17 leads, 85.000 RON, 80% V→O, 29.4%/45.8% showroom, 82 stuck offers). Prompt caching confirmed active: 1,051 tokens written on first call, 1,051 cache_read_input_tokens on second call. Number validator fixed: (1) added current_value/expected_value/context_json scalar values to reference set with minutes→hours and fraction→percent forms; (2) added date day-of-month to reference; (3) skip year range 1900-2100 in cross-check; (4) check summary text only (not problem descriptions which contain domain-knowledge figures). Phase 5 HUMAN-UAT complete (3/3 live tests passed, 1 deferred to Phase 6). Phase 5 FULLY COMPLETE.
 
 **2026-05-28 session (07-01 executed):** Phase 7 Plan 01 (Wave 1 Infrastructure + Foundations) COMPLETE. KI-01 RESOLVED: postcss.config.mjs with @tailwindcss/postcss added; D-03 visual audit APPROVED by user (CSS renders correctly). 18 files created/modified: postcss.config.mjs, formatters.ts (26 unit tests GREEN), useHealthData.ts (staleTime 60s), DataFreshnessBanner, 7 shadcn components installed (card/skeleton/badge/table/chart/collapsible/sheet), recharts + react-day-picker + date-fns installed, dashboard layout.tsx converted to Client Component with getQueryClient singleton + QueryClientProvider, sidebar hidden md:flex, topbar left-0 md:left-[240px] + hamburger Sheet mobile nav, 6 i18n namespaces (sales/salespeople/marketing/insights/common/errors) added to ro.json and en.json. 1 auto-fix: transpilePackages: ["radix-ui"] in next.config.ts (Rule 3 blocking — Radix UI ESM resolution). pnpm typecheck + lint: exit 0. Wave 2 plans (07-02, 07-03, 07-04) now unblocked.
+
+**2026-05-29 session (07-05 executed — Phase 7 COMPLETE):** Phase 7 Plan 05 (Insights Dashboard) COMPLETE. 6 files: useInsights.ts (useInsightsToday + useInsightsByDate returning null on 404 + useInsightsRefresh using useMutation per W10), InsightSummary (payload.summary not summary_ro per B3, InsightEnvelope.date not new Date() per Pitfall 8), ProblemCard (shadcn Collapsible collapsed by default, 44px touch target, severity badge color variants, INSI-04 source trace via problem.id), GenerationFailedBanner (role="alert"), FallbackAnomalyList (B6 dual-mode: Case A renders ProblemCard list for status=fallback+problems, Case B static "Nu există date disponibile" paragraph), full /insights page (Suspense, useMutation refresh with 429 Retry-After countdown formatted N:SS, single HTML date input + Astăzi reset, footer formatTimestamp). Task 3 BLOCKING mobile checkpoint (D-17 NON-NEGOTIABLE) APPROVED across all 4 dashboard pages × 360px/768px/1280px breakpoints. **9 Phase 7-wide deviation fixes committed during execution:** (1) `1ccf8062` transpilePackages radix-ui in next.config.ts, (2) `a76a6d50` gitignore spurious pnpm-workspace.yaml, (3) `0f88fbc9` /api/* → backend rewrite proxy, (4) `6d2b02b0` apiClient forwards access_token cookie as Authorization Bearer, (5) `3b0bfc67` DateRangePicker URL sync + "Tot anul" preset, (6) `557c53cd` Marketing service emits total_leads (Pydantic validation fix), (7) `67638e49` useUrlDateRange hook for bulletproof URL→state hydration, (8) `d06089be` Marketing junk_by_source uses canonical 11-category mapping, (9) `02429aff` Move generate_daily_insights from app/tasks/etl/ to app/tasks/insights/ (semantic refactor). Phase 7 status: ALL 5 PLANS COMPLETE — ready for /gsd:verify-work or Phase 8.
 
 ## Known Issues
 

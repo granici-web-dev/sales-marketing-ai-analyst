@@ -17,7 +17,7 @@
 - [x] **Phase 4: Anomaly Detection** *(completed 2026-05-28)* — Rule-based anomaly engine writing detected_problems with severity and estimated_loss_ron
 - [x] **Phase 5: AI Insights** *(completed 2026-05-28)* — Claude Sonnet 4.5 integration with structured Pydantic schema, prompt caching, post-validation, daily insights table
 - [x] **Phase 6: Backend HTTP API** *(completed 2026-05-28)* — FastAPI endpoints for all dashboards and insights with Pydantic response schemas
-- [ ] **Phase 7: Frontend Dashboards** — Next.js UI pages (Sales → Salespeople → Marketing → Insights) with Romanian locale
+- [x] **Phase 7: Frontend Dashboards** *(completed 2026-05-29)* — Next.js UI pages (Sales → Salespeople → Marketing → Insights) with Romanian locale
 - [ ] **Phase 8: AI Chat** — Interactive Romanian AI chat with Tool Use, conversation history, streaming responses, and number cross-check validation
 - [ ] **Phase 9: Polish & Deploy** — E2E tests, Sentry, healthcheck task, Hetzner deployment with Caddy
 
@@ -173,7 +173,7 @@ Plans:
 - [x] 07-02-PLAN.md — Sales Dashboard (funnel chart, KPI cards, source breakdown, revenue trend, stuck offers) ← Wave 2 (parallel with 03, 04)
 - [x] 07-03-PLAN.md — Salespeople Dashboard (sortable leaderboard table, per-rep funnel, TTFT red highlight) ← Wave 2 (parallel with 02, 04)
 - [x] 07-04-PLAN.md — Marketing Dashboard (source volume line chart, junk % table, ad-spend placeholder) ← Wave 2 (parallel with 02, 03)
-- [ ] 07-05-PLAN.md — Insights Dashboard (problem cards, refresh rate-limit, historical picker, fallback) ← **Wave 3 — depends on 01..04; contains blocking mobile checkpoint**
+- [x] 07-05-PLAN.md — Insights Dashboard (problem cards, refresh rate-limit, historical picker, fallback) ← **Wave 3 — depends on 01..04; contains blocking mobile checkpoint**
 **Wave dependency:** 01 → {02, 03, 04} → 05 (02/03/04 parallelisable)
 **Cross-cutting constraints:** All charts use `shadcn chart` abstraction (no direct `recharts` imports in pages); every component uses `useTranslations(ns)` (no hardcoded Romanian strings); `credentials: "include"` required on POST /insights/refresh (CSRF); date params validated as YYYY-MM-DD before API call (T-7-01). SC#8 grep gate (`grep -r "@tremor" frontend/src`) run in 07-01 verify block.
 **UI hint:** yes
@@ -224,7 +224,7 @@ Plans:
 | 4. Anomaly Detection | 3/4 | In progress | — |
 | 5. AI Insights | 4/4 | Executed | 2026-05-28 |
 | 6. Backend HTTP API | 3/4 | In progress | — |
-| 7. Frontend Dashboards | 3/5 | In progress | — |
+| 7. Frontend Dashboards | 5/5 | Executed | 2026-05-29 |
 | 8. AI Chat | 0/? | Not started | — |
 | 9. Polish & Deploy | 0/? | Not started | — |
 
