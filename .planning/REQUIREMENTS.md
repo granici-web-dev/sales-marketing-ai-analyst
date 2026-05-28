@@ -55,13 +55,13 @@
 
 ### Anomaly Detection
 
-- [ ] **ANOM-01**: Anomaly detection runs after metrics calculation and writes findings to `detected_problems` with severity, metric, current_value, expected_value, estimated_loss_ron
-- [ ] **ANOM-02**: Rule: leads with no contact attempt > 4 hours during business hours → "slow first touch"
-- [ ] **ANOM-03**: Rule: offers with no activity > 14 days → "stuck offer"
-- [ ] **ANOM-04**: Rule: L→V conversion rate drops > 30% vs 30-day baseline → "showroom traffic problem"
-- [ ] **ANOM-05**: Rule: O→C conversion rate drops > 20% vs baseline → "closing problem"
-- [ ] **ANOM-06**: Rule: specific salesperson KPI 30%+ below team average → "underperforming salesperson"
-- [ ] **ANOM-07**: Anomaly detection skips junk leads; flags if junk % > 20% as a marketing quality issue
+- [x] **ANOM-01**: Anomaly detection runs after metrics calculation and writes findings to `detected_problems` with severity, metric, current_value, expected_value, estimated_loss_ron
+- [x] **ANOM-02**: Rule: leads with no contact attempt > 4 hours during business hours → "slow first touch"
+- [x] **ANOM-03**: Rule: offers with no activity > 14 days → "stuck offer"
+- [x] **ANOM-04**: Rule: L→V conversion rate drops > 30% vs 30-day baseline → "showroom traffic problem"
+- [x] **ANOM-05**: Rule: O→C conversion rate drops > 20% vs baseline → "closing problem"
+- [x] **ANOM-06**: Rule: specific salesperson KPI 30%+ below team average → "underperforming salesperson"
+- [x] **ANOM-07**: Anomaly detection skips junk leads; flags if junk % > 20% as a marketing quality issue
 
 ### AI Insights Generation
 
@@ -228,13 +228,13 @@
 | METR-04 | Phase 3: Metrics Engine | Pending |
 | METR-05 | Phase 3: Metrics Engine | Pending |
 | METR-06 | Phase 3: Metrics Engine | Pending |
-| ANOM-01 | Phase 4: Anomaly Detection | Pending |
-| ANOM-02 | Phase 4: Anomaly Detection | Pending |
-| ANOM-03 | Phase 4: Anomaly Detection | Pending |
-| ANOM-04 | Phase 4: Anomaly Detection | Pending |
-| ANOM-05 | Phase 4: Anomaly Detection | Pending |
-| ANOM-06 | Phase 4: Anomaly Detection | Pending |
-| ANOM-07 | Phase 4: Anomaly Detection | Pending |
+| ANOM-01 | Phase 4: Anomaly Detection | Complete |
+| ANOM-02 | Phase 4: Anomaly Detection | Complete |
+| ANOM-03 | Phase 4: Anomaly Detection | Complete |
+| ANOM-04 | Phase 4: Anomaly Detection | Complete |
+| ANOM-05 | Phase 4: Anomaly Detection | Complete |
+| ANOM-06 | Phase 4: Anomaly Detection | Complete |
+| ANOM-07 | Phase 4: Anomaly Detection | Complete |
 | AI-01 | Phase 5: AI Insights | Pending |
 | AI-02 | Phase 5: AI Insights | Pending |
 | AI-03 | Phase 5: AI Insights | Pending |

@@ -2,7 +2,7 @@
 
 **Project:** Sales & Marketing AI Analyst
 **Initialized:** 2026-05-19
-**Current Phase:** Phase 4 — Anomaly Detection
+**Current Phase:** Phase 5 — AI Insights
 **Milestone:** Iteration 1 (MVP1: MEFI-only)
 
 ## Project Reference
@@ -10,7 +10,7 @@
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Every morning, Sofa Belle gets a clear answer to "where are we losing money?" and 5–7 specific tasks for the day.
-**Current focus:** Phase 4 — Anomaly Detection
+**Current focus:** Phase 5 — AI Insights
 
 ## Phase Progress
 
@@ -19,7 +19,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 1 | Foundation | ✓ Complete (2026-05-21) | 7/7 |
 | 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
 | 3 | Metrics Engine | ✓ Complete (2026-05-28) | 4/4 |
-| 4 | Anomaly Detection | ◆ In progress | 3/4 |
+| 4 | Anomaly Detection | ✓ Complete (2026-05-28) | 4/4 |
 | 5 | AI Insights | ○ Pending | — |
 | 6 | Backend HTTP API | ○ Pending | — |
 | 7 | Frontend Dashboards | ○ Pending | — |
@@ -78,6 +78,8 @@ None currently.
 **2026-05-28 session (04-02 executed):** Phase 4 Plan 02 (schema foundation) COMPLETE. Migration 007 creates detected_problems table with UNIQUE(tenant_id, date, rule_id), 2 performance indexes, FK to tenants.id. DetectedProblem ORM model with 8 domain columns (date, rule_id, severity, metric, current_value NUMERIC(12,4), expected_value NUMERIC(12,4), estimated_loss_ron NUMERIC(12,2), context_json JSONB) + detected_at TIMESTAMPTZ. app/models/anomaly package + app/models/__init__.py updated for Alembic autogenerate discovery.
 
 **2026-05-28 session (04-03 executed):** Phase 4 Plan 03 (service layer) COMPLETE. AnomalyService (5 detect methods + run_all_rules orchestrator) + AnomalyRepository (3-col UPSERT). All 23 unit tests GREEN. Optional-params design: detect_*() methods accept pre-fetched data for testability, auto-fetch from DB when called from run_all_rules(). Key decisions: optional params pattern (AsyncMock-friendly), CLOSE_RATE_FALLBACK=0.15, underperforming sp loss = count × avg_deal_size × 0.30 proxy.
+
+**2026-05-28 session (04-04 executed):** Phase 4 Plan 04 (Celery task wiring) COMPLETE. detect_anomalies task (NullPool, deferred imports, WR-06 stale SyncRun cleanup, PIPE-04 audit trail, WR-04 single commit, CR-05 autoretry). daily_pipeline() extended to 3-link chain: sync_mefi_leads → calculate_daily_kpis → detect_anomalies. celery_app.py include list updated. 45 tests passed (3 skipped live-DB integration). Phase 4 COMPLETE — advancing to Phase 5 AI Insights.
 
 ## Known Issues
 

@@ -14,7 +14,7 @@
 - [x] **Phase 1: Foundation** *(completed 2026-05-21 — KI-01: CSS/Tailwind unstyled, fix in Phase 7)* — Docker stack, FastAPI async skeleton, Celery+RedBeat, Next.js 16+shadcn UI scaffold, JWT auth, next-intl i18n, multi-tenancy seam
 - [ ] **Phase 2: MEFI ETL** — MEFI API client, raw tables, conformed views, "ever reached" funnel logic, idempotent nightly sync with rate limits and backfill
 - [ ] **Phase 3: Metrics Engine** — Daily KPI calculation, funnel conversion rates, salesperson and source KPIs, WoW/MoM deltas
-- [ ] **Phase 4: Anomaly Detection** — Rule-based anomaly engine writing detected_problems with severity and estimated_loss_ron
+- [x] **Phase 4: Anomaly Detection** *(completed 2026-05-28)* — Rule-based anomaly engine writing detected_problems with severity and estimated_loss_ron
 - [ ] **Phase 5: AI Insights** — Claude Sonnet 4.5 integration with structured Pydantic schema, prompt caching, post-validation, daily insights table
 - [ ] **Phase 6: Backend HTTP API** — FastAPI endpoints for all dashboards and insights with Pydantic response schemas
 - [ ] **Phase 7: Frontend Dashboards** — Next.js UI pages (Sales → Salespeople → Marketing → Insights) with Romanian locale
@@ -108,7 +108,7 @@ Plans:
 - [x] 04-01-PLAN.md — Wave 0 test stubs (RED tests for service, repository, task + anomaly_factory)
 - [x] 04-02-PLAN.md — Alembic migration 007 (detected_problems table) + DetectedProblem SQLAlchemy model
 - [x] 04-03-PLAN.md — AnomalyService (5 rules + run_all_rules) + AnomalyRepository (UPSERT writer)
-- [ ] 04-04-PLAN.md — detect_anomalies Celery task + daily_pipeline chain extension + celery_app registration
+- [x] 04-04-PLAN.md — detect_anomalies Celery task + daily_pipeline chain extension + celery_app registration
 
 ---
 
