@@ -145,7 +145,12 @@ Plans:
 5. `POST /api/v1/insights/refresh` enqueues a pipeline run, is rate-limited to 1 per hour per user (subsequent call within the window returns 429), and returns a `pipeline_run_id` the client can poll.
 6. `GET /api/v1/healthz` returns 200; `GET /api/v1/health/data` returns `last_sync_at`, `last_pipeline_status`, and a stale flag if `now - last_sync_at > 26h`.
 7. All endpoints return Pydantic-validated responses; revenue fields serialize as decimal strings (not floats); endpoint OpenAPI schema visible at `/docs` matches actual responses.
-**Plans:** TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 06-01-PLAN.md — Wave 1: get_current_user dependency + all dashboard/insight Pydantic response schemas + dashboard factory + schema unit tests
+- [ ] 06-02-PLAN.md — Wave 1: DashboardReadService (sales, salespeople, marketing, stuck offers) + InsightReadService + HealthReadService + service unit tests
+- [ ] 06-03-PLAN.md — Wave 2: dashboards.py + insights.py + health/data routers + router registration + rate-limit unit tests + auth integration tests
+- [ ] 06-04-PLAN.md — Wave 3: Phase 6 integration test suite (all 7 success criteria) + full suite regression check
 
 ---
 
@@ -210,7 +215,7 @@ Plans:
 | 3. Metrics Engine | 1/4 | In progress | — |
 | 4. Anomaly Detection | 3/4 | In progress | — |
 | 5. AI Insights | 4/4 | Executed | 2026-05-28 |
-| 6. Backend HTTP API | 0/? | Not started | — |
+| 6. Backend HTTP API | 0/4 | Not started | — |
 | 7. Frontend Dashboards | 0/? | Not started | — |
 | 8. AI Chat | 0/? | Not started | — |
 | 9. Polish & Deploy | 0/? | Not started | — |
