@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { DayPicker, type DateRange } from "react-day-picker";
-import { format, subDays, startOfMonth } from "date-fns";
+import { format, subDays, startOfMonth, startOfYear } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -46,24 +46,31 @@ export function DateRangePicker() {
   const isMobile = useIsMobile();
 
   const defaults = getDefaultDateRange();
-  const currentFrom = searchParams.get("from") ?? defaults.from;
-  const currentTo = searchParams.get("to") ?? defaults.to;
-
-  const [open, setOpen] = useState(false);
-  const [range, setRange] = useState<DateRange | undefined>({
-    from: new Date(currentFrom),
-    to: new Date(currentTo),
-  });
+  const urlFrom = searchParams.get("from");
+  const urlTo = searchParams.get("to");
 
   // Validate URL params (T-7-01 mitigation): fall back to defaults on invalid dates
   const validatedFrom = (() => {
-    const d = new Date(currentFrom);
-    return isNaN(d.getTime()) ? defaults.from : currentFrom;
+    if (!urlFrom) return defaults.from;
+    const d = new Date(urlFrom);
+    return isNaN(d.getTime()) ? defaults.from : urlFrom;
   })();
   const validatedTo = (() => {
-    const d = new Date(currentTo);
-    return isNaN(d.getTime()) ? defaults.to : currentTo;
+    if (!urlTo) return defaults.to;
+    const d = new Date(urlTo);
+    return isNaN(d.getTime()) ? defaults.to : urlTo;
   })();
+
+  const [open, setOpen] = useState(false);
+  const [range, setRange] = useState<DateRange | undefined>({
+    from: new Date(validatedFrom),
+    to: new Date(validatedTo),
+  });
+
+  // Sync internal range with URL params (browser back/forward, external router.push, refresh)
+  useEffect(() => {
+    setRange({ from: new Date(validatedFrom), to: new Date(validatedTo) });
+  }, [validatedFrom, validatedTo]);
 
   function applyRange(r: DateRange | undefined) {
     if (!r?.from || !r?.to) return;
@@ -102,6 +109,11 @@ export function DateRangePicker() {
     {
       label: "Luna curentă",
       from: startOfMonth(today),
+      to: today,
+    },
+    {
+      label: "Tot anul",
+      from: startOfYear(today),
       to: today,
     },
   ];
@@ -155,7 +167,7 @@ export function DateRangePicker() {
       variant="outline"
       className={cn(
         "min-h-[44px] gap-2 text-sm font-normal",
-        !currentFrom && "text-muted-foreground",
+        !urlFrom && "text-muted-foreground",
       )}
     >
       <CalendarIcon size={16} />
