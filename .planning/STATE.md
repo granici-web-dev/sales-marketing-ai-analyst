@@ -20,7 +20,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 2 | MEFI ETL | ✓ Complete (2026-05-23) | 5/5 |
 | 3 | Metrics Engine | ✓ Complete (2026-05-28) | 4/4 |
 | 4 | Anomaly Detection | ✓ Complete (2026-05-28) | 5/5 |
-| 5 | AI Insights | ◆ In Progress | 0/4 |
+| 5 | AI Insights | ◆ In Progress | 1/4 |
 | 6 | Backend HTTP API | ○ Pending | — |
 | 7 | Frontend Dashboards | ○ Pending | — |
 | 8 | AI Chat | ○ Pending | — |
@@ -84,6 +84,8 @@ None currently.
 **2026-05-28 session (04-05 executed):** Phase 4 Plan 05 (Gap Closure CR-01, CR-02, INFO) COMPLETE. Two BLOCKER defects closed: (1) CR-01 — migration 007 now includes `detected_at TIMESTAMPTZ NOT NULL DEFAULT now()` between updated_at and date columns (13 columns match ORM model exactly); (2) CR-02 — `_get_junk_ids()` SQL now date-scoped via `AND created_date_local = :kpi_date` (no more all-time junk inflation). INFO closed: context_json keys renamed count→junk_count, total→total_leads per ORM model docstring. All 23 unit tests GREEN. Phase 4 gap-closure complete — Phase 4 FULLY COMPLETE.
 
 **2026-05-28 session:** Phase 5 context gathered. Key decisions: rich SPEC.md schema (positives[], warnings[], weekly_action_plan[], expected_outcome), hard max 3 problems by estimated_loss_ron, problems[].id = rule_id for traceability, user message = anomalies + yesterday KPI snapshot, system prompt (cached) = instructions + Sofa Belle context (real salesperson names: Roibu Valeria/Raileanu Leon/Godja Adina Maria/Dragoi Mihaela/Zagrian Emilia/Moaca Andreea) + output schema, deadlines as relative Romanian labels, status machine: success|failed|fallback, zero-anomaly → positive-only report, anthropic SDK to add to pyproject.toml. Resume file: .planning/phases/05-ai-insights/05-CONTEXT.md
+
+**2026-05-28 session (05-01 executed):** Phase 5 Plan 01 (Wave 0 test stubs) COMPLETE. 7 files created: insight_factory.py (GREEN) + 6 RED-state test files. 41 total tests: 36 unit tests (across schema, prompt_builder, insight_service, number_validator, insight_repository) + 5 integration tests (4 skipped without TEST_DATABASE_URL, 1 AI-09 grep gate PASSING immediately). Key decision: per-test @_integration_skip decorator instead of module-level pytestmark — allows AI-09 grep gate to run without TEST_DATABASE_URL. Advancing to Phase 5 Plan 02 (Wave 1: schema foundation + migration 008).
 
 ## Known Issues
 

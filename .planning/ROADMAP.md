@@ -209,7 +209,7 @@ Plans:
 | 2. MEFI ETL | 0/5 | Not started | — |
 | 3. Metrics Engine | 1/4 | In progress | — |
 | 4. Anomaly Detection | 3/4 | In progress | — |
-| 5. AI Insights | 0/4 | Planned | — |
+| 5. AI Insights | 1/4 | In progress | — |
 | 6. Backend HTTP API | 0/? | Not started | — |
 | 7. Frontend Dashboards | 0/? | Not started | — |
 | 8. AI Chat | 0/? | Not started | — |
