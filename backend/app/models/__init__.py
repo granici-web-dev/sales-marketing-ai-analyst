@@ -23,6 +23,10 @@ from app.models.metrics import DailyKpi, SalespersonDailyKpi, SourceDailyKpi  # 
 # Phase 4 models — anomaly detection (detected_problems)
 from app.models.anomaly import DetectedProblem  # noqa: F401
 
+# Phase 5 models — AI insights (daily_insights)
+from app.models.insights import daily_insight as _di  # noqa: F401 — Alembic autogenerate discovery
+from app.models.insights import DailyInsight  # noqa: F401
+
 __all__ = [
     # Phase 1
     "PipelineRun",
@@ -39,4 +43,6 @@ __all__ = [
     "SourceDailyKpi",
     # Phase 4
     "DetectedProblem",
+    # Phase 5
+    "DailyInsight",
 ]
