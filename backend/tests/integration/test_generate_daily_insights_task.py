@@ -118,7 +118,7 @@ async def test_task_writes_success_row() -> None:
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import create_async_engine
 
-    from app.tasks.etl.generate_daily_insights import _generate_async  # noqa: PLC0415
+    from app.tasks.insights.generate_daily_insights import _generate_async  # noqa: PLC0415
 
     kpi_date = date.today()
     engine = create_async_engine(_TEST_DB_URL)
@@ -165,7 +165,7 @@ async def test_token_usage_logged() -> None:
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import create_async_engine
 
-    from app.tasks.etl.generate_daily_insights import _generate_async  # noqa: PLC0415
+    from app.tasks.insights.generate_daily_insights import _generate_async  # noqa: PLC0415
 
     kpi_date = date.today()
     engine = create_async_engine(_TEST_DB_URL)
@@ -211,7 +211,7 @@ async def test_upsert_is_idempotent() -> None:
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import create_async_engine
 
-    from app.tasks.etl.generate_daily_insights import _generate_async  # noqa: PLC0415
+    from app.tasks.insights.generate_daily_insights import _generate_async  # noqa: PLC0415
 
     kpi_date = date.today()
     engine = create_async_engine(_TEST_DB_URL)
@@ -288,7 +288,7 @@ async def test_fallback_on_all_claude_failures() -> None:
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import create_async_engine
 
-    from app.tasks.etl.generate_daily_insights import _generate_async  # noqa: PLC0415
+    from app.tasks.insights.generate_daily_insights import _generate_async  # noqa: PLC0415
 
     kpi_date = date.today()
     engine = create_async_engine(_TEST_DB_URL)

@@ -41,7 +41,7 @@ logger = structlog.get_logger(__name__)
     autoretry_for=(Exception,),
     max_retries=3,
     default_retry_delay=60,
-    name="tasks.etl.generate_daily_insights",
+    name="tasks.insights.generate_daily_insights",
     soft_time_limit=120,
     time_limit=180,
 )

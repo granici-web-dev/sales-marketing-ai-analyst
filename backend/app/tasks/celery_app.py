@@ -32,7 +32,7 @@ celery_app = Celery(
         "app.tasks.etl.calculate_daily_kpis",
         "app.tasks.etl.backfill_daily_kpis",
         "app.tasks.etl.detect_anomalies",  # Phase 4
-        "app.tasks.etl.generate_daily_insights",  # Phase 5 — AI Insights
+        "app.tasks.insights.generate_daily_insights",  # Phase 5 — AI Insights
     ],
 )
 

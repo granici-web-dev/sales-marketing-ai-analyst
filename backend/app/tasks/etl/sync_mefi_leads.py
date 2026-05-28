@@ -323,7 +323,7 @@ def daily_pipeline(tenant_id: str) -> object:
     from celery import chain
     from app.tasks.etl.calculate_daily_kpis import calculate_daily_kpis  # noqa: PLC0415
     from app.tasks.etl.detect_anomalies import detect_anomalies  # noqa: PLC0415
-    from app.tasks.etl.generate_daily_insights import generate_daily_insights  # noqa: PLC0415
+    from app.tasks.insights.generate_daily_insights import generate_daily_insights  # noqa: PLC0415
 
     return chain(
         sync_mefi_leads.si(tenant_id),
