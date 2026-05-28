@@ -22,7 +22,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 4 | Anomaly Detection | ✓ Complete (2026-05-28) | 5/5 |
 | 5 | AI Insights | ✓ Complete (2026-05-28) | 4/4 |
 | 6 | Backend HTTP API | ✓ Complete (2026-05-28) | 4/4 |
-| 7 | Frontend Dashboards | ◆ In progress (2026-05-28) | 1/5 complete |
+| 7 | Frontend Dashboards | ◆ In progress (2026-05-28) | 2/5 complete |
 | 8 | AI Chat | ○ Pending | — |
 | 9 | Polish & Deploy | ○ Pending | — |
 
@@ -54,8 +54,11 @@ None currently.
 - Phase 7 QueryClientProvider: getQueryClient() singleton in layout.tsx (NOT useState) — server gets new instance per request, browser reuses single instance
 - Phase 7 KI-01 fix: postcss.config.mjs (ESM .mjs extension) with @tailwindcss/postcss plugin; transpilePackages: ["radix-ui"] in next.config.ts for Radix UI ESM resolution
 - Phase 7 formatters.ts: Intl.NumberFormat('ro-RO') for all monetary/percentage formatting; formatWowDelta returns {label, positive} shape; no .toFixed() anywhere
+- Phase 7 tooltip.tsx + popover.tsx: created manually via radix-ui umbrella package (same pattern as sheet.tsx/collapsible.tsx) — shadcn CLI unavailable (pnpm not on PATH)
+- Phase 7 RevenueTrend: AreaChart (vs LineChart) — gradient fill more visually informative for daily revenue data
+- Phase 7 date URL validation: isNaN(new Date(param).getTime()) check before use per T-7-01 threat mitigation
 
-**Last session:** 2026-05-28 — Phase 7 Plan 01 complete ✓. KI-01 RESOLVED. Wave 2 plans (07-02, 07-03, 07-04) unblocked and ready to execute in parallel.
+**Last session:** 2026-05-28 — Phase 7 Plan 02 complete ✓. Sales dashboard page fully implemented: useSalesDashboard hook, DateRangePicker (with disabled YoY SALE-06 shape), FunnelChart (responsive), KpiCards grid, SourceBreakdown, RevenueTrend AreaChart, StuckOffers, all loading/empty/error states. tooltip.tsx + popover.tsx added via radix-ui umbrella. Plans 07-03, 07-04 (Wave 2) + 07-05 (Insights) ready to execute.
 
 **2026-05-21 session:** Phase 2 context gathered. Key decisions: store all lifecycle states (active/lost/junk) in raw_mefi_leads, two conformed views (v_mefi_leads_active + v_mefi_leads_junk), auto-detect backfill on first sync, auto-upsert salespeople, new Alembic migration 003 for funnel_config JSONB.
 

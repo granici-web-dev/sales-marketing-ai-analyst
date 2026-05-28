@@ -90,13 +90,13 @@
 
 ### Sales Dashboard
 
-- [ ] **SALE-01**: User can view funnel visualization showing total counts at each stage (Lead → Vizita → Oferta → Contract) for selected date range
-- [ ] **SALE-02**: User can view L→V, V→O, L→O, O→C, L→C conversion rates with WoW/MoM delta indicators
-- [ ] **SALE-03**: User can view total leads, visits, offers, contracts, revenue (Încasări) as KPI cards with delta vs prior period
-- [ ] **SALE-04**: User can view lead volume breakdown by source category (Mail/FB/IG, Telefon, WhatsApp, Site, Designer, Alte) as chart and table
-- [ ] **SALE-05**: User can view revenue trend over time (line chart, selected date range)
-- [ ] **SALE-06**: User can switch between date ranges: 7d, 30d, 90d, custom; toggle YoY overlay
-- [ ] **SALE-07**: User can see "stuck offers" widget: offers with no activity > 14 days, count and list
+- [x] **SALE-01**: User can view funnel visualization showing total counts at each stage (Lead → Vizita → Oferta → Contract) for selected date range
+- [x] **SALE-02**: User can view L→V, V→O, L→O, O→C, L→C conversion rates with WoW/MoM delta indicators
+- [x] **SALE-03**: User can view total leads, visits, offers, contracts, revenue (Încasări) as KPI cards with delta vs prior period
+- [x] **SALE-04**: User can view lead volume breakdown by source category (Mail/FB/IG, Telefon, WhatsApp, Site, Designer, Alte) as chart and table
+- [x] **SALE-05**: User can view revenue trend over time (line chart, selected date range)
+- [x] **SALE-06**: User can switch between date ranges: 7d, 30d, 90d, custom; toggle YoY overlay
+- [x] **SALE-07**: User can see "stuck offers" widget: offers with no activity > 14 days, count and list
 
 ### Salespeople Dashboard
 
@@ -123,14 +123,14 @@
 
 ### UI & Localization
 
-- [ ] **UI-01**: All UI text defaults to Romanian; English secondary (via next-intl locale switching)
-- [ ] **UI-02**: Currency formatted as `1.234,56 RON` (`Intl.NumberFormat('ro-RO', {style:'currency', currency:'RON'})`)
-- [ ] **UI-03**: Dates formatted as `DD.MM.YYYY` (Romanian convention)
-- [ ] **UI-04**: All timestamps displayed in Europe/Bucharest timezone
-- [ ] **UI-05**: Every chart and table has loading, empty, and error states
-- [ ] **UI-06**: Data freshness banner shown when last sync > 26h ago or a sync failed
-- [ ] **UI-07**: Responsive layout for desktop (1280px+) and tablet (768px+)
-- [ ] **UI-08**: Charts use shadcn/ui chart components (Recharts v3) — no `@tremor/react` imports
+- [x] **UI-01**: All UI text defaults to Romanian; English secondary (via next-intl locale switching)
+- [x] **UI-02**: Currency formatted as `1.234,56 RON` (`Intl.NumberFormat('ro-RO', {style:'currency', currency:'RON'})`)
+- [x] **UI-03**: Dates formatted as `DD.MM.YYYY` (Romanian convention)
+- [x] **UI-04**: All timestamps displayed in Europe/Bucharest timezone
+- [x] **UI-05**: Every chart and table has loading, empty, and error states
+- [x] **UI-06**: Data freshness banner shown when last sync > 26h ago or a sync failed
+- [x] **UI-07**: Responsive layout for desktop (1280px+) and tablet (768px+)
+- [x] **UI-08**: Charts use shadcn/ui chart components (Recharts v3) — no `@tremor/react` imports
 
 ### Daily Pipeline
 
@@ -244,13 +244,13 @@
 | AI-07 | Phase 5: AI Insights | Pending |
 | AI-08 | Phase 5: AI Insights | Pending |
 | AI-09 | Phase 5: AI Insights | Pending |
-| SALE-01 | Phase 6 (API) + Phase 7 (UI) | Pending |
-| SALE-02 | Phase 6 (API) + Phase 7 (UI) | Pending |
-| SALE-03 | Phase 6 (API) + Phase 7 (UI) | Pending |
-| SALE-04 | Phase 6 (API) + Phase 7 (UI) | Pending |
-| SALE-05 | Phase 6 (API) + Phase 7 (UI) | Pending |
-| SALE-06 | Phase 6 (API) + Phase 7 (UI) | Pending |
-| SALE-07 | Phase 6 (API) + Phase 7 (UI) | Pending |
+| SALE-01 | Phase 6 (API) + Phase 7 (UI) | Complete |
+| SALE-02 | Phase 6 (API) + Phase 7 (UI) | Complete |
+| SALE-03 | Phase 6 (API) + Phase 7 (UI) | Complete |
+| SALE-04 | Phase 6 (API) + Phase 7 (UI) | Complete |
+| SALE-05 | Phase 6 (API) + Phase 7 (UI) | Complete |
+| SALE-06 | Phase 6 (API) + Phase 7 (UI) | Complete |
+| SALE-07 | Phase 6 (API) + Phase 7 (UI) | Complete |
 | SALES-01 | Phase 6 (API) + Phase 7 (UI) | Pending |
 | SALES-02 | Phase 6 (API) + Phase 7 (UI) | Pending |
 | SALES-03 | Phase 6 (API) + Phase 7 (UI) | Pending |
@@ -265,14 +265,14 @@
 | INSI-04 | Phase 6 (API) + Phase 7 (UI) | Pending |
 | INSI-05 | Phase 6 (API) + Phase 7 (UI) | Pending |
 | INSI-06 | Phase 6 (API) + Phase 7 (UI) | Pending |
-| UI-01 | Phase 1 (i18n scaffold) + Phase 7 | Pending |
-| UI-02 | Phase 7: Frontend Dashboards | Pending |
-| UI-03 | Phase 7: Frontend Dashboards | Pending |
-| UI-04 | Phase 7: Frontend Dashboards | Pending |
-| UI-05 | Phase 7: Frontend Dashboards | Pending |
-| UI-06 | Phase 6 (API) + Phase 7 (banner UI) | Pending |
-| UI-07 | Phase 7: Frontend Dashboards | Pending |
-| UI-08 | Phase 7: Frontend Dashboards | Pending |
+| UI-01 | Phase 1 (i18n scaffold) + Phase 7 | Complete |
+| UI-02 | Phase 7: Frontend Dashboards | Complete |
+| UI-03 | Phase 7: Frontend Dashboards | Complete |
+| UI-04 | Phase 7: Frontend Dashboards | Complete |
+| UI-05 | Phase 7: Frontend Dashboards | Complete |
+| UI-06 | Phase 6 (API) + Phase 7 (banner UI) | Complete |
+| UI-07 | Phase 7: Frontend Dashboards | Complete |
+| UI-08 | Phase 7: Frontend Dashboards | Complete |
 | PIPE-01 | Phase 2: MEFI ETL | Pending |
 | PIPE-02 | Phase 2: MEFI ETL | Pending |
 | PIPE-03 | Phase 2: MEFI ETL | Pending |

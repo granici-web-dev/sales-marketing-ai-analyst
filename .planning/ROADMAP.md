@@ -170,7 +170,7 @@ Plans:
 **Plans:** 5 plans
 Plans:
 - [x] 07-01-PLAN.md — Infrastructure + Foundations (KI-01 fix, packages, QueryClientProvider, formatters, mobile layout, i18n namespaces) ← **Wave 1 — all others depend on this**
-- [ ] 07-02-PLAN.md — Sales Dashboard (funnel chart, KPI cards, source breakdown, revenue trend, stuck offers) ← Wave 2 (parallel with 03, 04)
+- [x] 07-02-PLAN.md — Sales Dashboard (funnel chart, KPI cards, source breakdown, revenue trend, stuck offers) ← Wave 2 (parallel with 03, 04)
 - [ ] 07-03-PLAN.md — Salespeople Dashboard (sortable leaderboard table, per-rep funnel, TTFT red highlight) ← Wave 2 (parallel with 02, 04)
 - [ ] 07-04-PLAN.md — Marketing Dashboard (source volume line chart, junk % table, ad-spend placeholder) ← Wave 2 (parallel with 02, 03)
 - [ ] 07-05-PLAN.md — Insights Dashboard (problem cards, refresh rate-limit, historical picker, fallback) ← **Wave 3 — depends on 01..04; contains blocking mobile checkpoint**
