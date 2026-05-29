@@ -38,15 +38,28 @@ from app.services.chat.tools.get_salesperson_performance import (
     TOOL as _GET_SALESPERSON_PERFORMANCE,
 )
 
+# ── Task 2 tools (4 of 12) — thin text() queries + delta math ─────────────────
+from app.services.chat.tools.compare_periods import TOOL as _COMPARE_PERIODS
+from app.services.chat.tools.get_leads import TOOL as _GET_LEADS
+from app.services.chat.tools.get_loss_reasons import TOOL as _GET_LOSS_REASONS
+from app.services.chat.tools.get_showroom_performance import (
+    TOOL as _GET_SHOWROOM_PERFORMANCE,
+)
+
 
 # Canonical name → Tool mapping (D-04). The registry is EXTENDED in plan
-# 08-03 Tasks 2 and 3 — never replaced; only add entries here.
+# 08-03 Task 3 — never replaced; only add entries here.
 TOOLS_REGISTRY: dict[str, Tool] = {
     # Task 1
     _GET_KPI.name: _GET_KPI,
     _GET_FUNNEL_DATA.name: _GET_FUNNEL_DATA,
     _GET_SALESPERSON_PERFORMANCE.name: _GET_SALESPERSON_PERFORMANCE,
     _GET_LEAD_CATEGORIES_BREAKDOWN.name: _GET_LEAD_CATEGORIES_BREAKDOWN,
+    # Task 2
+    _GET_LEADS.name: _GET_LEADS,
+    _COMPARE_PERIODS.name: _COMPARE_PERIODS,
+    _GET_LOSS_REASONS.name: _GET_LOSS_REASONS,
+    _GET_SHOWROOM_PERFORMANCE.name: _GET_SHOWROOM_PERFORMANCE,
 }
 
 
