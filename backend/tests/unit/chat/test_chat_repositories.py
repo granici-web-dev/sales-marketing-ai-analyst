@@ -180,6 +180,9 @@ class TestRequestResponseSchemas:
 TENANT_A = UUID("00000000-0000-0000-0000-000000000001")
 TENANT_B = UUID("00000000-0000-0000-0000-00000000000b")
 USER_ID = UUID("00000000-0000-0000-0000-000000000010")
+# CR-01 (Plan 08-07): same-tenant different-user fixture for cross-user isolation tests.
+SOFA_BELLE_USER_ID = USER_ID
+OTHER_USER_ID = UUID("00000000-0000-0000-0000-000000000099")
 
 
 class TestConversationRepository:
@@ -191,7 +194,7 @@ class TestConversationRepository:
         )
 
         session = AsyncMock()
-        repo = ConversationRepository(session, TENANT_A)
+        repo = ConversationRepository(session, TENANT_A, USER_ID)
 
         bad_row = {
             "id": uuid4(),
@@ -211,7 +214,7 @@ class TestConversationRepository:
         )
 
         session = AsyncMock()
-        repo = ConversationRepository(session, TENANT_A)
+        repo = ConversationRepository(session, TENANT_A, USER_ID)
 
         with pytest.raises(ValueError, match="tenant_id"):
             await repo.insert_conversation(
@@ -226,7 +229,7 @@ class TestConversationRepository:
 
     @pytest.mark.asyncio
     async def test_list_conversations_filters_tenant_and_archived(self) -> None:
-        """Test 4: list_conversations builds a SELECT scoped by tenant + archived."""
+        """Test 4: list_conversations builds a SELECT scoped by tenant + user + archived."""
         from app.services.chat.repositories.conversation_repository import (
             ConversationRepository,
         )
@@ -239,15 +242,16 @@ class TestConversationRepository:
         result.scalars = MagicMock(return_value=scalars)
         session.execute = AsyncMock(return_value=result)
 
-        repo = ConversationRepository(session, TENANT_A)
+        repo = ConversationRepository(session, TENANT_A, USER_ID)
         rows = await repo.list_conversations(archived=False, limit=50)
         assert rows == []
         # Verify the SQL statement was constructed (execute was called)
         session.execute.assert_called_once()
         stmt = session.execute.call_args[0][0]
         sql_text = str(stmt.compile(compile_kwargs={"literal_binds": False}))
-        # Must filter by tenant_id and archived
+        # Must filter by tenant_id, user_id, and archived
         assert "tenant_id" in sql_text.lower()
+        assert "user_id" in sql_text.lower()
         assert "archived" in sql_text.lower()
         # ORDER BY last_message_at DESC
         assert "last_message_at desc" in sql_text.lower()
@@ -261,7 +265,7 @@ class TestConversationRepository:
 
         session = AsyncMock()
         session.execute = AsyncMock()
-        repo = ConversationRepository(session, TENANT_A)
+        repo = ConversationRepository(session, TENANT_A, USER_ID)
 
         await repo.soft_archive(uuid4())
         session.execute.assert_called_once()
@@ -270,6 +274,143 @@ class TestConversationRepository:
         assert "update" in sql_text.lower()
         assert "archived" in sql_text.lower()
         assert "tenant_id" in sql_text.lower()
+        assert "user_id" in sql_text.lower()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CR-01 (Plan 08-07) — Cross-user-within-tenant authorization predicate
+#
+# Per 08-VERIFICATION.md gap "SC#4 + SC#5", the repository must apply
+# `WHERE user_id = self._user_id` to every SELECT and UPDATE so a user in the
+# same tenant cannot read or mutate another user's conversation rows.
+#
+# These tests verify the predicate is present in the emitted SQL for each of
+# the 5 public read/update methods AND that insert_conversation raises when
+# row.user_id ≠ repo.user_id.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestConversationRepositoryCrossUserCR01:
+    """CR-01 (Plan 08-07): per-user authorization predicate on every method."""
+
+    @pytest.mark.asyncio
+    async def test_insert_blocks_cross_user_write(self) -> None:
+        """insert_conversation rejects a row whose user_id ≠ repo.user_id."""
+        from app.services.chat.repositories.conversation_repository import (
+            ConversationRepository,
+        )
+
+        session = AsyncMock()
+        repo = ConversationRepository(session, TENANT_A, SOFA_BELLE_USER_ID)
+
+        bad_row = {
+            "id": uuid4(),
+            "tenant_id": TENANT_A,
+            "user_id": OTHER_USER_ID,  # mismatch — User B writing through User A's repo
+            "title": None,
+            "last_message_at": datetime.now(timezone.utc),
+            "archived": False,
+        }
+        with pytest.raises(ValueError, match="cross-user write blocked"):
+            await repo.insert_conversation(bad_row)
+
+    @pytest.mark.asyncio
+    async def test_get_by_id_emits_user_id_predicate(self) -> None:
+        """get_by_id SELECT must include `user_id == self._user_id`."""
+        from app.services.chat.repositories.conversation_repository import (
+            ConversationRepository,
+        )
+
+        session = AsyncMock()
+        result = MagicMock()
+        scalars = MagicMock()
+        scalars.first = MagicMock(return_value=None)
+        result.scalars = MagicMock(return_value=scalars)
+        session.execute = AsyncMock(return_value=result)
+
+        repo = ConversationRepository(session, TENANT_A, SOFA_BELLE_USER_ID)
+        await repo.get_by_id(uuid4())
+        stmt = session.execute.call_args[0][0]
+        sql_text = str(stmt.compile(compile_kwargs={"literal_binds": False}))
+        assert "tenant_id" in sql_text.lower()
+        assert "user_id" in sql_text.lower()
+
+    @pytest.mark.asyncio
+    async def test_list_conversations_emits_user_id_predicate(self) -> None:
+        """list_conversations SELECT must include `user_id == self._user_id`."""
+        from app.services.chat.repositories.conversation_repository import (
+            ConversationRepository,
+        )
+
+        session = AsyncMock()
+        result = MagicMock()
+        scalars = MagicMock()
+        scalars.all = MagicMock(return_value=[])
+        result.scalars = MagicMock(return_value=scalars)
+        session.execute = AsyncMock(return_value=result)
+
+        repo = ConversationRepository(session, TENANT_A, SOFA_BELLE_USER_ID)
+        await repo.list_conversations()
+        stmt = session.execute.call_args[0][0]
+        sql_text = str(stmt.compile(compile_kwargs={"literal_binds": False}))
+        assert "tenant_id" in sql_text.lower()
+        assert "user_id" in sql_text.lower()
+
+    @pytest.mark.asyncio
+    async def test_update_title_emits_user_id_predicate(self) -> None:
+        """update_title UPDATE must include `user_id == self._user_id`."""
+        from app.services.chat.repositories.conversation_repository import (
+            ConversationRepository,
+        )
+
+        session = AsyncMock()
+        session.execute = AsyncMock()
+        repo = ConversationRepository(session, TENANT_A, SOFA_BELLE_USER_ID)
+
+        await repo.update_title(uuid4(), "Titlu nou")
+        stmt = session.execute.call_args[0][0]
+        sql_text = str(stmt.compile(compile_kwargs={"literal_binds": False}))
+        assert "update" in sql_text.lower()
+        assert "tenant_id" in sql_text.lower()
+        assert "user_id" in sql_text.lower()
+
+    @pytest.mark.asyncio
+    async def test_update_last_message_at_emits_user_id_predicate(self) -> None:
+        """update_last_message_at UPDATE must include `user_id == self._user_id`."""
+        from app.services.chat.repositories.conversation_repository import (
+            ConversationRepository,
+        )
+
+        session = AsyncMock()
+        session.execute = AsyncMock()
+        repo = ConversationRepository(session, TENANT_A, SOFA_BELLE_USER_ID)
+
+        await repo.update_last_message_at(uuid4())
+        stmt = session.execute.call_args[0][0]
+        sql_text = str(stmt.compile(compile_kwargs={"literal_binds": False}))
+        assert "update" in sql_text.lower()
+        assert "tenant_id" in sql_text.lower()
+        assert "user_id" in sql_text.lower()
+        assert "last_message_at" in sql_text.lower()
+
+    @pytest.mark.asyncio
+    async def test_soft_archive_emits_user_id_predicate(self) -> None:
+        """soft_archive UPDATE must include `user_id == self._user_id`."""
+        from app.services.chat.repositories.conversation_repository import (
+            ConversationRepository,
+        )
+
+        session = AsyncMock()
+        session.execute = AsyncMock()
+        repo = ConversationRepository(session, TENANT_A, SOFA_BELLE_USER_ID)
+
+        await repo.soft_archive(uuid4())
+        stmt = session.execute.call_args[0][0]
+        sql_text = str(stmt.compile(compile_kwargs={"literal_binds": False}))
+        assert "update" in sql_text.lower()
+        assert "archived" in sql_text.lower()
+        assert "tenant_id" in sql_text.lower()
+        assert "user_id" in sql_text.lower()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
