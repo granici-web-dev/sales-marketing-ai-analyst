@@ -365,25 +365,32 @@ async def test_send_message_sse_basic_turn() -> None:
     orch = _make_mock_orchestrator_for_basic_turn()
     conv_id = uuid4()
 
+    # CR-01 (Plan 08-07): send_message now runs an ownership pre-check via
+    # ConversationRepository.get_by_id BEFORE touching Redis. Patch the repo
+    # to return a valid (owned) row so the test exercises the SSE happy path.
+    conv_repo = AsyncMock()
+    conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=conv_id))
+
     try:
-        with patch("app.api.v1.chat.aioredis.from_url", return_value=redis_ctx):
-            with patch("app.api.v1.chat.ChatOrchestrator", return_value=orch):
-                async with AsyncClient(
-                    transport=ASGITransport(app=app), base_url="http://test"
-                ) as c:
-                    async with c.stream(
-                        "POST",
-                        f"/api/v1/chat/conversations/{conv_id}/messages",
-                        json={"content": "Cum stăm?"},
-                    ) as r:
-                        assert r.status_code == 200
-                        assert r.headers["content-type"].startswith("text/event-stream")
-                        # Drain the stream and collect event names.
-                        event_names: list[str] = []
-                        async for chunk in r.aiter_text():
-                            for line in chunk.split("\n"):
-                                if line.startswith("event: "):
-                                    event_names.append(line.removeprefix("event: ").strip())
+        with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
+            with patch("app.api.v1.chat.aioredis.from_url", return_value=redis_ctx):
+                with patch("app.api.v1.chat.ChatOrchestrator", return_value=orch):
+                    async with AsyncClient(
+                        transport=ASGITransport(app=app), base_url="http://test"
+                    ) as c:
+                        async with c.stream(
+                            "POST",
+                            f"/api/v1/chat/conversations/{conv_id}/messages",
+                            json={"content": "Cum stăm?"},
+                        ) as r:
+                            assert r.status_code == 200
+                            assert r.headers["content-type"].startswith("text/event-stream")
+                            # Drain the stream and collect event names.
+                            event_names: list[str] = []
+                            async for chunk in r.aiter_text():
+                                for line in chunk.split("\n"):
+                                    if line.startswith("event: "):
+                                        event_names.append(line.removeprefix("event: ").strip())
         assert "conversation_meta" in event_names
         assert "assistant_chunk" in event_names
         assert "done" in event_names
@@ -418,23 +425,28 @@ async def test_send_message_sse_multi_tool() -> None:
     orch = _make_mock_orchestrator_for_multi_tool()
     conv_id = uuid4()
 
+    # CR-01 (Plan 08-07): ownership pre-check passes — see test above.
+    conv_repo = AsyncMock()
+    conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=conv_id))
+
     try:
-        with patch("app.api.v1.chat.aioredis.from_url", return_value=redis_ctx):
-            with patch("app.api.v1.chat.ChatOrchestrator", return_value=orch):
-                async with AsyncClient(
-                    transport=ASGITransport(app=app), base_url="http://test"
-                ) as c:
-                    async with c.stream(
-                        "POST",
-                        f"/api/v1/chat/conversations/{conv_id}/messages",
-                        json={"content": "Cum stăm comparativ?"},
-                    ) as r:
-                        assert r.status_code == 200
-                        event_names: list[str] = []
-                        async for chunk in r.aiter_text():
-                            for line in chunk.split("\n"):
-                                if line.startswith("event: "):
-                                    event_names.append(line.removeprefix("event: ").strip())
+        with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
+            with patch("app.api.v1.chat.aioredis.from_url", return_value=redis_ctx):
+                with patch("app.api.v1.chat.ChatOrchestrator", return_value=orch):
+                    async with AsyncClient(
+                        transport=ASGITransport(app=app), base_url="http://test"
+                    ) as c:
+                        async with c.stream(
+                            "POST",
+                            f"/api/v1/chat/conversations/{conv_id}/messages",
+                            json={"content": "Cum stăm comparativ?"},
+                        ) as r:
+                            assert r.status_code == 200
+                            event_names: list[str] = []
+                            async for chunk in r.aiter_text():
+                                for line in chunk.split("\n"):
+                                    if line.startswith("event: "):
+                                        event_names.append(line.removeprefix("event: ").strip())
         assert event_names.count("tool_use") == 3
         assert event_names.count("tool_result") == 3
         assert "done" in event_names
@@ -464,15 +476,20 @@ async def test_rate_limit_429() -> None:
     redis_ctx.__aenter__ = AsyncMock(return_value=fake_redis)
     redis_ctx.__aexit__ = AsyncMock(return_value=None)
 
+    # CR-01 (Plan 08-07): ownership pre-check passes — caller owns the row.
+    conv_repo = AsyncMock()
+    conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=uuid4()))
+
     try:
-        with patch("app.api.v1.chat.aioredis.from_url", return_value=redis_ctx):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
-                r = await c.post(
-                    f"/api/v1/chat/conversations/{uuid4()}/messages",
-                    json={"content": "Test"},
-                )
+        with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
+            with patch("app.api.v1.chat.aioredis.from_url", return_value=redis_ctx):
+                async with AsyncClient(
+                    transport=ASGITransport(app=app), base_url="http://test"
+                ) as c:
+                    r = await c.post(
+                        f"/api/v1/chat/conversations/{uuid4()}/messages",
+                        json={"content": "Test"},
+                    )
         assert r.status_code == 429
         assert r.headers.get("retry-after") == "900"
         assert "Ai trimis prea multe mesaje" in r.json()["detail"]
@@ -502,15 +519,20 @@ async def test_concurrent_stream_409() -> None:
     redis_ctx.__aenter__ = AsyncMock(return_value=fake_redis)
     redis_ctx.__aexit__ = AsyncMock(return_value=None)
 
+    # CR-01 (Plan 08-07): ownership pre-check passes — caller owns the row.
+    conv_repo = AsyncMock()
+    conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=uuid4()))
+
     try:
-        with patch("app.api.v1.chat.aioredis.from_url", return_value=redis_ctx):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
-                r = await c.post(
-                    f"/api/v1/chat/conversations/{uuid4()}/messages",
-                    json={"content": "Test"},
-                )
+        with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
+            with patch("app.api.v1.chat.aioredis.from_url", return_value=redis_ctx):
+                async with AsyncClient(
+                    transport=ASGITransport(app=app), base_url="http://test"
+                ) as c:
+                    r = await c.post(
+                        f"/api/v1/chat/conversations/{uuid4()}/messages",
+                        json={"content": "Test"},
+                    )
         assert r.status_code == 409
         assert "Așteaptă răspunsul curent" in r.json()["detail"]
     finally:

@@ -153,7 +153,12 @@ async def create_conversation(
     tenant_id = require_tenant_id()
     now = datetime.now(timezone.utc)
 
-    conv_repo = ConversationRepository(session, tenant_id)
+    # CR-01 (Plan 08-07): per-user authorization predicate threaded into the
+    # repository constructor so every SELECT/UPDATE inside the repo filters by
+    # (tenant_id, user_id). The Phase 1 with_loader_criteria seam only scopes
+    # by tenant_id; without this third arg, any tenant user can read/mutate
+    # any other tenant user's conversations.
+    conv_repo = ConversationRepository(session, tenant_id, current_user.id)
     msg_repo = MessageRepository(session, tenant_id)
 
     conv_id = await conv_repo.insert_conversation(
@@ -200,7 +205,9 @@ async def list_conversations(
 ) -> ConversationListOut:
     """List conversations for the current user (D-23 + D-15 default archived=False)."""
     tenant_id = require_tenant_id()
-    repo = ConversationRepository(session, tenant_id)
+    # CR-01 (Plan 08-07): repo filters list_conversations by (tenant_id, user_id)
+    # so the sidebar never shows another user's conversations.
+    repo = ConversationRepository(session, tenant_id, current_user.id)
     rows = await repo.list_conversations(archived=archived, limit=limit)
     return ConversationListOut(
         conversations=[
@@ -233,7 +240,10 @@ async def get_conversation(
     may add a `messages` field if requested by the frontend.)
     """
     tenant_id = require_tenant_id()
-    repo = ConversationRepository(session, tenant_id)
+    # CR-01 (Plan 08-07): repo.get_by_id returns None for cross-user reads,
+    # which folds naturally into the existing 404 path — no existence-leak
+    # via a 403-vs-404 distinction (T-08-01b).
+    repo = ConversationRepository(session, tenant_id, current_user.id)
     row = await repo.get_by_id(conversation_id)
     if row is None:
         raise HTTPException(
@@ -263,7 +273,9 @@ async def archive_conversation(
 ) -> None:
     """Soft-archive a conversation (D-15 — no hard delete in MVP1)."""
     tenant_id = require_tenant_id()
-    repo = ConversationRepository(session, tenant_id)
+    # CR-01 (Plan 08-07): repo.get_by_id + repo.soft_archive both filter by
+    # (tenant_id, user_id) — cross-user delete attempts hit the 404 path.
+    repo = ConversationRepository(session, tenant_id, current_user.id)
     row = await repo.get_by_id(conversation_id)
     if row is None:
         raise HTTPException(
@@ -303,6 +315,27 @@ async def send_message(
     so Caddy/nginx don't time out idle SSE connections (RESEARCH §1 Pitfall 1).
     """
     tenant_id = require_tenant_id()
+
+    # ── 0. CR-01 (Plan 08-07) ownership pre-check ────────────────────────────
+    # Verify the caller actually owns this conversation BEFORE we touch Redis.
+    # The repository's (tenant_id, user_id) predicate makes get_by_id return
+    # None for any conversation owned by a different user in the same tenant
+    # (or a non-existent uuid). We collapse both into a 404 with the same
+    # Romanian copy used by the other endpoints — no existence-leak via a
+    # 403-vs-404 distinction (T-08-01b).
+    #
+    # This MUST run before the rate-limit INCR and the stream-lock SET NX so
+    # a probing attacker cannot burn the legitimate owner's rate-limit budget
+    # or grab a lock they don't have ownership of. CR-02 (plan 08-08) will
+    # further reorder the rate-limit / stream-lock pair; this 404 stays in
+    # front of BOTH.
+    conv_repo = ConversationRepository(session, tenant_id, current_user.id)
+    conv_row = await conv_repo.get_by_id(conversation_id)
+    if conv_row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversația nu există.",
+        )
 
     # ── 1. Rate-limit (D-24) ─────────────────────────────────────────────────
     # Hour bucket: align all users to the same wall-clock hour so behavior is

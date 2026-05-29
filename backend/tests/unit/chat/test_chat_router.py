@@ -142,7 +142,14 @@ def _make_redis_mock(*, incr_return=1, set_nx_return=True, ttl_return=3600) -> t
 @pytest.mark.asyncio
 async def test_r5_post_messages_returns_429_when_rate_limit_exceeded() -> None:
     """R5: when Redis INCR returns 31 (over the 30/hour cap), the endpoint raises
-    429 with `Retry-After` header and the exact Romanian message from UI-SPEC."""
+    429 with `Retry-After` header and the exact Romanian message from UI-SPEC.
+
+    CR-01 (Plan 08-07): send_message now runs a ConversationRepository.get_by_id
+    ownership pre-check BEFORE touching Redis. The repo is patched here to
+    return a valid (owned) conversation so this test exercises the
+    rate-limit path, not the new ownership path (covered by R-CR01 tests in
+    tests/integration/chat/test_cross_user_isolation.py).
+    """
     from fastapi import HTTPException
 
     from app.api.v1.chat import send_message
@@ -155,15 +162,20 @@ async def test_r5_post_messages_returns_429_when_rate_limit_exceeded() -> None:
     mock_request = MagicMock()
     mock_request.is_disconnected = AsyncMock(return_value=False)
 
-    with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
-        with pytest.raises(HTTPException) as exc_info:
-            await send_message(
-                conversation_id=uuid4(),
-                request=mock_request,
-                body=body,
-                session=AsyncMock(),
-                current_user=_make_user(),
-            )
+    # CR-01 pre-check passes — caller owns the conversation.
+    conv_repo = AsyncMock()
+    conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=uuid4()))
+
+    with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
+        with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
+            with pytest.raises(HTTPException) as exc_info:
+                await send_message(
+                    conversation_id=uuid4(),
+                    request=mock_request,
+                    body=body,
+                    session=AsyncMock(),
+                    current_user=_make_user(),
+                )
 
     assert exc_info.value.status_code == 429
     assert "Retry-After" in exc_info.value.headers
@@ -175,7 +187,11 @@ async def test_r5_post_messages_returns_429_when_rate_limit_exceeded() -> None:
 @pytest.mark.asyncio
 async def test_r6_post_messages_returns_409_when_stream_lock_held() -> None:
     """R6: when Redis SET NX returns False (lock already held), the endpoint
-    raises 409 with the exact Romanian message from UI-SPEC."""
+    raises 409 with the exact Romanian message from UI-SPEC.
+
+    CR-01 (Plan 08-07): repo patched with a valid (owned) row so the new
+    ownership pre-check passes and flow reaches the stream-lock branch.
+    """
     from fastapi import HTTPException
 
     from app.api.v1.chat import send_message
@@ -189,15 +205,20 @@ async def test_r6_post_messages_returns_409_when_stream_lock_held() -> None:
     mock_request = MagicMock()
     mock_request.is_disconnected = AsyncMock(return_value=False)
 
-    with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
-        with pytest.raises(HTTPException) as exc_info:
-            await send_message(
-                conversation_id=uuid4(),
-                request=mock_request,
-                body=body,
-                session=AsyncMock(),
-                current_user=_make_user(),
-            )
+    # CR-01 pre-check passes — caller owns the conversation.
+    conv_repo = AsyncMock()
+    conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=uuid4()))
+
+    with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
+        with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
+            with pytest.raises(HTTPException) as exc_info:
+                await send_message(
+                    conversation_id=uuid4(),
+                    request=mock_request,
+                    body=body,
+                    session=AsyncMock(),
+                    current_user=_make_user(),
+                )
 
     assert exc_info.value.status_code == 409
     assert "Așteaptă răspunsul curent" in exc_info.value.detail
@@ -413,7 +434,11 @@ async def test_r11c_suggested_questions_fault_tolerant_on_insight_failure() -> N
 async def test_r12_sse_endpoint_sets_text_event_stream_and_x_accel_buffering() -> None:
     """R12: POST /conversations/{id}/messages returns a StreamingResponse with
     media_type='text/event-stream' AND X-Accel-Buffering: no header (LM-5 — prevents
-    Caddy/nginx from buffering and breaking token-by-token UX)."""
+    Caddy/nginx from buffering and breaking token-by-token UX).
+
+    CR-01 (Plan 08-07): repo patched with a valid (owned) row so the new
+    ownership pre-check passes and flow reaches StreamingResponse construction.
+    """
     from fastapi.responses import StreamingResponse
 
     from app.api.v1.chat import send_message
@@ -434,15 +459,20 @@ async def test_r12_sse_endpoint_sets_text_event_stream_and_x_accel_buffering() -
     mock_request = MagicMock()
     mock_request.is_disconnected = AsyncMock(return_value=False)
 
-    with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
-        with patch("app.api.v1.chat.ChatOrchestrator", return_value=fake_orch):
-            response = await send_message(
-                conversation_id=uuid4(),
-                request=mock_request,
-                body=body,
-                session=AsyncMock(),
-                current_user=_make_user(),
-            )
+    # CR-01 pre-check passes — caller owns the conversation.
+    conv_repo = AsyncMock()
+    conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=uuid4()))
+
+    with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
+        with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
+            with patch("app.api.v1.chat.ChatOrchestrator", return_value=fake_orch):
+                response = await send_message(
+                    conversation_id=uuid4(),
+                    request=mock_request,
+                    body=body,
+                    session=AsyncMock(),
+                    current_user=_make_user(),
+                )
 
     assert isinstance(response, StreamingResponse)
     assert response.media_type == "text/event-stream"
