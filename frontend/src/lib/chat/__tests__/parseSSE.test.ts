@@ -1,55 +1,62 @@
-import { describe, it } from "vitest";
+import { describe, it, expect } from "vitest";
+import { parseSSEChunk } from "../parseSSE";
 
 /**
- * SSE chunk-boundary parser contract — Wave 0 stub.
+ * Phase 8 D-09 + LM-7 — SSE chunk parser contract.
  *
- * Pre-declares the test contract for the SSE parser that lives in
- * `frontend/src/lib/chat/parseSSE.ts` — a file produced by plan 08-06 alongside
- * `useChat.ts`. The parser handles the LM-7 chunk-boundary landmine documented
- * in 08-RESEARCH.md (§ "Frontend SSE consumer" lines 1048-1150): SSE messages
- * arrive in arbitrarily-sized ReadableStream chunks, so the consumer must
- * maintain a buffer and only emit a parsed event when it sees `\n\n`.
- *
- * The tests below are marked `it.todo` so Vitest discovers them (they appear
- * in the test report) without failing the Wave 0 suite. Plan 08-06 will:
- *   1. Create `src/lib/chat/parseSSE.ts` exporting `parseSSEChunk(buffer: string)`.
- *   2. Convert each `it.todo` to `it(..., () => { ... })` with real assertions.
- *   3. Verify the suite turns green.
- *
- * Contract specification (08-RESEARCH.md § Frontend SSE consumer + D-09):
- *
- *   parseSSEChunk(input: string): {
- *     events: Array<{ event: string; data: unknown }>;
- *     remainder: string;
- *   }
- *
- *   Semantics:
- *     - Split input on the SSE record separator `\n\n`.
- *     - Each record consists of one or more lines of the form `event: NAME`
- *       and `data: JSON_STRING`.
- *     - Lines starting with `:` are SSE heartbeat comments — silently ignored.
- *     - Malformed JSON in a `data:` line is silently skipped (LM-7 mitigation:
- *       a partial chunk MUST NOT crash the consumer).
- *     - The trailing record without a closing `\n\n` is returned as
- *       `remainder` for the caller to prepend to the next chunk.
+ * The Wave 0 contract (08-01 SUMMARY) reserved 5 todo entries; this file
+ * activates them as PS1..PS5 per the 08-06 PLAN behavior block.
  */
 
-describe("parseSSEChunk — Wave 0 contract", () => {
-  it.todo(
-    "parses a complete single-event chunk: 'event: assistant_chunk\\ndata: {\"text\":\"Salut\"}\\n\\n' → [{ event: 'assistant_chunk', data: { text: 'Salut' } }], remainder ''",
-  );
+describe("parseSSEChunk — Phase 8", () => {
+  it("PS1: parses a complete single-event chunk", () => {
+    const chunk = 'event: assistant_chunk\ndata: {"text":"Salut"}\n\n';
+    const events = parseSSEChunk(chunk);
+    expect(events).toEqual([
+      { event: "assistant_chunk", data: { text: "Salut" } },
+    ]);
+  });
 
-  it.todo(
-    "buffers a partial event split across reads: the prefix without '\\n\\n' returns events=[] and remainder=<original>; the buffer-concat result on the next call returns the parsed event",
-  );
+  it("PS2: skips heartbeat lines starting with ':'", () => {
+    const chunk = ':\n\nevent: assistant_chunk\ndata: {"text":"x"}\n\n';
+    const events = parseSSEChunk(chunk);
+    // The leading `:` frame is a heartbeat — skipped.
+    expect(events).toHaveLength(1);
+    expect(events[0]).toEqual({
+      event: "assistant_chunk",
+      data: { text: "x" },
+    });
+  });
 
-  it.todo("silently skips heartbeat lines starting with ':'");
+  it("PS3: returns all events when one chunk contains multiple frames", () => {
+    const chunk =
+      'event: tool_use\ndata: {"tool_use_id":"t1","name":"get_kpi","input":{}}\n\n' +
+      'event: assistant_chunk\ndata: {"text":"Hello"}\n\n' +
+      'event: done\ndata: {"message_id":"m1","total_input_tokens":10,"total_output_tokens":5,"duration_ms":42,"hallucination_flag":false}\n\n';
+    const events = parseSSEChunk(chunk);
+    expect(events).toHaveLength(3);
+    expect(events[0].event).toBe("tool_use");
+    expect(events[1].event).toBe("assistant_chunk");
+    expect(events[2].event).toBe("done");
+  });
 
-  it.todo(
-    "tolerates malformed JSON in a data: line (LM-7 mitigation — never crash on a partial chunk)",
-  );
+  it("PS4: tolerates malformed JSON in a data: line (LM-7)", () => {
+    const chunk =
+      'event: assistant_chunk\ndata: {"text":"good"}\n\n' +
+      "event: assistant_chunk\ndata: {malformed\n\n" +
+      'event: assistant_chunk\ndata: {"text":"good2"}\n\n';
+    const events = parseSSEChunk(chunk);
+    // Two good events flank a corrupt middle frame that's silently dropped.
+    expect(events).toHaveLength(2);
+    expect((events[0].data as { text: string }).text).toBe("good");
+    expect((events[1].data as { text: string }).text).toBe("good2");
+  });
 
-  it.todo(
-    "returns all events when a single chunk contains multiple records separated by '\\n\\n'",
-  );
+  it("PS5: skips empty frames", () => {
+    const chunk =
+      "\n\nevent: assistant_chunk\ndata: {\"text\":\"x\"}\n\n\n\n";
+    const events = parseSSEChunk(chunk);
+    // Leading + trailing empty frames are ignored.
+    expect(events).toHaveLength(1);
+  });
 });
