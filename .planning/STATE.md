@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: Phase 7 — Frontend Dashboards (COMPLETE — awaiting verification)
+current_phase: Phase 8 — AI Chat (UI-SPEC approved — ready for plan-phase)
 status: unknown
-last_updated: "2026-05-29T07:54:10.089Z"
+last_updated: "2026-05-29T08:30:00.000Z"
 progress:
   total_phases: 9
   completed_phases: 7
@@ -17,7 +17,7 @@ progress:
 
 **Project:** Sales & Marketing AI Analyst
 **Initialized:** 2026-05-19
-**Current Phase:** Phase 7 — Frontend Dashboards (COMPLETE — awaiting verification)
+**Current Phase:** Phase 8 — AI Chat (UI-SPEC approved — ready for plan-phase)
 **Milestone:** Iteration 1 (MVP1: MEFI-only)
 
 ## Project Reference
@@ -25,7 +25,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Every morning, Sofa Belle gets a clear answer to "where are we losing money?" and 5–7 specific tasks for the day.
-**Current focus:** Phase 7 complete — ready for /gsd:verify-work or Phase 8 (AI Chat)
+**Current focus:** Phase 8 UI-SPEC approved (6/6 dimensions PASS) — ready for /gsd:plan-phase 8
 
 ## Phase Progress
 
@@ -73,7 +73,7 @@ None currently.
 - Phase 7 RevenueTrend: AreaChart (vs LineChart) — gradient fill more visually informative for daily revenue data
 - Phase 7 date URL validation: isNaN(new Date(param).getTime()) check before use per T-7-01 threat mitigation
 
-**Last session:** 2026-05-29T07:54:10.084Z
+**Last session:** 2026-05-29T08:30:00.000Z (Phase 8 UI-SPEC approved — 6/6 dimensions PASS, ready for plan-phase)
 
 **2026-05-21 session:** Phase 2 context gathered. Key decisions: store all lifecycle states (active/lost/junk) in raw_mefi_leads, two conformed views (v_mefi_leads_active + v_mefi_leads_junk), auto-detect backfill on first sync, auto-upsert salespeople, new Alembic migration 003 for funnel_config JSONB.
 
