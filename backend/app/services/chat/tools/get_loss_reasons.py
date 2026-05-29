@@ -6,10 +6,9 @@ Thin ``text()`` query on ``v_mefi_leads_active`` (which includes both
 active and lost leads) filtered by ``lifecycle='lost'`` and grouped by
 either source category or salesperson.
 
-**D-02 NOTE — no revenue figures:** Sofa Belle's MEFI ``estimated_value`` is
-``NULL`` for all leads in MVP1 (Phase 3 finding). This handler intentionally
-does NOT include any revenue or estimated_value columns in either the SQL
-SELECT list or the response shape — it returns only counts and percentages.
+D-02 NOTE: Sofa Belle's MEFI deal-value field is NULL for all leads in
+MVP1 (Phase 3 finding). This handler intentionally returns only counts
+and percentages — no monetary aggregates.
 
 LM-3: handler signature ``(tenant_id, session, inp)``.
 LM-4: tenant_id bound via ``bindparam("tid", type_=PG_UUID(as_uuid=True))``
@@ -124,10 +123,10 @@ TOOL = Tool(
         "name": "get_loss_reasons",
         "description": (
             "Returns the distribution of LOST leads by source category or "
-            "salesperson over a date range. Does NOT include revenue figures "
-            "because estimated_value is unavailable for Sofa Belle leads in "
-            "MVP1 (Phase 3 finding). Use this when the user asks 'where are "
-            "we losing leads?' or 'which source has the highest loss rate?'."
+            "salesperson over a date range. Returns counts + percentages "
+            "only — no monetary aggregates (deal-value data is unavailable "
+            "in MVP1). Use this when the user asks 'where are we losing "
+            "leads?' or 'which source has the highest loss rate?'."
         ),
         "input_schema": GetLossReasonsInput.model_json_schema(),
     },

@@ -56,25 +56,21 @@ class TestRegistryShape:
         assert callable(get_all_tools)
 
     def test_registry_has_canonical_twelve_tools(self) -> None:
-        """Test 2: registry will contain exactly the 12 canonical D-02 tools.
+        """Test 2: registry contains EXACTLY the 12 canonical D-02 tools.
 
-        Plan 08-03 builds the registry across 3 tasks (4 + 4 + 4 = 12). This
-        test asserts a partial check during Task 1 + Task 2 (``>= 4``) and is
-        strengthened to ``== 12`` in Task 3 once every tool is registered.
-
-        TODO(08-03 Task 3): bump to ``len(TOOLS_REGISTRY) == 12`` and
-        ``set(TOOLS_REGISTRY) == EXPECTED_TOOL_NAMES``.
+        Task 3 of plan 08-03 strengthens this from the prior ``>= 4`` partial
+        check now that every tool is registered (D-01 closed).
         """
         from app.services.chat.tools import TOOLS_REGISTRY
 
-        assert len(TOOLS_REGISTRY) >= 4, (
-            f"Task 1 minimum: at least 4 tools registered; got {len(TOOLS_REGISTRY)}: "
+        assert len(TOOLS_REGISTRY) == 12, (
+            f"Expected exactly 12 tools per D-02; got {len(TOOLS_REGISTRY)}: "
             f"{sorted(TOOLS_REGISTRY)}"
         )
-        # Names registered so far must be a subset of the canonical D-02 set.
-        assert set(TOOLS_REGISTRY.keys()) <= EXPECTED_TOOL_NAMES, (
-            "Unexpected tool name(s) in registry: "
-            f"{set(TOOLS_REGISTRY) - EXPECTED_TOOL_NAMES}"
+        assert set(TOOLS_REGISTRY.keys()) == EXPECTED_TOOL_NAMES, (
+            "Tool-name mismatch with canonical D-02 set. "
+            f"Missing: {EXPECTED_TOOL_NAMES - set(TOOLS_REGISTRY)}; "
+            f"unexpected: {set(TOOLS_REGISTRY) - EXPECTED_TOOL_NAMES}"
         )
 
     def test_every_handler_lm3_signature(self) -> None:

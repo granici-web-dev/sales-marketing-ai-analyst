@@ -312,3 +312,243 @@ class TestGetShowroomPerformance:
 
         assert len(result["showrooms"]) == 1
         assert result["showrooms"][0]["showroom"] == "Brașov"
+
+
+# ── Task 3 ─────────────────────────────────────────────────────────────────────
+
+
+class TestGetRecentInsight:
+    """get_recent_insight — wraps InsightReadService."""
+
+    @pytest.mark.asyncio
+    async def test_lm3_signature(self) -> None:
+        from app.services.chat.tools.get_recent_insight import _handler
+
+        _lm3_signature_assertion(_handler)
+
+    @pytest.mark.asyncio
+    async def test_get_recent_insight_today_when_date_null(
+        self, monkeypatch
+    ) -> None:
+        from app.services.chat.tools.get_recent_insight import (
+            GetRecentInsightInput,
+            _handler,
+        )
+
+        fake_svc = MagicMock()
+        fake_svc.get_today = AsyncMock(
+            return_value={"date": date(2026, 5, 28), "status": "success", "payload": {}}
+        )
+        fake_svc.get_by_date = AsyncMock()
+        fake_ctor = MagicMock(return_value=fake_svc)
+        monkeypatch.setattr(
+            "app.services.chat.tools.get_recent_insight.InsightReadService", fake_ctor
+        )
+
+        session = AsyncMock()
+        inp = GetRecentInsightInput()
+        result = await _handler(TENANT_ID, session, inp)
+
+        fake_ctor.assert_called_once_with(session, TENANT_ID)
+        fake_svc.get_today.assert_awaited_once()
+        fake_svc.get_by_date.assert_not_called()
+        assert result["insight"]["status"] == "success"
+
+    @pytest.mark.asyncio
+    async def test_get_recent_insight_by_date_when_date_provided(
+        self, monkeypatch
+    ) -> None:
+        from app.services.chat.tools.get_recent_insight import (
+            GetRecentInsightInput,
+            _handler,
+        )
+
+        target = date(2026, 5, 15)
+        fake_svc = MagicMock()
+        fake_svc.get_by_date = AsyncMock(
+            return_value={"date": target, "status": "success", "payload": {}}
+        )
+        fake_svc.get_today = AsyncMock()
+        fake_ctor = MagicMock(return_value=fake_svc)
+        monkeypatch.setattr(
+            "app.services.chat.tools.get_recent_insight.InsightReadService", fake_ctor
+        )
+
+        session = AsyncMock()
+        inp = GetRecentInsightInput(date=target)
+        result = await _handler(TENANT_ID, session, inp)
+
+        fake_svc.get_by_date.assert_awaited_once_with(target)
+        fake_svc.get_today.assert_not_called()
+        assert result["insight"]["status"] == "success"
+
+    @pytest.mark.asyncio
+    async def test_get_recent_insight_returns_null_when_missing(
+        self, monkeypatch
+    ) -> None:
+        from app.services.chat.tools.get_recent_insight import (
+            GetRecentInsightInput,
+            _handler,
+        )
+
+        fake_svc = MagicMock()
+        fake_svc.get_today = AsyncMock(return_value=None)
+        fake_ctor = MagicMock(return_value=fake_svc)
+        monkeypatch.setattr(
+            "app.services.chat.tools.get_recent_insight.InsightReadService", fake_ctor
+        )
+
+        session = AsyncMock()
+        inp = GetRecentInsightInput()
+        result = await _handler(TENANT_ID, session, inp)
+
+        assert result == {"insight": None}
+
+
+class TestExplainMetric:
+    """explain_metric — pure dict lookup, no DB."""
+
+    @pytest.mark.asyncio
+    async def test_lm3_signature(self) -> None:
+        from app.services.chat.tools.explain_metric import _handler
+
+        _lm3_signature_assertion(_handler)
+
+    @pytest.mark.asyncio
+    async def test_explain_metric_returns_glossary_entry(self) -> None:
+        from app.services.chat.tools.explain_metric import (
+            ExplainMetricInput,
+            _handler,
+        )
+
+        session = AsyncMock()  # MUST NOT be touched
+        result = await _handler(
+            TENANT_ID, session, ExplainMetricInput(metric_name="CAC")
+        )
+
+        # session.execute must NOT have been called — pure dict lookup.
+        session.execute.assert_not_called()
+        assert result["name"] == "CAC"
+        assert "definition_ro" in result
+        assert "formula" in result
+        assert "relevant_for_sofa_belle" in result
+
+    @pytest.mark.asyncio
+    async def test_explain_metric_case_insensitive_lookup(self) -> None:
+        from app.services.chat.tools.explain_metric import (
+            ExplainMetricInput,
+            _handler,
+        )
+
+        session = AsyncMock()
+        # lowercase should still hit CAC
+        result = await _handler(
+            TENANT_ID, session, ExplainMetricInput(metric_name="cac")
+        )
+        assert result["name"].upper() == "CAC"
+
+    @pytest.mark.asyncio
+    async def test_explain_metric_unknown_returns_friendly_message(self) -> None:
+        from app.services.chat.tools.explain_metric import (
+            ExplainMetricInput,
+            GLOSSARY,
+            _handler,
+        )
+
+        session = AsyncMock()
+        result = await _handler(
+            TENANT_ID, session, ExplainMetricInput(metric_name="ZZZ_unknown")
+        )
+
+        assert "definition_ro" in result
+        assert "glosar" in result["definition_ro"].lower()
+        # Glossary itself meets the ≥9 entries contract
+        assert len(GLOSSARY) >= 9
+
+
+class TestGetStuckLeads:
+    """get_stuck_leads — wraps DashboardReadService.get_stuck_offers."""
+
+    @pytest.mark.asyncio
+    async def test_lm3_signature(self) -> None:
+        from app.services.chat.tools.get_stuck_leads import _handler
+
+        _lm3_signature_assertion(_handler)
+
+    @pytest.mark.asyncio
+    async def test_get_stuck_leads_passes_days_threshold(self, monkeypatch) -> None:
+        from app.services.chat.tools.get_stuck_leads import (
+            GetStuckLeadsInput,
+            _handler,
+        )
+
+        fake_svc = MagicMock()
+        fake_svc.get_stuck_offers = AsyncMock(
+            return_value=[
+                {"external_id": 101, "days_stuck": 20, "salesperson_name": "Roibu Valeria"},
+                {"external_id": 102, "days_stuck": 15, "salesperson_name": "Raileanu Leon"},
+            ]
+        )
+        fake_ctor = MagicMock(return_value=fake_svc)
+        monkeypatch.setattr(
+            "app.services.chat.tools.get_stuck_leads.DashboardReadService", fake_ctor
+        )
+
+        session = AsyncMock()
+        inp = GetStuckLeadsInput(days=21)
+        result = await _handler(TENANT_ID, session, inp)
+
+        # Constructor properly tenant-scoped
+        fake_ctor.assert_called_once_with(session, TENANT_ID)
+        fake_svc.get_stuck_offers.assert_awaited()
+        assert result["days_threshold"] == 21
+        assert isinstance(result["leads"], list)
+        assert result["count"] == 2
+
+
+class TestGetTrend:
+    """get_trend — time series of one metric via DailyKpiService."""
+
+    @pytest.mark.asyncio
+    async def test_lm3_signature(self) -> None:
+        from app.services.chat.tools.get_trend import _handler
+
+        _lm3_signature_assertion(_handler)
+
+    @pytest.mark.asyncio
+    async def test_get_trend_returns_points(self, monkeypatch) -> None:
+        from app.services.chat.tools.get_trend import GetTrendInput, _handler
+
+        # 7-day window: simulate per-day compute_for_date returns
+        def _make_row(day_offset: int) -> dict:
+            return {
+                "date": date(2026, 5, day_offset + 1),
+                "leads_total": 10 + day_offset,
+                "contracts_count": 1 + (day_offset // 3),
+                "revenue": Decimal(str(5000 + day_offset * 100)),
+                "conversion_l_to_c": Decimal("0.1000"),
+                "conversion_l_to_v": Decimal("0.3000"),
+                "conversion_o_to_c": Decimal("0.2500"),
+            }
+
+        rows = [_make_row(i) for i in range(7)]
+        fake_svc = MagicMock()
+        fake_svc.compute_for_date = AsyncMock(side_effect=rows)
+        fake_ctor = MagicMock(return_value=fake_svc)
+        monkeypatch.setattr(
+            "app.services.chat.tools.get_trend.DailyKpiService", fake_ctor
+        )
+
+        session = AsyncMock()
+        inp = GetTrendInput(metric_name="leads", period_days=7, granularity="day")
+        result = await _handler(TENANT_ID, session, inp)
+
+        fake_ctor.assert_called_once_with(session, TENANT_ID)
+        assert fake_svc.compute_for_date.await_count == 7
+        assert result["metric"] == "leads"
+        assert result["granularity"] == "day"
+        assert result["period_days"] == 7
+        assert len(result["points"]) == 7
+        # Decimals serialized as str (DATA-04)
+        for point in result["points"]:
+            assert isinstance(point["value"], (str, type(None)))

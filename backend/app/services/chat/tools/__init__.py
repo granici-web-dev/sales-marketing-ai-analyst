@@ -46,9 +46,14 @@ from app.services.chat.tools.get_showroom_performance import (
     TOOL as _GET_SHOWROOM_PERFORMANCE,
 )
 
+# ── Task 3 tools (4 of 12) — insight read + static glossary + stuck + trend ──
+from app.services.chat.tools.explain_metric import TOOL as _EXPLAIN_METRIC
+from app.services.chat.tools.get_recent_insight import TOOL as _GET_RECENT_INSIGHT
+from app.services.chat.tools.get_stuck_leads import TOOL as _GET_STUCK_LEADS
+from app.services.chat.tools.get_trend import TOOL as _GET_TREND
 
-# Canonical name → Tool mapping (D-04). The registry is EXTENDED in plan
-# 08-03 Task 3 — never replaced; only add entries here.
+
+# Canonical name → Tool mapping (D-04). Final 12-tool registry per D-01 + D-02.
 TOOLS_REGISTRY: dict[str, Tool] = {
     # Task 1
     _GET_KPI.name: _GET_KPI,
@@ -60,6 +65,11 @@ TOOLS_REGISTRY: dict[str, Tool] = {
     _COMPARE_PERIODS.name: _COMPARE_PERIODS,
     _GET_LOSS_REASONS.name: _GET_LOSS_REASONS,
     _GET_SHOWROOM_PERFORMANCE.name: _GET_SHOWROOM_PERFORMANCE,
+    # Task 3
+    _GET_RECENT_INSIGHT.name: _GET_RECENT_INSIGHT,
+    _EXPLAIN_METRIC.name: _EXPLAIN_METRIC,
+    _GET_STUCK_LEADS.name: _GET_STUCK_LEADS,
+    _GET_TREND.name: _GET_TREND,
 }
 
 
