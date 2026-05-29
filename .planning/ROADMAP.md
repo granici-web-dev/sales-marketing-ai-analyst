@@ -225,7 +225,7 @@ Plans:
 6. Streaming: user sees first token within 2 seconds of submitting a question; subsequent tokens stream continuously without a loading pause; tool call round-trips (DB query) complete in < 500ms each.
 7. Chat endpoint `/api/v1/chat/stream` exists as a `StreamingResponse` using the Anthropic async client; CLAUDE.md documents this as the documented exception to the batch-only rule.
 
-**Plans:** 6/6 plans executed
+**Plans:** 10 plans (6/6 original executed; 4 gap-closure plans 08-07..08-10 added 2026-05-29 to close 6 BLOCKER CRs + deferred 08-06 Task 4 HUMAN-UAT)
 Plans:
 **Wave 1**
 
@@ -245,7 +245,20 @@ Plans:
 - [x] 08-05-PLAN.md — FastAPI router (5 endpoints under /api/v1/chat/ incl. SSE streaming with X-Accel-Buffering: no + 15s heartbeat) + rate-limit 30/hour + stream-lock per-conversation + CLAUDE.md D-25 documented exception sub-bullet + activate CHAT-08 strict grep gate + integration tests
 - [x] 08-06-PLAN.md — Frontend (3 shadcn primitives via radix-umbrella manual + useChat SSE consumer + 14 chat components + rebuilt /chat page + i18n chat namespace from UI-SPEC + BLOCKING mobile checkpoint at 360/768/1280px + Romanian-language UAT against live Anthropic)
 
-**Wave dependency:** 08-01 (Wave 1) → {08-02, 08-03} (Wave 2 parallel — distinct files) → 08-04 (Wave 3 — depends on schema + tools) → {08-05, 08-06} (Wave 4 — frontend can mock SSE schema until 08-05 wires it)
+**Gap-closure Wave 1** *(closes CR-01 authorization bypass; depends on 6 original plans complete)*
+
+- [ ] 08-07-PLAN.md — CR-01 fix: thread user_id through ConversationRepository + all 5 chat endpoints + send_message ownership pre-check + cross-user integration test suite (closes 08-VERIFICATION.md gap SC#4+SC#5)
+
+**Gap-closure Wave 2** *(parallel: distinct files; depends on 08-07 for CR-03 signature only)*
+
+- [ ] 08-08-PLAN.md — CR-02 (acquire stream-lock before rate-limit INCR; 429 releases lock) + CR-03 (detached title task owns its own AsyncSessionLocal session — uses 08-07 user_id signature) + CR-05 (three commit boundaries in orchestrator.run_turn) + WR-10 (structured warning replaces bare except)
+- [ ] 08-09-PLAN.md — CR-04 (Romanian sentence-starter stopword filter in hallucination_guard.py — corpus regression test with ≥15 openers) + CR-06 (static _GROUP_COLUMNS dict replaces f-string column interpolation in get_loss_reasons.py + Pydantic ValidationError defense-in-depth test)
+
+**Gap-closure Wave 3** *(blocking human-verify; depends on 08-07 + 08-08 + 08-09)*
+
+- [ ] 08-10-PLAN.md — Write 08-HUMAN-UAT.md (11-item checklist modeled after 05-HUMAN-UAT.md) + BLOCKING checkpoint:human-verify gating phase advancement on operator verdict (approved | gaps-filed)
+
+**Wave dependency:** 08-01 (Wave 1) → {08-02, 08-03} (Wave 2 parallel — distinct files) → 08-04 (Wave 3 — depends on schema + tools) → {08-05, 08-06} (Wave 4 — frontend can mock SSE schema until 08-05 wires it) → 08-07 (Gap-closure Wave 1) → {08-08, 08-09} (Gap-closure Wave 2 parallel — 08-08 depends on 08-07; 08-09 independent of both) → 08-10 (Gap-closure Wave 3 BLOCKING human-verify)
 **UI hint:** yes
 
 ---
