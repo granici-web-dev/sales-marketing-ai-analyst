@@ -225,7 +225,7 @@ Plans:
 6. Streaming: user sees first token within 2 seconds of submitting a question; subsequent tokens stream continuously without a loading pause; tool call round-trips (DB query) complete in < 500ms each.
 7. Chat endpoint `/api/v1/chat/stream` exists as a `StreamingResponse` using the Anthropic async client; CLAUDE.md documents this as the documented exception to the batch-only rule.
 
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans executed
 Plans:
 **Wave 1**
 
@@ -243,7 +243,7 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 
 - [x] 08-05-PLAN.md — FastAPI router (5 endpoints under /api/v1/chat/ incl. SSE streaming with X-Accel-Buffering: no + 15s heartbeat) + rate-limit 30/hour + stream-lock per-conversation + CLAUDE.md D-25 documented exception sub-bullet + activate CHAT-08 strict grep gate + integration tests
-- [ ] 08-06-PLAN.md — Frontend (3 shadcn primitives via radix-umbrella manual + useChat SSE consumer + 14 chat components + rebuilt /chat page + i18n chat namespace from UI-SPEC + BLOCKING mobile checkpoint at 360/768/1280px + Romanian-language UAT against live Anthropic)
+- [x] 08-06-PLAN.md — Frontend (3 shadcn primitives via radix-umbrella manual + useChat SSE consumer + 14 chat components + rebuilt /chat page + i18n chat namespace from UI-SPEC + BLOCKING mobile checkpoint at 360/768/1280px + Romanian-language UAT against live Anthropic)
 
 **Wave dependency:** 08-01 (Wave 1) → {08-02, 08-03} (Wave 2 parallel — distinct files) → 08-04 (Wave 3 — depends on schema + tools) → {08-05, 08-06} (Wave 4 — frontend can mock SSE schema until 08-05 wires it)
 **UI hint:** yes
