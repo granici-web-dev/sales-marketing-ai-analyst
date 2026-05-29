@@ -225,7 +225,7 @@ Plans:
 6. Streaming: user sees first token within 2 seconds of submitting a question; subsequent tokens stream continuously without a loading pause; tool call round-trips (DB query) complete in < 500ms each.
 7. Chat endpoint `/api/v1/chat/stream` exists as a `StreamingResponse` using the Anthropic async client; CLAUDE.md documents this as the documented exception to the batch-only rule.
 
-**Plans:** 10 plans (6/6 original executed; 4 gap-closure plans 08-07..08-10 added 2026-05-29 to close 6 BLOCKER CRs + deferred 08-06 Task 4 HUMAN-UAT)
+**Plans:** 10 plans (6/6 original executed + 08-07 gap-closure complete = 7/10; 3 gap-closure plans remaining: 08-08 + 08-09 + 08-10)
 Plans:
 **Wave 1**
 
@@ -247,7 +247,7 @@ Plans:
 
 **Gap-closure Wave 1** *(closes CR-01 authorization bypass; depends on 6 original plans complete)*
 
-- [ ] 08-07-PLAN.md — CR-01 fix: thread user_id through ConversationRepository + all 5 chat endpoints + send_message ownership pre-check + cross-user integration test suite (closes 08-VERIFICATION.md gap SC#4+SC#5)
+- [x] 08-07-PLAN.md — CR-01 fix: thread user_id through ConversationRepository + all 5 chat endpoints + send_message ownership pre-check + cross-user integration test suite (closes 08-VERIFICATION.md gap SC#4+SC#5) — COMPLETE 2026-05-29 (commits a60598f7 + 9b742b74)
 
 **Gap-closure Wave 2** *(parallel: distinct files; depends on 08-07 for CR-03 signature only)*
 

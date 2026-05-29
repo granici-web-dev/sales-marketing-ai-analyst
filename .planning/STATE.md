@@ -2,22 +2,22 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 08
-status: Ready to execute
-last_updated: "2026-05-29T15:57:31.582Z"
+current_phase: 8
+status: Executing Phase 8
+last_updated: "2026-05-29T18:41:03Z"
 progress:
   total_phases: 9
   completed_phases: 7
   total_plans: 44
-  completed_plans: 40
-  percent: 78
+  completed_plans: 41
+  percent: 80
 ---
 
 # Project State
 
 **Project:** Sales & Marketing AI Analyst
 **Initialized:** 2026-05-19
-**Current Phase:** 08
+**Current Phase:** 8
 **Milestone:** Iteration 1 (MVP1: MEFI-only)
 
 ## Project Reference
@@ -25,7 +25,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Every morning, Sofa Belle gets a clear answer to "where are we losing money?" and 5–7 specific tasks for the day.
-**Current focus:** Phase 08 — ai-chat
+**Current focus:** Phase 8 — ai-chat
 
 ## Phase Progress
 
@@ -38,7 +38,7 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 | 5 | AI Insights | ✓ Complete (2026-05-28) | 4/4 |
 | 6 | Backend HTTP API | ✓ Complete (2026-05-28) | 4/4 |
 | 7 | Frontend Dashboards | ✓ Complete (2026-05-29) | 5/5 |
-| 8 | AI Chat | ⚠ Gaps Found | 6/6 |
+| 8 | AI Chat | ⚠ Gap-closure in progress (CR-01 ✓; CR-02/03/04/05/06 pending) | 7/10 |
 | 9 | Polish & Deploy | ○ Pending | — |
 
 ## Blockers
@@ -72,8 +72,11 @@ None currently.
 - Phase 7 tooltip.tsx + popover.tsx: created manually via radix-ui umbrella package (same pattern as sheet.tsx/collapsible.tsx) — shadcn CLI unavailable (pnpm not on PATH)
 - Phase 7 RevenueTrend: AreaChart (vs LineChart) — gradient fill more visually informative for daily revenue data
 - Phase 7 date URL validation: isNaN(new Date(param).getTime()) check before use per T-7-01 threat mitigation
+- Phase 8 CR-01 (Plan 08-07): ConversationRepository constructor extended to (session, tenant_id, user_id); user_id predicate added to every SELECT/UPDATE; insert_conversation gains parallel cross-user ValueError guard; send_message ownership pre-check fires BEFORE Redis (rate-limit budget not burned by probing); cross-user paths return 404 with same Romanian copy (no 403, no existence-leak per T-08-01b); 138/138 chat tests GREEN incl. 4 new cross-user regression tests
 
-**Last session:** 2026-05-29T13:45:40.932Z (Phase 8 Wave 3 complete — 08-04 ChatOrchestrator + hallucination guard + prompt builder + title generator + 3 tenant-scoped repositories + 7 SSE schemas; 101/101 chat unit tests GREEN on main post-merge; ready for Wave 4 / plan 08-05 FastAPI router with CHAT-08 grep gate strict-inclusion)
+**Last session:** 2026-05-29T18:41:03Z (Phase 8 Plan 08-07 COMPLETE — CR-01 cross-user authorization bypass closed. ConversationRepository.__init__ now requires user_id; (tenant_id, user_id) predicate on all 5 read/update methods + parallel insert_conversation cross-user guard. All 5 chat endpoints pass current_user.id into the repo; send_message ownership pre-check returns 404 BEFORE Redis rate-limit INCR + stream-lock SET NX so a probing attacker cannot burn the owner's 30/hour budget. New integration test file test_cross_user_isolation.py (4 tests: GET/DELETE/POST/list — POST test explicitly asserts redis_from_url + ChatOrchestrator never called on cross-user path). 7 pre-existing tests updated to patch ConversationRepository so the new pre-check sees an owned row. 138/138 chat tests GREEN (134 always-on + 4 cross-user under TEST_DATABASE_URL). Closes 08-VERIFICATION.md gap "SC#4 + SC#5" all three missing items. Plan 08-08 (CR-02/CR-03/CR-05/WR-10) unblocked — CR-03 detached title task can adopt the 3-arg signature. Ruff/mypy skipped: not installed in this env (no pre-commit hook), pytest is the functional gate. Commits: a60598f7 (Task 1 storage fix) + 9b742b74 (Task 2 endpoints + integration tests).
+
+**2026-05-29T13:45:40.932Z session:** Phase 8 Wave 3 complete — 08-04 ChatOrchestrator + hallucination guard + prompt builder + title generator + 3 tenant-scoped repositories + 7 SSE schemas; 101/101 chat unit tests GREEN on main post-merge; ready for Wave 4 / plan 08-05 FastAPI router with CHAT-08 grep gate strict-inclusion
 
 **2026-05-21 session:** Phase 2 context gathered. Key decisions: store all lifecycle states (active/lost/junk) in raw_mefi_leads, two conformed views (v_mefi_leads_active + v_mefi_leads_junk), auto-detect backfill on first sync, auto-upsert salespeople, new Alembic migration 003 for funnel_config JSONB.
 
