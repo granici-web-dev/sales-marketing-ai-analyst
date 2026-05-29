@@ -233,8 +233,8 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 08-02-PLAN.md — Migration 009 + 3 ORM models (chat_conversations / chat_messages / chat_tool_calls with D-20 extensions hallucination_flag + regenerate_count) + Alembic discovery + [BLOCKING] alembic upgrade head verify revision=009
-- [ ] 08-03-PLAN.md — Tool registry + 12 tool handlers + Pydantic input schemas (wrap Phase 3/5/6 services per D-03 — 3 thin text() queries for get_leads / get_loss_reasons / get_showroom_performance with LM-4 bindparam tid)
+- [x] 08-02-PLAN.md — Migration 009 + 3 ORM models (chat_conversations / chat_messages / chat_tool_calls with D-20 extensions hallucination_flag + regenerate_count) + Alembic discovery + [BLOCKING] alembic upgrade head verify revision=009
+- [x] 08-03-PLAN.md — Tool registry + 12 tool handlers + Pydantic input schemas (wrap Phase 3/5/6 services per D-03 — 3 thin text() queries for get_leads / get_loss_reasons / get_showroom_performance with LM-4 bindparam tid)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
