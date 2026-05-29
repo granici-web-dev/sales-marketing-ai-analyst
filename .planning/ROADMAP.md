@@ -225,7 +225,7 @@ Plans:
 6. Streaming: user sees first token within 2 seconds of submitting a question; subsequent tokens stream continuously without a loading pause; tool call round-trips (DB query) complete in < 500ms each.
 7. Chat endpoint `/api/v1/chat/stream` exists as a `StreamingResponse` using the Anthropic async client; CLAUDE.md documents this as the documented exception to the batch-only rule.
 
-**Plans:** 1/6 plans executed
+**Plans:** 4/6 plans executed
 Plans:
 **Wave 1**
 
@@ -238,7 +238,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 08-04-PLAN.md — Service layer: ChatOrchestrator (streaming + bounded tool loop + asyncio.gather + MAX_TOOL_ROUNDS=5) + hallucination guard (±1% tolerance + entity/link whitelists) + title_generator (Haiku→Sonnet fallback + LM-8 _pending set) + prompt_builder (cache_control ephemeral) + 3 repositories + 7 SSE event Pydantic schemas
+- [x] 08-04-PLAN.md — Service layer: ChatOrchestrator (streaming + bounded tool loop + asyncio.gather + MAX_TOOL_ROUNDS=5) + hallucination guard (±1% tolerance + entity/link whitelists) + title_generator (Haiku→Sonnet fallback + LM-8 _pending set) + prompt_builder (cache_control ephemeral) + 3 repositories + 7 SSE event Pydantic schemas
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -280,7 +280,7 @@ Plans:
 | 5. AI Insights | 4/4 | Executed | 2026-05-28 |
 | 6. Backend HTTP API | 3/4 | In progress | — |
 | 7. Frontend Dashboards | 5/5 | Executed | 2026-05-29 |
-| 8. AI Chat | 1/6 | In Progress|  |
+| 8. AI Chat | 4/6 | In Progress|  |
 | 9. Polish & Deploy | 0/? | Not started | — |
 
 ---
