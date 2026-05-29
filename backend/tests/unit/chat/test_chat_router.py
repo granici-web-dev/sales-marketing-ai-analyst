@@ -113,6 +113,15 @@ def _make_user() -> object:
     return UserOut(id=MOCK_USER_ID, email="ceo@sofabelle.ro", is_active=True)
 
 
+@pytest.fixture(autouse=True)
+def _set_tenant_context():
+    """Auto-set tenant context for every test (ContextVar isolation)."""
+    from app.core.tenancy import set_tenant_id
+
+    set_tenant_id(MOCK_TENANT_ID)
+    yield
+
+
 def _make_redis_mock(*, incr_return=1, set_nx_return=True, ttl_return=3600) -> tuple[AsyncMock, AsyncMock]:
     """Build (redis_ctx, redis_client) mocks that emulate the
     `async with aioredis.from_url(...) as r:` pattern."""
