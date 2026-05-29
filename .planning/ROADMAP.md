@@ -225,11 +225,11 @@ Plans:
 6. Streaming: user sees first token within 2 seconds of submitting a question; subsequent tokens stream continuously without a loading pause; tool call round-trips (DB query) complete in < 500ms each.
 7. Chat endpoint `/api/v1/chat/stream` exists as a `StreamingResponse` using the Anthropic async client; CLAUDE.md documents this as the documented exception to the batch-only rule.
 
-**Plans:** 6 plans
+**Plans:** 1/6 plans executed
 Plans:
 **Wave 1**
 
-- [ ] 08-01-PLAN.md — Wave 0 test infrastructure (chat unit + integration packages, mock-AsyncAnthropic fixtures, anthropic_responses cassettes, CHAT-08 grep gate stub, adversarial YAML stub + env-gated runner, frontend parseSSE + Playwright stubs, react-markdown@^9 + remark-gfm@^4 + respx installs)
+- [x] 08-01-PLAN.md — Wave 0 test infrastructure (chat unit + integration packages, mock-AsyncAnthropic fixtures, anthropic_responses cassettes, CHAT-08 grep gate stub, adversarial YAML stub + env-gated runner, frontend parseSSE + Playwright stubs, react-markdown@^9 + remark-gfm@^4 + respx installs)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -280,7 +280,7 @@ Plans:
 | 5. AI Insights | 4/4 | Executed | 2026-05-28 |
 | 6. Backend HTTP API | 3/4 | In progress | — |
 | 7. Frontend Dashboards | 5/5 | Executed | 2026-05-29 |
-| 8. AI Chat | 0/? | Not started | — |
+| 8. AI Chat | 1/6 | In Progress|  |
 | 9. Polish & Deploy | 0/? | Not started | — |
 
 ---
