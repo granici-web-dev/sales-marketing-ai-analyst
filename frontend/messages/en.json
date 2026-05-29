@@ -165,5 +165,83 @@
     "networkError": "Network error. Check your connection.",
     "serverError": "Server error. Please try again.",
     "pipelineFailed": "Last sync failed. Data may be incomplete."
+  },
+  "chat": {
+    "page": {
+      "title": "AI Chat"
+    },
+    "welcome": {
+      "heading": "Hi! Ask me about your data.",
+      "body": "I provide answers based on real data from your MEFI CRM. Start with one of the questions below or type your own."
+    },
+    "sidebar": {
+      "newConversation": "New conversation",
+      "recentConversations": "Recent conversations",
+      "empty": "No conversations yet.",
+      "loading": "Loading conversations...",
+      "error": "An error occurred while loading conversations.",
+      "retry": "Try again",
+      "openAriaLabel": "Open conversations list",
+      "closeAriaLabel": "Close conversations list",
+      "title": "Conversations"
+    },
+    "conversation": {
+      "defaultTitle": "New conversation",
+      "kebabAriaLabel": "Conversation actions",
+      "notFound": "Conversation not found.",
+      "startNew": "Start a new conversation"
+    },
+    "input": {
+      "placeholder": "Ask anything about your data...",
+      "ariaLabel": "New question",
+      "sendAriaLabel": "Send message",
+      "sendTooltip": "Send message",
+      "sendDisabledTooltip": "Waiting for response...",
+      "shiftEnterHint": "Shift + Enter for newline"
+    },
+    "indicators": {
+      "thinking": "Thinking...",
+      "lookingUp": "Looking up data...",
+      "verifyingNumbers": "Verifying numbers..."
+    },
+    "tools": {
+      "collapsedSummary": "🔧 {count} tools used",
+      "collapsedSummaryOne": "🔧 1 tool used",
+      "errorSuffix": "(error)",
+      "dayUnit": "{count} days",
+      "ariaLabel": "Tool: {tool_name}"
+    },
+    "suggested": {
+      "sectionAriaLabel": "Suggested questions",
+      "static": {
+        "salesThisMonth": "How are sales this month?",
+        "topSalesperson": "Who is the top salesperson this month?",
+        "stuckLeads": "Which leads need attention?",
+        "vsLastWeek": "Compared to last week, how are we doing?",
+        "conversionDrop": "Why did the offer conversion drop?"
+      }
+    },
+    "messages": {
+      "userAriaLabel": "Your message",
+      "assistantAriaLabel": "AI assistant response",
+      "newMessagesButton": "↓ New messages",
+      "regenerateNotice": "Verifying numbers...",
+      "fallback": "I can't give a precise answer based on the available data. Please rephrase your question.",
+      "streamError": "Something went wrong. Please try again.",
+      "rateLimitError": "You've sent too many messages. Wait a few minutes and try again.",
+      "concurrentStreamError": "Wait for the current response before sending another message.",
+      "emptyConversation": ""
+    },
+    "archive": {
+      "trigger": "Archive conversation",
+      "dialogTitle": "Archive conversation?",
+      "dialogBody": "The conversation will be moved to archive. You can access archived conversations via URL.",
+      "confirm": "Archive",
+      "cancel": "Cancel"
+    },
+    "timestamps": {
+      "justNow": "just now"
+    },
+    "selectConversation": "Select a conversation or start a new one"
   }
 }

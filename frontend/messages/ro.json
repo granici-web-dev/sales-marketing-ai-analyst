@@ -165,5 +165,83 @@
     "networkError": "Eroare de rețea. Verifică conexiunea.",
     "serverError": "Eroare server. Încearcă din nou.",
     "pipelineFailed": "Ultima sincronizare a eșuat. Datele pot fi incomplete."
+  },
+  "chat": {
+    "page": {
+      "title": "Chat AI"
+    },
+    "welcome": {
+      "heading": "Bună! Întreabă-mă despre datele tale.",
+      "body": "Pun la dispoziție răspunsuri pe baza datelor reale din CRM-ul tău MEFI. Începe cu una dintre întrebările de mai jos sau scrie a ta."
+    },
+    "sidebar": {
+      "newConversation": "Conversație nouă",
+      "recentConversations": "Conversații recente",
+      "empty": "Nu există conversații încă.",
+      "loading": "Se încarcă conversațiile...",
+      "error": "A apărut o eroare la încărcarea conversațiilor.",
+      "retry": "Încearcă din nou",
+      "openAriaLabel": "Deschide lista de conversații",
+      "closeAriaLabel": "Închide lista de conversații",
+      "title": "Conversații"
+    },
+    "conversation": {
+      "defaultTitle": "Conversație nouă",
+      "kebabAriaLabel": "Acțiuni conversație",
+      "notFound": "Conversația nu există.",
+      "startNew": "Începe o conversație nouă"
+    },
+    "input": {
+      "placeholder": "Întreabă orice despre datele tale...",
+      "ariaLabel": "Întrebare nouă",
+      "sendAriaLabel": "Trimite mesajul",
+      "sendTooltip": "Trimite mesajul",
+      "sendDisabledTooltip": "Așteaptă răspunsul...",
+      "shiftEnterHint": "Shift + Enter pentru linie nouă"
+    },
+    "indicators": {
+      "thinking": "Se gândește...",
+      "lookingUp": "Caut datele...",
+      "verifyingNumbers": "Verific cifrele..."
+    },
+    "tools": {
+      "collapsedSummary": "🔧 {count} unelte folosite",
+      "collapsedSummaryOne": "🔧 1 unealtă folosită",
+      "errorSuffix": "(eroare)",
+      "dayUnit": "{count} zile",
+      "ariaLabel": "Unealtă: {tool_name}"
+    },
+    "suggested": {
+      "sectionAriaLabel": "Întrebări sugerate",
+      "static": {
+        "salesThisMonth": "Cum stăm cu vânzările luna asta?",
+        "topSalesperson": "Care e cel mai bun vânzător luna asta?",
+        "stuckLeads": "Ce lead-uri au nevoie de atenție?",
+        "vsLastWeek": "Comparativ cu săptămâna trecută, cum stăm?",
+        "conversionDrop": "De ce a scăzut conversia la oferte?"
+      }
+    },
+    "messages": {
+      "userAriaLabel": "Mesajul tău",
+      "assistantAriaLabel": "Răspuns asistent AI",
+      "newMessagesButton": "↓ Mesaje noi",
+      "regenerateNotice": "Verific cifrele...",
+      "fallback": "Nu pot da un răspuns precis pe baza datelor disponibile. Te rog reformulează întrebarea.",
+      "streamError": "A apărut o problemă. Te rog încearcă din nou.",
+      "rateLimitError": "Ai trimis prea multe mesaje. Așteaptă câteva minute și încearcă din nou.",
+      "concurrentStreamError": "Așteaptă răspunsul curent înainte de a trimite alt mesaj.",
+      "emptyConversation": ""
+    },
+    "archive": {
+      "trigger": "Arhivează conversația",
+      "dialogTitle": "Arhivezi conversația?",
+      "dialogBody": "Conversația va fi mutată în arhivă. Poți accesa conversațiile arhivate prin URL.",
+      "confirm": "Arhivează",
+      "cancel": "Anulează"
+    },
+    "timestamps": {
+      "justNow": "acum câteva secunde"
+    },
+    "selectConversation": "Selectează o conversație sau începe una nouă"
   }
 }
