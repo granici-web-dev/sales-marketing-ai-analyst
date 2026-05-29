@@ -413,6 +413,23 @@ class ChatOrchestrator:
             )
             return
 
+        # Persist all writes from this turn — without this, get_session's
+        # `async with AsyncSessionLocal()` closes the session without committing
+        # and SQLAlchemy rolls back EVERY write from the turn (user message,
+        # assistant stub, tool_calls, finalize UPDATE). chat_messages stays
+        # empty across all turns and history.load_history returns nothing on
+        # follow-up turns. Plan 08-08 CR-05 refines this into per-section
+        # commit boundaries; for now ONE final commit makes /chat usable.
+        try:
+            await self._session.commit()
+        except Exception:  # noqa: BLE001 — sanitize per T-08-03
+            self._log.exception("chat.turn_commit_failed")
+            yield (
+                "error",
+                {"code": "internal", "message_ro": "A apărut o problemă. Te rog încearcă din nou."},
+            )
+            return
+
         # D-31 cost logging — structlog only, no DB column in MVP1.
         cost_usd = _compute_cost(total_usage)
         self._log.info(
