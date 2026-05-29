@@ -164,6 +164,33 @@ class ChatOrchestrator:
             return
 
         assistant_msg_id = uuid4()
+
+        # Insert assistant-message STUB before the Claude tool loop so each
+        # `tool_repo.insert_tool_call(message_id=assistant_msg_id, ...)` below
+        # has a valid FK target. Without this the per-tool flush raises
+        # ForeignKeyViolationError, which poisons the session (PendingRollback)
+        # and makes the final assistant insert at the bottom of run_turn fail
+        # too — surfacing as the generic "A apărut o problemă." SSE error event.
+        # Final content/tokens/duration are filled in by `finalize_assistant_message`
+        # after the tool loop completes (see section 4 below).
+        try:
+            await msg_repo.insert_assistant_message(
+                conversation_id,
+                content="",
+                tokens_used=None,
+                duration_ms=None,
+                hallucination_flag=False,
+                regenerate_count=0,
+                message_id=assistant_msg_id,
+            )
+        except Exception:  # noqa: BLE001 — sanitize per T-08-03
+            log_.exception("chat.assistant_stub_failed")
+            yield (
+                "error",
+                {"code": "internal", "message_ro": "A apărut o problemă. Te rog încearcă din nou."},
+            )
+            return
+
         yield (
             "conversation_meta",
             {
@@ -364,18 +391,19 @@ class ChatOrchestrator:
             )
             return
 
-        # ── 4. Persist assistant message + emit done ───────────────────────
+        # ── 4. Finalize assistant message + emit done ──────────────────────
+        # The stub row was inserted before the tool loop (see section 1) so
+        # chat_tool_calls.message_id FK targets exist. Fill in real values now.
         duration_ms = int((perf_counter() - turn_start) * 1000)
         hallucination_flag = fallback_used
         try:
-            await msg_repo.insert_assistant_message(
-                conversation_id,
+            await msg_repo.finalize_assistant_message(
+                assistant_msg_id,
                 content=accumulated_text,
                 tokens_used=total_usage["input_tokens"] + total_usage["output_tokens"],
                 duration_ms=duration_ms,
                 hallucination_flag=hallucination_flag,
                 regenerate_count=guard_attempt if not hallucination_flag else GUARD_RETRY_BUDGET,
-                message_id=assistant_msg_id,
             )
         except Exception:  # noqa: BLE001
             self._log.exception("chat.assistant_persist_failed")

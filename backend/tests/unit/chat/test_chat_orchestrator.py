@@ -143,6 +143,11 @@ def _orchestrator_patches(
     msg_repo = MagicMock()
     msg_repo.insert_user_message = AsyncMock(return_value=uid)
     msg_repo.insert_assistant_message = AsyncMock(return_value=aid)
+    # finalize_assistant_message added with Option A fix (FK ordering): the
+    # orchestrator inserts an assistant-message stub upfront so chat_tool_calls
+    # FK targets exist, then finalizes after the tool loop. Tests mocking
+    # msg_repo MUST stub this method or `await` raises on plain MagicMock.
+    msg_repo.finalize_assistant_message = AsyncMock(return_value=None)
     msg_repo.load_history = AsyncMock(return_value=history if history is not None else [])
 
     conv_repo = MagicMock()
@@ -482,8 +487,9 @@ class TestHallucinationGuardPaths:
         assert "regenerate_notice" in names
         done_payload = next(p for n, p in events if n == "done")
         assert done_payload["hallucination_flag"] is False
-        # regenerate_count=1 on the persisted assistant message
-        kwargs = msg_repo.insert_assistant_message.await_args.kwargs
+        # Option A (FK fix): final state lives on `finalize_assistant_message`,
+        # not the upfront stub call to `insert_assistant_message`.
+        kwargs = msg_repo.finalize_assistant_message.await_args.kwargs
         assert kwargs["regenerate_count"] == 1
 
     @pytest.mark.asyncio
@@ -522,8 +528,10 @@ class TestHallucinationGuardPaths:
         done_payload = next(p for n, p in events if n == "done")
         assert done_payload["hallucination_flag"] is True
 
-        # Romanian fallback persisted with hallucination_flag=True
-        kwargs = msg_repo.insert_assistant_message.await_args.kwargs
+        # Option A (FK fix): final state lives on finalize_assistant_message.
+        # The upfront stub from insert_assistant_message always has
+        # hallucination_flag=False / content="" / regenerate_count=0.
+        kwargs = msg_repo.finalize_assistant_message.await_args.kwargs
         assert kwargs["hallucination_flag"] is True
         assert kwargs["regenerate_count"] == 1
         assert "Nu pot da un răspuns precis" in kwargs.get("content", "")
@@ -568,9 +576,14 @@ class TestDisconnectMidStream:
                 for p in patches:
                     p.stop()
 
-        # User message WAS persisted; assistant message NOT persisted; no done event
+        # User message WAS persisted. Option A (FK fix): the assistant-message
+        # STUB is also inserted upfront (so chat_tool_calls FK targets exist);
+        # the FINAL content is only written by finalize_assistant_message,
+        # which is what disconnect must skip. The stub remains in DB with empty
+        # content — an honest "started but never completed" audit row.
         msg_repo.insert_user_message.assert_awaited_once()
-        msg_repo.insert_assistant_message.assert_not_awaited()
+        msg_repo.insert_assistant_message.assert_awaited_once()
+        msg_repo.finalize_assistant_message.assert_not_awaited()
         assert all(n != "done" for n, _ in events)
 
 

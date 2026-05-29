@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+
 """Romanian system prompt builder for Phase 8 AI Chat (D-26 + D-27 + D-28).
 
 D-26: base prompt = docs/CHAT.md §5 verbatim parameterized with Sofa Belle tenant
@@ -128,6 +131,35 @@ def _build_tenant_facts(tenant_name: str = "Sofa Belle") -> dict:
     }
 
 
+_RO_MONTHS = (
+    "ianuarie", "februarie", "martie", "aprilie", "mai", "iunie",
+    "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie",
+)
+
+
+def _build_today_block(today: date | None = None) -> dict:
+    # Appended AFTER the cache-control sentinel so the cached prefix is stable
+    # across days. Without this, Claude doesn't know the current date and
+    # mis-resolves "luna asta" / "săptămâna trecută" against its training cutoff,
+    # producing tool calls against dates that pre-date Sofa Belle's data
+    # (started 2026-01-23). See docs/CHAT.md §5 tenant block.
+    if today is None:
+        today = datetime.now(ZoneInfo("Europe/Bucharest")).date()
+    monday = today - timedelta(days=today.weekday())
+    month_name = _RO_MONTHS[today.month - 1]
+    return {
+        "type": "text",
+        "text": (
+            f"# Context temporal\n"
+            f"Data curentă: {today.isoformat()} "
+            f"(luna curentă: {month_name} {today.year}, "
+            f"săptămâna curentă începe luni {monday.isoformat()}). "
+            f"Folosește această dată pentru a interpreta expresii relative "
+            f"precum „luna asta\", „săptămâna trecută\", „azi\", „ieri\"."
+        ),
+    }
+
+
 def build_system_prompt(tenant_facts: dict | None = None) -> list[dict]:
     """Build the Claude system prompt as a list of cache-aware text blocks.
 
@@ -158,4 +190,7 @@ def build_system_prompt(tenant_facts: dict | None = None) -> list[dict]:
             "text": OUTPUT_FORMAT_BLOCK,
             "cache_control": {"type": "ephemeral"},
         },
+        # AFTER the cache_control sentinel: changes daily, so the cached
+        # prefix above survives across days. Tiny payload (~250 chars).
+        _build_today_block(),
     ]

@@ -103,6 +103,45 @@ class MessageRepository:
         await self._session.execute(bump)
         return new_id
 
+    async def finalize_assistant_message(
+        self,
+        message_id: UUID,
+        *,
+        content: str,
+        tokens_used: int | None,
+        duration_ms: int | None,
+        hallucination_flag: bool,
+        regenerate_count: int,
+    ) -> None:
+        # Two-pass persistence: `insert_assistant_message(content="", ...)` is
+        # called BEFORE the Claude tool loop so chat_tool_calls.message_id FK
+        # has a target row to reference (each `tool_repo.insert_tool_call`
+        # flushes immediately and would otherwise hit ForeignKeyViolationError).
+        # This finalizer fills in the real content/usage/flags after the loop.
+        bump = (
+            update(ChatMessage)
+            .where(ChatMessage.tenant_id == self._tenant_id)
+            .where(ChatMessage.id == message_id)
+            .values(
+                content=content,
+                tokens_used=tokens_used,
+                duration_ms=duration_ms,
+                hallucination_flag=hallucination_flag,
+                regenerate_count=regenerate_count,
+            )
+        )
+        await self._session.execute(bump)
+        conv_bump = (
+            update(ChatConversation)
+            .where(ChatConversation.tenant_id == self._tenant_id)
+            .where(ChatConversation.id == select(ChatMessage.conversation_id)
+                   .where(ChatMessage.id == message_id)
+                   .where(ChatMessage.tenant_id == self._tenant_id)
+                   .scalar_subquery())
+            .values(last_message_at=datetime.now(timezone.utc))
+        )
+        await self._session.execute(conv_bump)
+
     async def load_history(
         self, conversation_id: UUID, limit: int = 20
     ) -> list[dict[str, str]]:

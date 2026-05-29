@@ -28,17 +28,24 @@ class TestPromptBuilder:
             assert isinstance(blk.get("text"), str)
             assert blk["text"]  # non-empty
 
-    def test_pb2_cache_control_on_last_block(self) -> None:
+    def test_pb2_cache_control_marks_cached_prefix_end(self) -> None:
         from app.services.chat.prompt_builder import (
             _build_tenant_facts,
             build_system_prompt,
         )
 
         blocks = build_system_prompt(_build_tenant_facts())
-        # D-27 — LAST block carries cache_control
-        last = blocks[-1]
-        cc = last.get("cache_control")
-        assert cc == {"type": "ephemeral"}
+        # D-27 — cache_control marks the END of the cached prefix. Originally
+        # the OUTPUT_FORMAT block was the last block. After the today-block
+        # injection (current-date fix), a dynamic today block is appended
+        # AFTER the sentinel so the cached prefix above stays stable across
+        # days while Claude still sees today's date. The sentinel is at [-2].
+        sentinel = blocks[-2]
+        assert sentinel.get("cache_control") == {"type": "ephemeral"}
+        # The tail block is the dynamic today-context block; it MUST NOT carry
+        # cache_control (would defeat the entire prefix cache).
+        assert blocks[-1].get("cache_control") is None
+        assert "Data curentă:" in blocks[-1]["text"]
 
     def test_pb3_six_salesperson_full_names(self) -> None:
         from app.services.chat.prompt_builder import (
