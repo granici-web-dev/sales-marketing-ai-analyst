@@ -27,6 +27,13 @@ from app.models.anomaly import DetectedProblem  # noqa: F401
 from app.models.insights import daily_insight as _di  # noqa: F401 — Alembic autogenerate discovery
 from app.models.insights import DailyInsight  # noqa: F401
 
+# Phase 8 models — AI Chat persistence (chat_conversations, chat_messages, chat_tool_calls)
+from app.models.chat import (  # noqa: F401 — Alembic autogenerate discovery
+    ChatConversation,
+    ChatMessage,
+    ChatToolCall,
+)
+
 __all__ = [
     # Phase 1
     "PipelineRun",
@@ -45,4 +52,8 @@ __all__ = [
     "DetectedProblem",
     # Phase 5
     "DailyInsight",
+    # Phase 8
+    "ChatConversation",
+    "ChatMessage",
+    "ChatToolCall",
 ]
