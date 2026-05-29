@@ -149,7 +149,7 @@ class ChatOrchestrator:
         # Instantiate repositories from the registered classes (module-level
         # patch targets so tests can swap them).
         msg_repo = MessageRepository(self._session, self._tenant_id)
-        conv_repo = ConversationRepository(self._session, self._tenant_id)
+        conv_repo = ConversationRepository(self._session, self._tenant_id, self._user_id)
         tool_repo = ToolCallRepository(self._session, self._tenant_id)
 
         # ── 1. Persist user message + emit conversation_meta ───────────────
