@@ -72,6 +72,13 @@
 - Все вызовы к MEFI/Meta/Google/TikTok/GA4/GSC — ТОЛЬКО через Celery tasks
 - Никогда не блокировать HTTP-запрос пользователя на запрос к внешнему API
 - БД как буфер между внешними API и UI
+- **Documented exception (D-25, Phase 8):** `backend/app/api/v1/chat.py` calls
+  AsyncAnthropic streaming inside the FastAPI request handler. AI Chat requires
+  low-latency token-by-token streaming, which is incompatible with Celery's batch
+  model. All OTHER Claude calls (Phase 5 daily insights, Phase 8 D-14 title
+  generation via `asyncio.create_task`) remain non-blocking from HTTP-handler
+  perspective. Enforced by grep-gate test
+  `backend/tests/unit/chat/test_anthropic_scope.py::test_chat08_async_anthropic_only_in_chat`.
 
 ### 6. Логирование без PII
 
