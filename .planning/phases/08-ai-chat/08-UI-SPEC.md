@@ -1,10 +1,11 @@
 ---
 phase: 8
 slug: ai-chat
-status: draft
+status: approved
 shadcn_initialized: true
 preset: new-york (cssVariables, baseColor=zinc) — inherited from Phase 1/7
 created: 2026-05-29
+reviewed_at: 2026-05-29
 ---
 
 # Phase 8 — UI Design Contract (AI Chat)
@@ -845,7 +846,7 @@ These items should be specifically validated against the 6 design quality dimens
 1. **Copywriting** — every user-visible string in the `chat` namespace is Romanian-primary and matches the Specifics block (no English leakage in JSX). Phase 8 executor MUST grep for hardcoded Romanian in `src/components/chat/` and fail the gate if found.
 2. **Visuals** — no `font-bold`, no `font-medium`, no hex colors in JSX (use Tailwind tokens that resolve to `globals.css` `--color-*`).
 3. **Color** — accent is reserved to the 8 elements in the "Accent reserved-for list". Greps for `bg-accent` / `text-accent` outside those 8 contexts fail the audit.
-4. **Typography** — 3 sizes (xs, sm, lg, optionally 2xl on welcome), 2 weights (400, 600). No `text-base`, no `text-md` in chat components.
+4. **Typography** — 4 sizes (12 / 14 / 18 / 24 px → `text-xs`, `text-sm`, `text-lg`, `text-2xl`) and 2 weights (400, 600). No `font-bold`, no `font-medium`, no `text-base`, no `text-md` in chat components.
 5. **Spacing** — all margins/paddings use the declared tokens (Tailwind 4-multiples: `1, 2, 4, 6, 8, 12, 16`). No raw `pt-[7px]` arbitrary values. Touch-target 44px exception documented.
 6. **Registry Safety** — no third-party `--registry` flag used in any `package.json` script or CI command.
 
