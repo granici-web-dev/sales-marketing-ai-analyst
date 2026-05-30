@@ -62,13 +62,13 @@ async def _handler(
     session: AsyncSession,
     inp: GetShowroomPerformanceInput,
 ) -> dict:
+    # leads / visits / offers on the CREATION cohort (created_at_source).
     sql = text(
         "SELECT "
         "  showroom AS showroom, "
         "  COUNT(*) AS leads, "
         "  COUNT(*) FILTER (WHERE reached_visit) AS visits, "
-        "  COUNT(*) FILTER (WHERE reached_offer) AS offers, "
-        "  COUNT(*) FILTER (WHERE reached_contract) AS contracts "
+        "  COUNT(*) FILTER (WHERE reached_offer) AS offers "
         "FROM v_mefi_leads_active "
         "WHERE tenant_id = :tid "
         "  AND showroom IS NOT NULL "
@@ -83,13 +83,43 @@ async def _handler(
     )
     rows = result.all() if hasattr(result, "all") else list(result)
 
+    # contracts on the EVENT model: deals SIGNED in the period (status→Clienți,
+    # status_id=1), keyed on status_changed_at, grouped by showroom (Phase 3 hotfix
+    # 2026-05-30). A lead created earlier but signed in-period counts here.
+    contracts_sql = text(
+        "SELECT showroom AS showroom, COUNT(*) AS contracts "
+        "FROM v_mefi_leads_active "
+        "WHERE tenant_id = :tid "
+        "  AND showroom IS NOT NULL "
+        "  AND status_id = 1 "
+        "  AND (status_changed_at AT TIME ZONE 'Europe/Bucharest')::date BETWEEN :df AND :dt "
+        "GROUP BY showroom"
+    ).bindparams(bindparam("tid", type_=PG_UUID(as_uuid=True)))
+    contracts_result = await session.execute(
+        contracts_sql,
+        {"tid": tenant_id, "df": inp.date_from, "dt": inp.date_to},
+    )
+    contracts_rows = contracts_result.all() if hasattr(contracts_result, "all") else list(contracts_result)
+    contracts_by_showroom: dict[str, int] = {
+        getattr(r, "showroom", None): int(getattr(r, "contracts", 0) or 0)
+        for r in contracts_rows
+    }
+    leads_lookup = {getattr(r, "showroom", None): r for r in rows}
+
+    # Union showroom names from both queries so a showroom with in-period contracts
+    # but no in-period new leads is still emitted (ordered by leads desc, like before).
+    ordered_names = [getattr(r, "showroom", None) for r in rows]
+    for name in contracts_by_showroom:
+        if name not in leads_lookup:
+            ordered_names.append(name)
+
     showrooms = []
-    for row in rows:
-        showroom_name = getattr(row, "showroom", None)
-        leads = int(getattr(row, "leads", 0) or 0)
-        visits = int(getattr(row, "visits", 0) or 0)
-        offers = int(getattr(row, "offers", 0) or 0)
-        contracts = int(getattr(row, "contracts", 0) or 0)
+    for showroom_name in ordered_names:
+        row = leads_lookup.get(showroom_name)
+        leads = int(getattr(row, "leads", 0) or 0) if row is not None else 0
+        visits = int(getattr(row, "visits", 0) or 0) if row is not None else 0
+        offers = int(getattr(row, "offers", 0) or 0) if row is not None else 0
+        contracts = contracts_by_showroom.get(showroom_name, 0)
         showrooms.append({
             "showroom": showroom_name,
             "leads": leads,

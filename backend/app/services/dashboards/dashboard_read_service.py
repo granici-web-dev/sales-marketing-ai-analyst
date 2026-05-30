@@ -113,6 +113,23 @@ class DashboardReadService:
         if revenue is not None and contracts_count > 0:
             avg_deal_size = revenue / Decimal(str(contracts_count))
 
+        # Period funnel ratios — recompute from SUMMED counts over the range
+        # (Phase 3 hotfix 2026-05-30). Contracts are event-based (signed in period)
+        # while leads/visits/offers are creation-cohort; the period ratio
+        # contracts_signed_in_period / leads_created_in_period is the funnel ratio
+        # the CEO/MEFI compare against — NOT the last-day stored rate, and NOT an
+        # average of noisy daily rates. NULLIF zero-division guard via _ratio.
+        def _ratio(num: int | None, den: int | None) -> Decimal | None:
+            if num is None or not den:  # den None or 0 → None
+                return None
+            return Decimal(str(num)) / Decimal(str(den))
+
+        period_l_to_v = _ratio(visits_count, leads_total)
+        period_v_to_o = _ratio(offers_count, visits_count)
+        period_l_to_o = _ratio(offers_count, leads_total)
+        period_o_to_c = _ratio(contracts_count, offers_count)
+        period_l_to_c = _ratio(contracts_count, leads_total)
+
         # ── Step 2: Last-day rates and deltas (last row in range DESC) ────────
         stmt_rates = select(
             DailyKpi.conversion_l_to_v,
@@ -159,7 +176,8 @@ class DashboardReadService:
             func.coalesce(func.sum(SourceDailyKpi.offers), 0).label("offers"),
             func.coalesce(func.sum(SourceDailyKpi.deals_won), 0).label("deals_won"),
             func.sum(SourceDailyKpi.revenue).label("revenue"),
-            func.avg(SourceDailyKpi.conversion_rate).label("conversion_rate"),
+            # conversion_rate recomputed from summed counts below (hotfix 2026-05-30) —
+            # NOT averaged daily rates (deals_won is event-based; leads is cohort).
         ).where(
             SourceDailyKpi.tenant_id == self._tenant_id,
             SourceDailyKpi.date >= from_date,
@@ -168,18 +186,24 @@ class DashboardReadService:
         src_result = await self._session.execute(stmt_src)
         src_rows = src_result.all()
 
-        source_breakdown = [
-            {
+        def _src_rate(deals_won: int, leads: int) -> Decimal | None:
+            if not leads:
+                return None
+            return Decimal(str(deals_won)) / Decimal(str(leads))
+
+        source_breakdown = []
+        for r in src_rows:
+            src_leads = int(r.leads) if r.leads is not None else 0
+            src_deals_won = int(r.deals_won) if r.deals_won is not None else 0
+            source_breakdown.append({
                 "source": r.source,
-                "leads": int(r.leads) if r.leads is not None else 0,
+                "leads": src_leads,
                 "visits": int(r.visits) if r.visits is not None else None,
                 "offers": int(r.offers) if r.offers is not None else 0,
-                "deals_won": int(r.deals_won) if r.deals_won is not None else 0,
+                "deals_won": src_deals_won,
                 "revenue": Decimal(str(r.revenue)) if r.revenue is not None else None,
-                "conversion_rate": Decimal(str(r.conversion_rate)) if r.conversion_rate is not None else None,
-            }
-            for r in src_rows
-        ]
+                "conversion_rate": _src_rate(src_deals_won, src_leads),
+            })
 
         # ── Step 4: Revenue time series — always daily granularity (SALE-05) ─
         stmt_ts = select(DailyKpi.date, DailyKpi.revenue).where(
@@ -212,11 +236,12 @@ class DashboardReadService:
                 "contracts": contracts_count,
             },
             "conversion_rates": {
-                "l_to_v": _dec(rates_row, "conversion_l_to_v"),
-                "v_to_o": _dec(rates_row, "conversion_v_to_o"),
-                "l_to_o": _dec(rates_row, "conversion_l_to_o"),
-                "o_to_c": _dec(rates_row, "conversion_o_to_c"),
-                "l_to_c": _dec(rates_row, "conversion_l_to_c"),
+                # Period funnel ratios recomputed from summed counts (hotfix 2026-05-30).
+                "l_to_v": period_l_to_v,
+                "v_to_o": period_v_to_o,
+                "l_to_o": period_l_to_o,
+                "o_to_c": period_o_to_c,
+                "l_to_c": period_l_to_c,
                 "l_to_v_wow_delta": _dec(rates_row, "conversion_l_to_v_wow_delta"),
                 "l_to_v_mom_delta": _dec(rates_row, "conversion_l_to_v_mom_delta"),
                 "v_to_o_wow_delta": _dec(rates_row, "conversion_v_to_o_wow_delta"),
@@ -279,10 +304,9 @@ class DashboardReadService:
             func.sum(SalespersonDailyKpi.revenue).label("revenue"),
             func.avg(SalespersonDailyKpi.avg_time_to_first_touch_minutes).label("avg_ttft"),
             func.avg(SalespersonDailyKpi.data_completeness_pct).label("data_completeness_pct"),
-            func.avg(SalespersonDailyKpi.conversion_l_to_v).label("conversion_l_to_v"),
-            func.avg(SalespersonDailyKpi.conversion_v_to_o).label("conversion_v_to_o"),
-            func.avg(SalespersonDailyKpi.conversion_o_to_c).label("conversion_o_to_c"),
-            func.avg(SalespersonDailyKpi.conversion_l_to_c).label("conversion_l_to_c"),
+            # Conversion rates recomputed from SUMMED counts below (hotfix 2026-05-30) —
+            # NOT averaged daily rates (which mix event-based deals_won with cohort
+            # denominators and are noisy). deals_won is event-based (signed in period).
         ).outerjoin(
             MefiSalesperson,
             and_(
@@ -302,12 +326,25 @@ class DashboardReadService:
         for r in rows:
             leads_assigned = int(r.leads_assigned) if r.leads_assigned is not None else 0
             deals_won = int(r.deals_won) if r.deals_won is not None else 0
+            visits_conducted = int(r.visits_conducted) if r.visits_conducted is not None else 0
+            offers_sent = int(r.offers_sent) if r.offers_sent is not None else 0
             revenue = Decimal(str(r.revenue)) if r.revenue is not None else None
 
             # win_rate = deals_won / leads_assigned (Python — T-06-02-03)
             win_rate: Decimal | None = None
             if leads_assigned > 0:
                 win_rate = Decimal(str(deals_won)) / Decimal(str(leads_assigned))
+
+            # Period funnel ratios from SUMMED counts (hotfix 2026-05-30) — NULLIF guard.
+            def _ratio(num: int, den: int) -> Decimal | None:
+                if not den:
+                    return None
+                return Decimal(str(num)) / Decimal(str(den))
+
+            sp_conversion_l_to_v = _ratio(visits_conducted, leads_assigned)
+            sp_conversion_v_to_o = _ratio(offers_sent, visits_conducted)
+            sp_conversion_o_to_c = _ratio(deals_won, offers_sent)
+            sp_conversion_l_to_c = _ratio(deals_won, leads_assigned)
 
             # avg_deal_size for range (Python)
             avg_deal_size: Decimal | None = None
@@ -318,8 +355,8 @@ class DashboardReadService:
                 "external_id": r.salesperson_external_id,
                 "name": r.name,
                 "leads_assigned": leads_assigned,
-                "visits_conducted": int(r.visits_conducted) if r.visits_conducted is not None else 0,
-                "offers_sent": int(r.offers_sent) if r.offers_sent is not None else 0,
+                "visits_conducted": visits_conducted,
+                "offers_sent": offers_sent,
                 "deals_won": deals_won,
                 "revenue": revenue,
                 "win_rate": win_rate,
@@ -330,18 +367,10 @@ class DashboardReadService:
                 "data_completeness_pct": (
                     Decimal(str(r.data_completeness_pct)) if r.data_completeness_pct is not None else None
                 ),
-                "conversion_l_to_v": (
-                    Decimal(str(r.conversion_l_to_v)) if r.conversion_l_to_v is not None else None
-                ),
-                "conversion_v_to_o": (
-                    Decimal(str(r.conversion_v_to_o)) if r.conversion_v_to_o is not None else None
-                ),
-                "conversion_o_to_c": (
-                    Decimal(str(r.conversion_o_to_c)) if r.conversion_o_to_c is not None else None
-                ),
-                "conversion_l_to_c": (
-                    Decimal(str(r.conversion_l_to_c)) if r.conversion_l_to_c is not None else None
-                ),
+                "conversion_l_to_v": sp_conversion_l_to_v,
+                "conversion_v_to_o": sp_conversion_v_to_o,
+                "conversion_o_to_c": sp_conversion_o_to_c,
+                "conversion_l_to_c": sp_conversion_l_to_c,
             })
 
         log.info("dashboard.salespeople.done", count=len(salespeople))
@@ -403,17 +432,22 @@ class DashboardReadService:
         ]
 
         # ── Step 2: Site conversion rate (MARK-02) ────────────────────────────
-        stmt_site = select(func.avg(SourceDailyKpi.conversion_rate)).where(
+        # Period ratio = SUM(deals_won) / SUM(leads) over the range (hotfix 2026-05-30)
+        # — NOT the average of daily rates (deals_won is event-based, leads cohort).
+        stmt_site = select(
+            func.coalesce(func.sum(SourceDailyKpi.deals_won), 0).label("deals_won"),
+            func.coalesce(func.sum(SourceDailyKpi.leads), 0).label("leads"),
+        ).where(
             SourceDailyKpi.tenant_id == self._tenant_id,
             SourceDailyKpi.source == "site",
             SourceDailyKpi.date >= from_date,
             SourceDailyKpi.date <= to_date,
         )
         site_result = await self._session.execute(stmt_site)
-        site_rate_raw = site_result.scalar_one_or_none()
-        site_conversion_rate: Decimal | None = (
-            Decimal(str(site_rate_raw)) if site_rate_raw is not None else None
-        )
+        site_row = site_result.first()
+        site_conversion_rate: Decimal | None = None
+        if site_row and site_row.leads:
+            site_conversion_rate = Decimal(str(site_row.deals_won)) / Decimal(str(site_row.leads))
 
         # ── Step 3: Junk by source (MARK-04 documented exception) ────────────
         # MARK-04 documented exception: raw_mefi_leads queried directly; no pre-computed

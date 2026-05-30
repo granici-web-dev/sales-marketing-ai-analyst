@@ -4,10 +4,22 @@ from __future__ import annotations
 
 Computes per-salesperson daily KPIs from v_mefi_leads_active (D-14):
   - One row per ACTIVE salesperson (is_active=True only — D-17)
-  - leads_assigned, leads_contacted, visits_conducted, offers_sent, deals_won, deals_lost
+  - leads_assigned, leads_contacted, visits_conducted (source_id=5 walk-ins), offers_sent, deals_won, deals_lost
   - avg_time_to_first_touch_minutes: business-hours-adjusted (D-06)
   - revenue, 4 conversion rates with NULLIF guard
   - data_completeness_pct: % leads with estimated_value filled (METR-06)
+
+CONTRACT COUNTING (Phase 3 hotfix 2026-05-30, 03-HOTFIX-contract-counting-PLAN.md):
+  - deals_won + revenue use the EVENT model — deals SIGNED on kpi_date
+    (status→Clienți, status_id=1), keyed on status_changed_at via a separate
+    per-rep query. NOT the creation-date cohort.
+  - leads_assigned, leads_contacted, visits_conducted, offers_sent, deals_lost,
+    TTFT, data_completeness_pct stay on the creation cohort (created_at_source).
+    deals_won (event) and deals_lost (cohort) are deliberately asymmetric —
+    deals_lost is out of scope for this hotfix.
+  - conversion_o_to_c / conversion_l_to_c stored daily are event/cohort and noisy;
+    period reads recompute from summed counts. win_rate (read service) already
+    recomputes from sums.
 
 D-05: "First touch" = first row in mefi_lead_history. NULL for leads with no history.
 D-06: Business-hours-adjusted minutes (zoneinfo, DST-safe).
@@ -60,7 +72,7 @@ class SalespersonKpiService:
         """
         stmt = text(
             "SELECT funnel_config FROM tenants WHERE id = :tenant_id"
-        ).bindparams(tenant_id=str(self._tenant_id))
+        ).bindparams(tenant_id=self._tenant_id)
         result = await self._session.execute(stmt)
         row = result.fetchone()
         if row and row[0] and "business_hours" in row[0]:
@@ -198,7 +210,7 @@ class SalespersonKpiService:
                 SELECT
                     v.external_id AS lead_external_id,
                     v.created_at_source,
-                    v.reached_visit,
+                    v.source_id,
                     v.reached_offer,
                     v.reached_contract,
                     v.estimated_value
@@ -207,7 +219,7 @@ class SalespersonKpiService:
                   AND v.assigned_to_id = :sp_id
                   AND (v.created_at_source AT TIME ZONE 'Europe/Bucharest')::date = :kpi_date
             """).bindparams(
-                tid=str(self._tenant_id),
+                tid=self._tenant_id,
                 sp_id=sp_external_id,
                 kpi_date=kpi_date,
             )
@@ -215,17 +227,37 @@ class SalespersonKpiService:
             leads = lead_result.all()
 
             leads_assigned = len(leads)
-            visits_conducted = sum(1 for l in leads if l.reached_visit)
+            # visits_conducted = Showroom walk-ins (source_id=5) — matches "Vizita" in Sofa Belle Excel.
+            visits_conducted = sum(1 for l in leads if l.source_id == 5)
             offers_sent = sum(1 for l in leads if l.reached_offer)
-            deals_won = sum(1 for l in leads if l.reached_contract)
+            # deals_lost stays on the creation cohort (out of scope for the contract
+            # hotfix; not a MEFI-comparison metric). Note the deliberate asymmetry with
+            # deals_won (event model) documented in the module docstring.
             deals_lost = sum(1 for l in leads if not l.reached_contract and not l.reached_offer)
 
-            # Revenue — sum estimated_value for deals_won (D-16 Decimal)
+            # deals_won + revenue use the EVENT model: deals this rep SIGNED on
+            # kpi_date (status→Clienți, status_id=1), keyed on status_changed_at —
+            # NOT the creation-date cohort (Phase 3 hotfix 2026-05-30). A lead created
+            # last month but signed today counts for today's row.
+            won_sql = text("""
+                SELECT v.estimated_value
+                FROM v_mefi_leads_active v
+                WHERE v.tenant_id = :tid
+                  AND v.assigned_to_id = :sp_id
+                  AND v.status_id = 1
+                  AND (v.status_changed_at AT TIME ZONE 'Europe/Bucharest')::date = :kpi_date
+            """).bindparams(tid=self._tenant_id, sp_id=sp_external_id, kpi_date=kpi_date)
+            won_result = await self._session.execute(won_sql)
+            won_rows = won_result.all()
+
+            deals_won = len(won_rows)
+
+            # Revenue — sum estimated_value for deals signed on kpi_date (D-16 Decimal)
             revenue: Decimal | None = None
             won_values = [
-                Decimal(str(l.estimated_value))
-                for l in leads
-                if l.reached_contract and l.estimated_value is not None
+                Decimal(str(w.estimated_value))
+                for w in won_rows
+                if w.estimated_value is not None
             ]
             if won_values:
                 revenue = sum(won_values, Decimal("0"))
@@ -252,7 +284,7 @@ class SalespersonKpiService:
                     WHERE tenant_id = :tid
                       AND lead_external_id = ANY(:lead_ids)
                     ORDER BY lead_external_id, changed_at ASC
-                """).bindparams(tid=str(self._tenant_id), lead_ids=lead_ids)
+                """).bindparams(tid=self._tenant_id, lead_ids=lead_ids)
                 hist_result = await self._session.execute(history_sql)
                 history_rows_all = hist_result.all()
 

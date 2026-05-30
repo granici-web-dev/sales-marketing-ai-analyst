@@ -78,74 +78,74 @@ async def _handler(
         }
 
     requested = [m for m in inp.metrics if m in _KNOWN_METRICS]
-    # Count and Decimal accumulators keyed by metric name.
-    sums: dict[str, Decimal] = {}
-    rate_values: dict[str, list[Decimal]] = {}
-    counts: dict[str, int] = {}
-    revenue_total = Decimal("0")
+    # Count + revenue accumulators over the range. We always accumulate all four
+    # underlying counts so conversion rates can be computed as PERIOD FUNNEL RATIOS
+    # from summed counts (Phase 3 hotfix 2026-05-30) — NOT averaged daily rates.
+    # contracts_count is event-based (signed in period) in daily_kpi_service; summing
+    # daily values gives the period total that matches MEFI.
+    leads_total = 0
+    visits_total = 0
+    offers_total = 0
     contracts_total = 0
+    revenue_total = Decimal("0")
+    days = 0
 
     day = inp.date_from
     while day <= inp.date_to:
         row = await svc.compute_for_date(day)
-        counts.setdefault("days", 0)
-        counts["days"] += 1
-
-        for metric in requested:
-            if metric == "leads":
-                val = row.get("leads_total") or 0
-                sums["leads"] = sums.get("leads", Decimal("0")) + Decimal(int(val))
-            elif metric == "visits":
-                val = row.get("visits_count") or 0
-                sums["visits"] = sums.get("visits", Decimal("0")) + Decimal(int(val))
-            elif metric == "offers":
-                val = row.get("offers_count") or 0
-                sums["offers"] = sums.get("offers", Decimal("0")) + Decimal(int(val))
-            elif metric == "contracts":
-                val = row.get("contracts_count") or 0
-                sums["contracts"] = sums.get("contracts", Decimal("0")) + Decimal(int(val))
-            elif metric == "revenue":
-                val = row.get("revenue")
-                if val is not None:
-                    sums["revenue"] = sums.get("revenue", Decimal("0")) + Decimal(str(val))
-            elif metric == "avg_deal_size":
-                # We need totals to compute the range average — track totals
-                rev = row.get("revenue")
-                if rev is not None:
-                    revenue_total += Decimal(str(rev))
-                ct = row.get("contracts_count") or 0
-                contracts_total += int(ct)
-            elif metric.startswith("conversion_") or metric == "conversion_rate":
-                # Rates are averaged over days where the rate is not None.
-                key = "conversion_l_to_c" if metric == "conversion_rate" else metric
-                val = row.get(key)
-                if val is not None:
-                    rate_values.setdefault(metric, []).append(Decimal(str(val)))
+        days += 1
+        leads_total += int(row.get("leads_total") or 0)
+        visits_total += int(row.get("visits_count") or 0)
+        offers_total += int(row.get("offers_count") or 0)
+        contracts_total += int(row.get("contracts_count") or 0)
+        rev = row.get("revenue")
+        if rev is not None:
+            revenue_total += Decimal(str(rev))
         day = day + timedelta(days=1)
+
+    def _ratio(num: int, den: int) -> Decimal | None:
+        """Period funnel ratio with NULLIF zero-division guard."""
+        if not den:
+            return None
+        return Decimal(str(num)) / Decimal(str(den))
+
+    # Map each conversion metric to its (numerator, denominator) period counts.
+    _rate_map: dict[str, tuple[int, int]] = {
+        "conversion_l_to_v": (visits_total, leads_total),
+        "conversion_v_to_o": (offers_total, visits_total),
+        "conversion_l_to_o": (offers_total, leads_total),
+        "conversion_o_to_c": (contracts_total, offers_total),
+        "conversion_l_to_c": (contracts_total, leads_total),
+        "conversion_rate": (contracts_total, leads_total),  # alias → l_to_c
+    }
+    _count_map: dict[str, int] = {
+        "leads": leads_total,
+        "visits": visits_total,
+        "offers": offers_total,
+        "contracts": contracts_total,
+    }
 
     output: dict = {
         "period": {
             "date_from": inp.date_from.isoformat(),
             "date_to": inp.date_to.isoformat(),
-            "days": counts.get("days", 0),
+            "days": days,
         },
         "metrics": {},
     }
-    for metric, total in sums.items():
-        output["metrics"][metric] = str(total)
-    for metric, vals in rate_values.items():
-        if vals:
-            avg = sum(vals, Decimal("0")) / Decimal(len(vals))
-            output["metrics"][metric] = str(avg)
-        else:
-            output["metrics"][metric] = None
-    if "avg_deal_size" in requested:
-        if contracts_total > 0:
-            output["metrics"]["avg_deal_size"] = str(
-                revenue_total / Decimal(contracts_total)
+    for metric in requested:
+        if metric in _count_map:
+            output["metrics"][metric] = str(Decimal(_count_map[metric]))
+        elif metric == "revenue":
+            output["metrics"]["revenue"] = str(revenue_total)
+        elif metric == "avg_deal_size":
+            output["metrics"]["avg_deal_size"] = (
+                str(revenue_total / Decimal(contracts_total)) if contracts_total > 0 else None
             )
-        else:
-            output["metrics"]["avg_deal_size"] = None
+        elif metric in _rate_map:
+            num, den = _rate_map[metric]
+            rate = _ratio(num, den)
+            output["metrics"][metric] = str(rate) if rate is not None else None
 
     # Sanitize any stragglers (defensive — DATA-04)
     for k, v in list(output["metrics"].items()):

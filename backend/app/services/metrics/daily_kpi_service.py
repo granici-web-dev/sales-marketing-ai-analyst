@@ -3,11 +3,29 @@ from __future__ import annotations
 """Daily KPI aggregation service.
 
 Computes tenant-level daily KPIs from v_mefi_leads_active (D-14):
-  - Lead counts by source category (6 MEFI categories + google = 7 total)
-  - Funnel counts: visits, offers, contracts (ever-reached logic from view)
+  - Lead counts by source category (6 MEFI categories; no Google — source_id=1 absent in Sofa Belle)
+  - Funnel counts: visits (source_id=5 Showroom walk-ins), offers, contracts
   - 5 conversion rates with NULLIF zero-division guard (METR-02, SC#2)
   - Revenue and avg_deal_size
   - WoW (D-7) and MoM (D-30) deltas; NULL when prior row absent or prior=0 (METR-05, D-11)
+
+visits_count = COUNT(source_id=5) — matches "Vizita" in Sofa Belle's Excel spreadsheet.
+"Vizita" means Showroom walk-ins, not a funnel stage reached after the lead is created.
+
+CONTRACT COUNTING (Phase 3 hotfix 2026-05-30, 03-HOTFIX-contract-counting-PLAN.md):
+  - contracts_count + revenue use the EVENT model — a lead SIGNED (status→Clienți,
+    status_id=1) on kpi_date, keyed on status_changed_at. NOT the creation-date
+    cohort. A lead created in February but signed in May is a MAY contract.
+  - All OTHER counts (leads, visits, offers) stay creation-date (created_at_source);
+    for those, the creation IS the event. Offers cannot be reliably event-counted
+    (status_changed_at is overwritten once an offered lead progresses) — known
+    limitation, tracked in Phase 9 backlog.
+  - Stored daily conversion_o_to_c / conversion_l_to_c divide an event-count
+    (contracts) by a creation-cohort count at daily grain — they are noisy and NOT
+    meaningful cohort conversions. PERIOD consumers (dashboards, get_kpi) MUST
+    recompute these from summed counts over the range, not read/average these
+    daily columns. conversion_l_to_v / conversion_v_to_o stay within the creation
+    cohort and remain meaningful.
 
 D-14: Never queries raw_mefi_* tables — v_mefi_leads_active only.
 D-15: All date grouping via AT TIME ZONE 'Europe/Bucharest'.
@@ -96,7 +114,7 @@ class DailyKpiService:
         """
         stmt = text(
             "SELECT funnel_config FROM tenants WHERE id = :tenant_id"
-        ).bindparams(tenant_id=str(self._tenant_id))
+        ).bindparams(tenant_id=self._tenant_id)
         result = await self._session.execute(stmt)
         row = result.fetchone()
         if row and row[0]:
@@ -126,26 +144,14 @@ class DailyKpiService:
         funnel_config = await self._get_funnel_config()
         source_categories: dict = funnel_config.get("source_categories", {})
 
-        # Build designer detection subquery (D-02)
-        # Explicit tenant_id filter — Core queries bypass with_loader_criteria (T-03-03-01)
-        designer_subq = (
-            select(text("lead_external_id"))
-            .select_from(text("mefi_lead_history"))
-            .where(
-                text(
-                    "tenant_id = :tid AND to_status_id = 24"
-                ).bindparams(tid=str(self._tenant_id))
-            )
-            .distinct()
-            .subquery()
-        )
-
-        # Source category IDs from funnel_config (fall back to Sofa Belle defaults)
-        mail_fb_ig_ids = source_categories.get("mail_fb_ig", [2, 11])
+        # Source category IDs from funnel_config (fall back to Sofa Belle defaults verified 2026-05-28)
+        # Showroom (id=5) = walk-in visits; Mail (id=11) only (Meta id=2 goes to alte).
+        mail_fb_ig_ids = source_categories.get("mail_fb_ig", source_categories.get("mail", [11]))
         telefon_ids = source_categories.get("telefon", [10])
         whatsapp_ids = source_categories.get("whatsapp", [9])
         site_ids = source_categories.get("site", [6])
-        alte_ids = source_categories.get("alte", [3, 4, 5, 7, 12, 13])
+        # alte = Meta + Recomandare + Teren + Arhitect + Colaborare + Client Fidel (not Showroom)
+        alte_ids = source_categories.get("alte", [2, 3, 4, 7, 12, 13])
 
         # Build aggregate query against v_mefi_leads_active
         # D-14: view only — never raw_mefi_*
@@ -160,28 +166,22 @@ class DailyKpiService:
             )
             SELECT
                 COUNT(*) AS leads_total,
-                -- WR-01: leads_google is not stored in daily_kpi (no column for it); Google leads
-                -- appear only in source_daily_kpi. leads_total INCLUDES Google leads — this means
-                -- sum(per-category) != leads_total. Tracked for future migration (see WR-01).
-                COUNT(CASE WHEN v.source_id = 1 THEN 1 END) AS leads_google,
                 COUNT(CASE WHEN v.source_id = ANY(:mail_fb_ig_ids) AND d.lead_external_id IS NULL THEN 1 END) AS leads_mail_fb_ig,
                 COUNT(CASE WHEN v.source_id = ANY(:telefon_ids) AND d.lead_external_id IS NULL THEN 1 END) AS leads_telefon,
                 COUNT(CASE WHEN v.source_id = ANY(:whatsapp_ids) AND d.lead_external_id IS NULL THEN 1 END) AS leads_whatsapp,
                 COUNT(CASE WHEN v.source_id = ANY(:site_ids) AND d.lead_external_id IS NULL THEN 1 END) AS leads_site,
                 COUNT(CASE WHEN d.lead_external_id IS NOT NULL THEN 1 END) AS leads_designer,
                 -- CR-03 FIX: use explicit :alte_ids binding instead of residual catch-all.
-                -- The catch-all ignored tenants with custom alte_ids in funnel_config.
                 COUNT(CASE WHEN v.source_id = ANY(:alte_ids) AND d.lead_external_id IS NULL THEN 1 END) AS leads_alte,
-                COUNT(CASE WHEN v.reached_visit THEN 1 END) AS visits_count,
-                COUNT(CASE WHEN v.reached_offer THEN 1 END) AS offers_count,
-                COUNT(CASE WHEN v.reached_contract THEN 1 END) AS contracts_count,
-                SUM(CASE WHEN v.reached_contract THEN v.estimated_value ELSE NULL END) AS revenue
+                -- visits_count = Showroom walk-ins (source_id=5) — matches "Vizita" in Sofa Belle Excel.
+                COUNT(CASE WHEN v.source_id = 5 THEN 1 END) AS visits_count,
+                COUNT(CASE WHEN v.reached_offer THEN 1 END) AS offers_count
             FROM v_mefi_leads_active v
             LEFT JOIN designer_leads d ON d.lead_external_id = v.external_id
             WHERE v.tenant_id = :tid
               AND (v.created_at_source AT TIME ZONE 'Europe/Bucharest')::date = :kpi_date
         """).bindparams(
-            tid=str(self._tenant_id),
+            tid=self._tenant_id,
             kpi_date=kpi_date,
             mail_fb_ig_ids=mail_fb_ig_ids,
             telefon_ids=telefon_ids,
@@ -193,13 +193,33 @@ class DailyKpiService:
         result = await self._session.execute(query_sql)
         agg = result.fetchone()
 
+        # Contracts + revenue use the EVENT model: a contract is a lead signed
+        # (status→Clienți, status_id=1) ON kpi_date, keyed on status_changed_at —
+        # NOT the creation-date cohort (Phase 3 hotfix 2026-05-30, 03-HOTFIX-*).
+        # Reliable because "won" is terminal: a status-1 lead's last status change
+        # IS its signing date. status_changed_at comes straight from MEFI (the real
+        # value); mefi_lead_history.changed_at is sync-time and must NOT be used here.
+        contracts_sql = text("""
+            SELECT
+                COUNT(*) AS contracts_count,
+                SUM(v.estimated_value) AS revenue
+            FROM v_mefi_leads_active v
+            WHERE v.tenant_id = :tid
+              AND v.status_id = 1
+              AND (v.status_changed_at AT TIME ZONE 'Europe/Bucharest')::date = :kpi_date
+        """).bindparams(tid=self._tenant_id, kpi_date=kpi_date)
+        contracts_result = await self._session.execute(contracts_sql)
+        contracts_agg = contracts_result.fetchone()
+
         leads_total = int(agg.leads_total) if agg and agg.leads_total is not None else 0
+        # visits_count = Showroom walk-ins (source_id=5) — matches "Vizita" in Sofa Belle Excel.
         visits_count = int(agg.visits_count) if agg and agg.visits_count is not None else 0
         offers_count = int(agg.offers_count) if agg and agg.offers_count is not None else 0
-        contracts_count = int(agg.contracts_count) if agg and agg.contracts_count is not None else 0
-        # WR-01: leads_google computed by SQL but not stored in daily_kpi (no column).
-        # Google leads appear only in source_daily_kpi. Variable not extracted here to
-        # avoid ruff/mypy unused-variable warning. See SQL comment above for full context.
+        contracts_count = (
+            int(contracts_agg.contracts_count)
+            if contracts_agg and contracts_agg.contracts_count is not None
+            else 0
+        )
         leads_mail_fb_ig = int(agg.leads_mail_fb_ig) if agg and agg.leads_mail_fb_ig is not None else 0
         leads_telefon = int(agg.leads_telefon) if agg and agg.leads_telefon is not None else 0
         leads_whatsapp = int(agg.leads_whatsapp) if agg and agg.leads_whatsapp is not None else 0
@@ -208,7 +228,12 @@ class DailyKpiService:
         leads_alte = int(agg.leads_alte) if agg and agg.leads_alte is not None else 0
 
         # Revenue and avg_deal_size — Decimal arithmetic (D-16)
-        revenue = Decimal(str(agg.revenue)) if agg and agg.revenue is not None else None
+        # Revenue follows contracts: estimated_value of deals SIGNED on kpi_date.
+        revenue = (
+            Decimal(str(contracts_agg.revenue))
+            if contracts_agg and contracts_agg.revenue is not None
+            else None
+        )
         avg_deal_size: Decimal | None = None
         if revenue is not None and contracts_count > 0:
             avg_deal_size = revenue / Decimal(str(contracts_count))
@@ -216,7 +241,7 @@ class DailyKpiService:
         # 5 conversion rates with zero-division guard (METR-02, SC#2)
         # Pitfall 4: cast counts to Decimal before division to avoid integer truncation
         leads_d = Decimal(str(leads_total)) if leads_total else None
-        visits_d = Decimal(str(visits_count)) if visits_count else None
+        visits_d = Decimal(str(visits_count)) if visits_count else None  # 0 → None (zero-guard)
         offers_d = Decimal(str(offers_count)) if offers_count else None
         contracts_d = Decimal(str(contracts_count)) if contracts_count else None
 

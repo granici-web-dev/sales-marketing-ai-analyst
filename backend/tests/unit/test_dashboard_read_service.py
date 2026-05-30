@@ -306,9 +306,10 @@ class TestGetMarketingDashboard:
         session = AsyncMock()
 
         # Marketing dashboard calls: lead_volume_by_source, site_conversion, junk_by_source
+        # site_conversion_rate now reads .first() → row with deals_won/leads (hotfix 2026-05-30)
         exec_results = [
             _mock_execute_result(rows=[]),    # lead_volume_by_source time series
-            _mock_execute_result(scalar=None),  # site_conversion_rate
+            _mock_execute_result(first=None),  # site_conversion_rate (no site rows)
             _mock_execute_result(rows=[]),    # junk query
             _mock_execute_result(rows=[]),    # total query
         ]
@@ -324,13 +325,20 @@ class TestGetMarketingDashboard:
 
     @pytest.mark.asyncio
     async def test_get_marketing_dashboard_site_conversion_rate(self) -> None:
-        """Returns Decimal from SourceDailyKpi site rows — MARK-02."""
+        """site_conversion_rate = SUM(deals_won)/SUM(leads) over the range — MARK-02.
+
+        Period funnel ratio recomputed from summed counts (hotfix 2026-05-30), NOT
+        the average of daily stored rates. 2 contracts / 31 site leads ≈ 0.0645.
+        """
         session = AsyncMock()
 
-        # site_conversion_rate result
+        site_row = MagicMock()
+        site_row.deals_won = 2
+        site_row.leads = 31
+
         exec_results = [
             _mock_execute_result(rows=[]),                      # lead_volume_by_source
-            _mock_execute_result(scalar=Decimal("0.0645")),     # site_conversion_rate
+            _mock_execute_result(first=site_row),               # site_conversion_rate counts
             _mock_execute_result(rows=[]),                      # junk query
             _mock_execute_result(rows=[]),                      # total query
         ]
@@ -339,7 +347,7 @@ class TestGetMarketingDashboard:
         svc, _ = _make_service(session)
         result = await svc.get_marketing_dashboard(FROM_DATE, TO_DATE)
 
-        assert result["site_conversion_rate"] == Decimal("0.0645")
+        assert result["site_conversion_rate"] == Decimal("2") / Decimal("31")
 
 
 class TestGetStuckOffers:
