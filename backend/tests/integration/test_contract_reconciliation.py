@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Reconciliation test — Phase 3 contract-counting hotfix (2026-05-30).
 
 THE GUARD that would have caught the 9-vs-21 bug: it asserts the pre-computed
@@ -17,6 +15,8 @@ Seeds its own data under a throwaway tenant inside an UNCOMMITTED transaction an
 rolls back on teardown — it never pollutes real tenant data. Skips unless
 TEST_DATABASE_URL is set (docker compose up -d).
 """
+
+from __future__ import annotations
 
 import os
 from datetime import UTC, date, datetime
@@ -48,20 +48,45 @@ def _utc(y: int, m: int, d: int, hour: int = 12) -> datetime:
 # AND lifecycle in ('active','lost') (the v_mefi_leads_active scope).
 _SEED_LEADS = [
     # 1) created Feb, SIGNED May → MAY contract (the cross-month bug case)
-    {"ext": "recon-1", "created": _utc(2026, 2, 10), "changed": _utc(2026, 5, 15),
-     "status": 1, "lifecycle": "active"},
+    {
+        "ext": "recon-1",
+        "created": _utc(2026, 2, 10),
+        "changed": _utc(2026, 5, 15),
+        "status": 1,
+        "lifecycle": "active",
+    },
     # 2) created May, signed May → MAY contract
-    {"ext": "recon-2", "created": _utc(2026, 5, 3), "changed": _utc(2026, 5, 20),
-     "status": 1, "lifecycle": "active"},
+    {
+        "ext": "recon-2",
+        "created": _utc(2026, 5, 3),
+        "changed": _utc(2026, 5, 20),
+        "status": 1,
+        "lifecycle": "active",
+    },
     # 3) created May, status=3 (offer, not won) → NOT a contract
-    {"ext": "recon-3", "created": _utc(2026, 5, 5), "changed": _utc(2026, 5, 6),
-     "status": 3, "lifecycle": "active"},
+    {
+        "ext": "recon-3",
+        "created": _utc(2026, 5, 5),
+        "changed": _utc(2026, 5, 6),
+        "status": 3,
+        "lifecycle": "active",
+    },
     # 4) created Apr, signed Apr → APRIL contract
-    {"ext": "recon-4", "created": _utc(2026, 4, 2), "changed": _utc(2026, 4, 25),
-     "status": 1, "lifecycle": "active"},
+    {
+        "ext": "recon-4",
+        "created": _utc(2026, 4, 2),
+        "changed": _utc(2026, 4, 25),
+        "status": 1,
+        "lifecycle": "active",
+    },
     # 5) signed May but lifecycle=junk → excluded by the view → NOT counted
-    {"ext": "recon-5", "created": _utc(2026, 5, 1), "changed": _utc(2026, 5, 10),
-     "status": 1, "lifecycle": "junk"},
+    {
+        "ext": "recon-5",
+        "created": _utc(2026, 5, 1),
+        "changed": _utc(2026, 5, 10),
+        "status": 1,
+        "lifecycle": "junk",
+    },
 ]
 
 # Ground-truth expectation (event model): {(year, month): contracts}
@@ -86,9 +111,7 @@ async def seeded_session():
 
     try:
         await session.execute(
-            text(
-                "INSERT INTO tenants (id, name, slug) VALUES (:id, :name, :slug)"
-            ),
+            text("INSERT INTO tenants (id, name, slug) VALUES (:id, :name, :slug)"),
             {"id": RECON_TENANT_ID, "name": "Recon Test", "slug": "recon-test-deadbeef"},
         )
         for lead in _SEED_LEADS:
