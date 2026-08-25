@@ -21,7 +21,8 @@
     "insights": "AI Insights",
     "chat": "AI Chat",
     "integrations": "Integrations",
-    "settings": "Settings"
+    "settings": "Settings",
+    "agents": "Agents"
   },
   "placeholder": {
     "comingSoon": "Coming soon",
@@ -260,5 +261,40 @@
       "justNow": "just now"
     },
     "selectConversation": "Select a conversation or start a new one"
+  },
+  "agents": {
+    "heading": "Agents",
+    "lead": "What is running for you, and what can be.",
+    "stubNotice": "The figures below are sample data. This panel's account and the engine's account are still separate, so the real payment state cannot be read yet.",
+    "unlock": "Turn on",
+    "open": "Open",
+    "comingSoon": "In progress",
+    "elsewhere": "Managed in the engine panel",
+    "priceFrom": "from {price} € / month",
+    "daysLeft": "{days} paid days left.",
+    "access": {
+      "unlocked": "Active",
+      "expiring": "Expiring",
+      "locked": "Not active",
+      "unavailable": "Coming soon"
+    },
+    "names": {
+      "chatbot": "AI chatbot",
+      "voice-assistant": "Phone assistant",
+      "configurator": "Request configurator",
+      "follow-up": "Automated follow-up",
+      "order-status": "Order status",
+      "content-engine": "Content engine",
+      "data-analyst": "Sales analyst"
+    },
+    "short": {
+      "chatbot": "Answers around the clock from your own material and qualifies the lead.",
+      "voice-assistant": "Takes the call nobody answered and books the visit.",
+      "configurator": "Turns the conversation into a costed request and a quote.",
+      "follow-up": "Returns to customers who went quiet, and stops when they reply.",
+      "order-status": "Shows the customer where their order is, without a phone call.",
+      "content-engine": "Prepares posts from your own work.",
+      "data-analyst": "Reads the CRM and says where money is leaking."
+    }
   }
 }

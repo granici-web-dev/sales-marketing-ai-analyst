@@ -21,7 +21,8 @@
     "insights": "Analize AI",
     "chat": "Chat AI",
     "integrations": "Integrări",
-    "settings": "Setări"
+    "settings": "Setări",
+    "agents": "Agenți"
   },
   "placeholder": {
     "comingSoon": "În curând",
@@ -260,5 +261,40 @@
       "justNow": "acum câteva secunde"
     },
     "selectConversation": "Selectează o conversație sau începe una nouă"
+  },
+  "agents": {
+    "heading": "Agenți",
+    "lead": "Ce este pornit la dumneavoastră și ce se poate porni.",
+    "stubNotice": "Datele de mai jos sunt de probă. Contul acestui panou și contul motorului sunt încă separate, așa că starea reală a plăților nu poate fi citită încă.",
+    "unlock": "Pornește",
+    "open": "Deschide",
+    "comingSoon": "În lucru",
+    "elsewhere": "Se administrează în panoul motorului",
+    "priceFrom": "de la {price} € / lună",
+    "daysLeft": "Mai are {days} zile plătite.",
+    "access": {
+      "unlocked": "Activ",
+      "expiring": "Expiră",
+      "locked": "Neactivat",
+      "unavailable": "În curând"
+    },
+    "names": {
+      "chatbot": "Chatbot AI",
+      "voice-assistant": "Asistent telefonic",
+      "configurator": "Configurator de cerere",
+      "follow-up": "Follow-up automat",
+      "order-status": "Statusul comenzii",
+      "content-engine": "Motor de conținut",
+      "data-analyst": "Analist de vânzări"
+    },
+    "short": {
+      "chatbot": "Răspunde 24/7 din materialele companiei și califică lead-ul.",
+      "voice-assistant": "Preia apelul când nimeni nu răspunde și programează vizita.",
+      "configurator": "Transformă discuția într-o cerere calculată și o ofertă.",
+      "follow-up": "Revine la clienții care au tăcut și se oprește când răspund.",
+      "order-status": "Arată clientului unde e comanda, fără să sune.",
+      "content-engine": "Pregătește postări din lucrările dumneavoastră.",
+      "data-analyst": "Citește datele din CRM și spune unde se pierd bani."
+    }
   }
 }

@@ -1,11 +1,18 @@
 // proxy.ts (NOT middleware.ts — Next.js 16 renamed this file per D-03)
 // Runtime: nodejs (edge NOT supported for jose JWT verify)
-import createMiddleware from "next-intl/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
-import { routing } from "./src/i18n/routing";
 
-const handleI18nRouting = createMiddleware(routing);
+/* Посредника next-intl здесь нет намеренно.
+ *
+ * `localePrefix: "never"` и в приложении нет сегмента [locale] — маршруты
+ * лежат в группах (auth) и (dashboard). Посредник переписывал бы /login
+ * в /ro/login, чего в дереве маршрутов не существует, и отдавал 404.
+ * Локаль приходит из src/i18n/request.ts, посредник для неё не нужен.
+ *
+ * Раньше это не проявлялось: файл лежал в корне проекта, а Next ищет его
+ * рядом с app/, то есть в src/. Он не запускался ни разу — вместе с
+ * проверкой токена. */
 
 const PUBLIC_PATHS = ["/login", "/api/v1/auth", "/api"];
 
@@ -15,7 +22,7 @@ export async function proxy(request: NextRequest) {
   // Skip auth check for public paths and static assets
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
   if (isPublic) {
-    return handleI18nRouting(request);
+    return NextResponse.next();
   }
 
   const accessToken = request.cookies.get("access_token")?.value;
@@ -30,7 +37,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  return handleI18nRouting(request);
+  return NextResponse.next();
 }
 
 export const config = {
