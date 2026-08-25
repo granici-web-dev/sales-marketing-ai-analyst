@@ -60,7 +60,16 @@ async def _handler(
     session: AsyncSession,
     inp: GetLossReasonsInput,
 ) -> dict:
-    group_col = "source_id" if inp.group_by == "source" else "assigned_to_id"
+    # CR-06: static enum→column map. Pydantic Literal is the first SQLi defense;
+    # this dict is the second — KeyError fails closed if the Literal is relaxed.
+    _GROUP_COLUMNS: dict[str, str] = {
+        "source": "source_id",
+        "salesperson": "assigned_to_id",
+    }
+    # CR-06: dict lookup fails closed (KeyError) if the Pydantic Literal is ever
+    # relaxed; group_col comes from a static map, never user input, so the
+    # f-string interpolation below stays injection-safe.
+    group_col = _GROUP_COLUMNS[inp.group_by]
 
     sql = text(
         "SELECT "

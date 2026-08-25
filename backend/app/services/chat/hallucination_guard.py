@@ -39,7 +39,7 @@ References:
 """
 
 import re
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
 from sqlalchemy import select
@@ -53,7 +53,14 @@ from app.services.insights.number_validator import (  # noqa: F401
 
 
 # ── Tolerance + skip-list constants ─────────────────────────────────────────
-TOLERANCE = Decimal("0.01")  # ±1% per D-06 (ROADMAP SC#4)
+# Number-match tolerance. Relative ±5% OR absolute ±0.6 — whichever is looser.
+# The absolute floor lets Claude round percentages (e.g. "31%" for 31.49%, "11%"
+# for 10.6%), which a tight relative-only bound rejects. Per the chat philosophy
+# (grounded answers > refusals), the number guard's job is to catch FABRICATED
+# figures (off by integer multiples), not to police rounding of real tool values.
+# Entity + link sub-checks stay strict — those catch genuine fabrication/phishing.
+TOLERANCE = Decimal("0.05")  # ±5% relative
+ABS_TOLERANCE = Decimal("0.6")  # absolute floor (rounding of small percentages)
 COMMON_DAYS: set[Decimal] = {Decimal(n) for n in range(1, 32)}
 COMMON_YEARS: set[Decimal] = {Decimal(y) for y in range(1900, 2101)}
 COMMON_ROUND_PERCENTS: set[Decimal] = {Decimal("0"), Decimal("50"), Decimal("100")}
@@ -81,6 +88,37 @@ _ENTITY_PATTERN = re.compile(
 # Inline Markdown link pattern.
 _LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
+# CR-04: Romanian sentence-starters that _ENTITY_PATTERN wrongly captures as
+# proper-noun heads (e.g. "Conform Sofa", "Comparativ Săptămâna"). The first
+# token of every entity candidate is checked here and skipped before the
+# whitelist lookup, so normal Romanian phrasing doesn't burn the regen budget.
+_ROMANIAN_SENTENCE_STARTERS: set[str] = {
+    "Conform", "Comparativ", "Astfel", "Practic", "Probabil", "Datorită",
+    "Astăzi", "Ieri", "Acum", "Apoi", "Deci", "Totuși", "Însă",
+    "În", "Pentru", "Cu", "De", "La", "Pe", "Prin", "Sub", "Spre", "Din", "După",
+    "Săptămâna", "Luna", "Anul", "Ziua", "Trimestrul", "Perioada",
+    "Vânzările", "Vânzătorul", "Datele", "Showroom", "Showroom-ul", "Lead",
+    "Lead-uri", "Oferta", "Ofertele", "Contractul", "Contractele", "Rata",
+    "Conversia", "Echipa",
+    "Cel", "Cea", "Cei", "Cele", "Această", "Acest", "Aceste", "Acești",
+    "Toate", "Toți", "Totul", "Câteva", "Câțiva", "Fiecare",
+}
+
+# Out-of-scope platform/source names the system prompt explicitly enumerates as
+# UNCONNECTED (Meta/Google Ads/TikTok/GA4/Search Console). When the user asks
+# about these, Claude is INSTRUCTED to name them in a polite refusal — so they
+# appear as capitalized multi-word phrases ("Google Ads", "Search Console") that
+# the entity regex would otherwise flag as fabricated entities, killing the
+# refusal via the guard→regenerate→fallback path. These are known proper nouns
+# (not hallucinated business data), so any entity candidate whose first token is
+# a platform name is skipped. Domain note: no Sofa Belle business entity
+# (salesperson/showroom/source) legitimately starts with these words, so this
+# cannot mask a real fabrication.
+_PLATFORM_FIRST_TOKENS: set[str] = {
+    "Google", "Meta", "Facebook", "Instagram", "TikTok", "GA4",
+    "Search", "Analytics", "Ads", "Console",
+}
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Internal helpers
@@ -99,7 +137,17 @@ def _extract_numbers_recursive(value: object) -> set[Decimal]:
     if isinstance(value, (int, float, Decimal)):
         out.add(Decimal(str(value)))
     elif isinstance(value, str):
-        out.update(Decimal(str(n)) for n in extract_numbers_from_text(value))
+        # Tool outputs serialize numerics as machine-format strings, e.g.
+        # "0.31490000000000000000" or "1.1428571428571429". These are NOT
+        # Romanian-formatted — routing them through extract_numbers_from_text
+        # would treat ".314" as a thousands group and mangle 0.3149 -> 314.
+        # Try a direct Decimal parse first; only fall back to the Romanian
+        # narrative extractor for genuinely free-text strings (labels, dates).
+        stripped = value.strip()
+        try:
+            out.add(Decimal(stripped))
+        except (InvalidOperation, ValueError):
+            out.update(Decimal(str(n)) for n in extract_numbers_from_text(value))
     elif isinstance(value, dict):
         for v in value.values():
             out |= _extract_numbers_recursive(v)
@@ -119,12 +167,27 @@ def _compute_derived(base: set[Decimal]) -> set[Decimal]:
     derived: set[Decimal] = set()
     items = list(base)
     Q = Decimal("0.1")
+
+    def _q(x: Decimal) -> None:
+        # quantize can raise InvalidOperation (DivisionImpossible) when the
+        # result needs more digits than the Decimal context allows. Swallow
+        # per-value so one bad pair never aborts the whole allow-set (which
+        # would degrade matching and flag legitimate, grounded numbers).
+        try:
+            derived.add(x.quantize(Q))
+        except (InvalidOperation, ValueError):
+            pass
+
+    for a in items:
+        # ratio -> percentage: Claude renders 0.3149 as "31,5%". Add a*100 so
+        # the grounded percentage matches directly (independent of pair math).
+        _q(a * Decimal("100"))
     for i, a in enumerate(items):
         for b in items[i + 1:]:
             if b != 0:
-                derived.add(((a / b) * Decimal("100")).quantize(Q))
+                _q((a / b) * Decimal("100"))
             if a != 0:
-                derived.add(((b / a) * Decimal("100")).quantize(Q))
+                _q((b / a) * Decimal("100"))
             derived.add(a + b)
             derived.add(abs(a - b))
     return derived
@@ -133,8 +196,11 @@ def _compute_derived(base: set[Decimal]) -> set[Decimal]:
 def _is_within_tolerance(num: Decimal, allowed: set[Decimal]) -> bool:
     """Return True if `num` is within ±TOLERANCE of any value in `allowed`."""
     for a in allowed:
+        diff = abs(num - a)
+        if diff <= ABS_TOLERANCE:
+            return True
         ref_mag = abs(a) if abs(a) > Decimal("1e-9") else Decimal("1e-9")
-        if abs(num - a) / ref_mag <= TOLERANCE:
+        if diff / ref_mag <= TOLERANCE:
             return True
     return False
 
@@ -198,8 +264,25 @@ def check_response(
         all_names |= entity_whitelist.get("salespeople", set())
         all_names |= entity_whitelist.get("showrooms", set())
         all_names |= entity_whitelist.get("categories", set())
-        for match in _ENTITY_PATTERN.finditer(response_text):
-            candidate = match.group(1)
+        # Normalize internal whitespace: MEFI names can carry double spaces
+        # (e.g. "Raileanu  Leon") while Claude writes a single space. Compare
+        # on collapsed-whitespace form so the roster still matches.
+        all_names = {" ".join(n.split()) for n in all_names if n}
+        # The system prompt INSTRUCTS Claude to emit dashboard links like
+        # [Salespeople Dashboard](/salespeople). The capitalized link label
+        # ("Salespeople Dashboard") is UI chrome, not a data entity — scanning
+        # it as a name produces guaranteed false positives. Strip link labels
+        # (hrefs are already validated in section 2) before entity matching.
+        entity_text = _LINK_PATTERN.sub(" ", response_text)
+        for match in _ENTITY_PATTERN.finditer(entity_text):
+            candidate = " ".join(match.group(1).split())
+            # CR-04: skip Romanian sentence-openers (not entity heads).
+            if candidate.split()[0] in _ROMANIAN_SENTENCE_STARTERS:
+                continue
+            # 08-09: skip known out-of-scope platform names ("Google Ads",
+            # "Search Console") — Claude names these in legitimate refusals.
+            if candidate.split()[0] in _PLATFORM_FIRST_TOKENS:
+                continue
             if candidate not in all_names:
                 unsupported.append(f"entity:{candidate}")
 
