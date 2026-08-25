@@ -18,6 +18,30 @@ Nothing here is speculative — every claim was measured against the code.
 - [x] **Commit `pnpm-lock.yaml`** — it was gitignored and had never been
       committed while 30 of 38 dependencies sit on caret ranges. Commit `7e31911`.
 
+- [x] **Route protection was never running.** `proxy.ts` sat at the project
+      root while the app lives under `src/`; Next looks for it beside `app/`.
+      It was never loaded, and neither was the token check — `/agents`,
+      `/sales`, `/insights` and `/settings` all returned 200 with full page
+      content and no cookie at all. This is the same layer the Next advisory
+      patched in `7e31911` was about: bypassing a proxy means nothing when the
+      proxy does not run. Moved to `src/proxy.ts`. Commit `98cbd03`.
+
+- [x] **`next-intl` middleware broke `/login` once the proxy started running.**
+      It rewrote `/login` to `/ro/login`, and no `[locale]` segment exists —
+      routes live in the `(auth)` and `(dashboard)` groups. With
+      `localePrefix: "never"` the locale comes from `src/i18n/request.ts` and
+      the middleware is not needed; removed, token check kept. Commit `98cbd03`.
+
+- [x] **An unset `JWT_SECRET_KEY` looked exactly like a bad token.** The
+      frontend has no `.env` at all, so the variable was undefined;
+      `process.env.JWT_SECRET_KEY!` is a TypeScript assertion and checks
+      nothing at runtime, so `jwtVerify` received the encoding of the string
+      "undefined" and rejected every valid token. A person with the correct
+      password would loop back to the login page with no message and no log
+      line. Now a missing secret throws with an explanation, because a
+      configuration fault must not behave like a wrong password. Added
+      `frontend/.env.example`. Commit `3d7c0b2`.
+
 ---
 
 ## Before the next deploy
@@ -56,6 +80,17 @@ Nothing here is speculative — every claim was measured against the code.
       that fails if `sofa_belle_tenant_id` appears under `app/api/`, the way the
       PII-in-logs check works. Mechanical, no behaviour change today. **Do it
       before the multi-tenancy work, not inside it** — inside, nobody will see it.
+
+- [ ] **Nothing proves route protection is switched on.** All three findings
+      above shared one cause: the file was not running, and code that does not
+      run does not fail. Moving, renaming or misplacing `src/proxy.ts` again
+      silently disables authentication for the whole dashboard, and every test
+      in the suite stays green.
+      *Fix:* a test that asserts an unauthenticated request to a protected
+      route redirects to `/login` — against the running app, not against the
+      file's contents. A source-level check that `proxy.ts` sits beside `app/`
+      is the cheap half and catches the original mistake; only a request
+      catches the other two.
 
 - [ ] **Python dependencies have never been checked.** `pip-audit` is not
       installed, so the backend got no dependency audit at all. The frontend had
