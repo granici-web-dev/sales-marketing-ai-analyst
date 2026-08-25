@@ -57,6 +57,25 @@ Response headers track current limits:
 
 On limit exceeded → `429 Too Many Requests` with `Retry-After` header.
 
+### Which limit actually binds — the IP one
+
+The per-token figures are the larger numbers and read like the operative
+ceiling. They are not. **All our traffic leaves one host, so the per-IP burst
+of 10 requests / 10 s binds first — an effective ceiling of ~1 request per
+second**, sixteen times lower than the token's 100 / 10 s suggests.
+
+Measured 2026-08-25: at a 0.35 s interval (≈2.8 req/s) the 429 arrives on the
+**11th request**, every time. The same symptom is recorded in `MefiClient` as
+a burst-limit hit "at page 11" — the interval there was raised 0.15 s → 0.35 s,
+which does not fix it, because 0.35 s is still almost three times over the
+ceiling. A 1.2 s interval completed 21 consecutive requests without a 429.
+
+Two things follow for any client we write:
+
+- Pace against **1 req/s**, not against the token limits.
+- Treat a 429 as a wait-and-retry (honour `Retry-After`), not as a failure.
+  A single burst hit should never end a sync run.
+
 ## Response codes
 
 | Code | Meaning |

@@ -80,6 +80,16 @@ curl -X POST "https://bellesofa.meficrm.com/api/v1/leads/search" \
 
 ### Example response
 
+> ⚠️ **The example below is ABRIDGED — it does not list every field the
+> endpoint returns.** It was copied from MEFI's PDF and shows a subset.
+>
+> Reading it as the full field list produces a wrong conclusion. It omits
+> `estimated_value`, and the omission was taken (2026-08-25) as evidence
+> that search does not return the deal value and that a `GET /leads/{id}`
+> call would be needed to obtain it. Verified against the live API: it is
+> returned by search. See "Fields actually returned" below for the measured
+> list.
+
 ```json
 {
   "success": true,
@@ -112,6 +122,43 @@ curl -X POST "https://bellesofa.meficrm.com/api/v1/leads/search" \
   }
 }
 ```
+
+### Fields actually returned by `/leads/search`
+
+Measured 2026-08-25 against `bellesofa.meficrm.com` with a live `lrd_*` key,
+over a sample of 20 leads with `status_id=1` (contract). 26 keys per record:
+
+```
+assigned_to, business, client_type, converted_at, created_at, created_by,
+custom_fields, description, email, estimated_value, gclid, id, identity,
+is_duplicate, is_public, last_contact_at, lifecycle, location, name, phone,
+priority, source, status, status_changed_at, title, website
+```
+
+**`estimated_value` IS among them.** Search and the detail endpoint differ by
+exactly one key: `company`, present only on `GET /leads/{id}` (and only for
+`client_type: "company"`).
+
+Practical consequence: **there is nothing to gain, for any metric we compute,
+by adding a per-lead detail fetch.** It costs one request per lead against a
+rate limit of ~1 req/s (see README) and returns one extra field we do not use.
+
+### Note on `estimated_value` — the field is returned, but it is empty
+
+Same measurement: `estimated_value` was `null` for **20 of 20 closed
+contracts**. Per the field description below, MEFI returns null when the value
+is zero or was never filled in — so this is a data-entry fact about Sofa Belle,
+not an API limitation and not a bug in our extraction.
+
+The same run enumerated every custom field present on those leads: 11 fields,
+all of them already documented in [custom-fields.md](./custom-fields.md), none
+of type `number`, none holding a monetary value. The deal amount is not hiding
+under another key either.
+
+Consequence: revenue, average deal size, CAC and ROAS cannot be derived from
+MEFI at all. The monthly spreadsheet is not a secondary source for them — it is
+the only one. See
+[`.planning/phases/03-metrics-engine/03-MARKETING-SHEET-INVESTIGATION.md`](../../../.planning/phases/03-metrics-engine/03-MARKETING-SHEET-INVESTIGATION.md).
 
 ---
 

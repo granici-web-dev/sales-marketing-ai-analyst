@@ -156,7 +156,7 @@ funnel velocity (time-in-stage) analytics.
 
 ## `estimated_value` NULL for 100% of leads — revenue metrics unverifiable
 
-**Status:** Proposed — investigate in the next 1–2 days (separate track from the contract-counting hotfix).
+**Status:** ✅ **RESOLVED 2026-08-25 — root-caused, no code fix possible.** Not a bug: the field is empty in MEFI. Findings below; the three investigation steps that follow are kept for the record, each now answered.
 **Cost:** Unknown until root-caused (could be a MEFI API gap, a sync bug, or a custom-field name mismatch).
 **Identified during:** Phase 3 hotfix ground-truth capture (2026-05-30) — see
 [03-HOTFIX-GROUND-TRUTH.md](../.planning/phases/03-metrics-engine/03-HOTFIX-GROUND-TRUTH.md).
@@ -166,7 +166,37 @@ contracts). Consequence: `revenue`, `avg_deal_size`, revenue time-series, CAC,
 ROAS, and any revenue-based insight/anomaly are unavailable across the whole
 product — independent of cohort-vs-event counting.
 
-**Investigate, in order:**
+### Answer (measured against the live API, 2026-08-25)
+
+A read-only probe fetched 20 leads with `status_id=1` (contract) via
+`POST /leads/search`, then `GET /leads/{id}` for each.
+
+1. **MEFI does return the field.** `/leads/search` returns 26 keys per lead and
+   `estimated_value` is one of them. The abbreviated example in
+   [leads-read.md](./api-references/mefi/leads-read.md) omits it, and that
+   omission briefly produced the opposite conclusion — that the value lived
+   only on the detail endpoint and we were failing to request it. It does not.
+   Search and detail differ by exactly one key, `company`.
+2. **It is empty.** `null` for **20 of 20 closed contracts**. MEFI returns null
+   when the amount is zero or was never entered, so this is a data-entry fact,
+   not an API gap and not an extraction bug.
+3. **It is not hiding elsewhere.** The same run enumerated every custom field on
+   those leads: 11 fields, all already in
+   [custom-fields.md](./api-references/mefi/custom-fields.md), none of type
+   `number`, none monetary.
+
+**Consequence — this is a decision about data, not about code.** Either
+salespeople start filling the amount in (after which lead-level revenue, CAC and
+ROAS become computable a month or two later), or the monthly spreadsheet is not
+a second source for revenue but the **only** one. In the latter case, revenue
+per source and per salesperson is unobtainable in principle — the sheet carries
+monthly totals with no lead-level breakdown — and revenue-dependent UI must show
+"no data" rather than `0`, because a rendered zero reads as a collapse.
+
+Nothing in this repository can change that. Closing the item as answered rather
+than fixed.
+
+**Original investigation steps, in order (all now answered above):**
 1. Does the MEFI API actually return a deal/estimated value field for leads? (Check
    a raw payload sample in `raw_mefi_leads.raw_payload` / `custom_fields_raw`.)
 2. If MEFI sends it under a custom-field key, is our extraction mapping the wrong
