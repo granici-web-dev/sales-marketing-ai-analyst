@@ -38,5 +38,8 @@ next-env.d.ts
 
 # pnpm
 .pnpm-debug.log*
-pnpm-lock.yaml
-pnpm-workspace.yaml
+# pnpm-lock.yaml is COMMITTED on purpose. 30 of 38 dependencies sit on caret
+# ranges, so without the lockfile a fresh clone resolves whatever satisfies
+# them that day — a different React, a different Tailwind, a different set of
+# advisories than the one that was audited. pnpm-workspace.yaml was already
+# tracked despite being listed here, which is how the inconsistency showed.
