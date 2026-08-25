@@ -14,10 +14,10 @@ export function WarningCard({ warning }: WarningCardProps) {
   const t = useTranslations("insights");
 
   return (
-    <Card className="border-yellow-200">
+    <Card className="border-warn/30">
       <CardHeader className="pb-2 px-4 pt-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge className="text-xs font-semibold border bg-yellow-100 text-yellow-800 border-yellow-200">
+          <Badge variant="warn">
             <AlertTriangle size={12} className="mr-1" aria-hidden="true" />
             {t("warning.badge")}
           </Badge>

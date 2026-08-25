@@ -14,10 +14,10 @@ export function PositiveCard({ positive }: PositiveCardProps) {
   const t = useTranslations("insights");
 
   return (
-    <Card className="border-emerald-200">
+    <Card className="border-ok/30">
       <CardHeader className="pb-2 px-4 pt-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge className="text-xs font-semibold border bg-emerald-100 text-emerald-800 border-emerald-200">
+          <Badge variant="ok">
             <CheckCircle2 size={12} className="mr-1" aria-hidden="true" />
             {t("positive.badge")}
           </Badge>

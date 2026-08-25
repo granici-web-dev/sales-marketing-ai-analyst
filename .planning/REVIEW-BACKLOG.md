@@ -141,6 +141,40 @@ Nothing here is speculative — every claim was measured against the code.
 
 ---
 
+## Interface: Davoq portal world
+
+Palette, fonts and the token layer were adopted from the Davoq engine portal on
+2026-08-25, applied to the insights screen. What is left is the same move on the
+remaining surfaces.
+
+- [ ] **35 hard-coded Tailwind palette colours on the other screens.**
+      `dashboards/sales` (20), `dashboards/salespeople` (2), and 35 raw hex
+      values inside chart components (`#71717A` ×28, `#2563EB` ×4, `#09090B` ×3).
+      None of them respond to the theme: in dark mode a `bg-yellow-100` surface
+      under `text-yellow-800` is unreadable, and chart axes stay light grey on a
+      dark ground.
+      *Fix:* the same substitution done on insights — semantic tokens for meaning
+      (`--ok`, `--warn`, `--danger`), `--muted-fg` for chart furniture, `--accent`
+      for the series. Recharts takes CSS variables through `stroke` and `fill`.
+
+- [ ] **No theme switch in the analyst.** The tokens carry all three states —
+      system, explicit light, explicit dark — and nothing lets a person choose.
+      The portal has the control; copy it rather than inventing a second one.
+
+- [ ] **Card radius and shadow are now tokens; other primitives are not.**
+      `card.tsx` uses `rounded-card` / `shadow-card`. Buttons, inputs, selects
+      and popovers still carry shadcn's `rounded-md`, so controls sit at 6 px
+      beside 14 px cards.
+      *Fix:* `rounded-control` on the control primitives.
+
+- [ ] **PRODUCT.md and DESIGN.md were never captured.** `impeccable` ran under
+      its scoped-refinement path because no product context exists. Every future
+      design task will re-derive the same answers.
+      *Fix:* `/impeccable init`, then `document` to write DESIGN.md from the
+      tokens that now exist.
+
+---
+
 ## Coverage gaps, not defects
 
 - [ ] **Frontend has 6 test files against 85 source files.** Covered: the SSE

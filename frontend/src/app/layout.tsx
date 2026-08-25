@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { Agentation } from "agentation";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+/* Geist с Inter в запасе — та же пара, что в портале Davoq. Оба подключены
+   переменными, а не классом: `font-sans` в globals.css собирает из них стек,
+   и шрифт остаётся частью системы токенов, а не отдельным решением в
+   разметке. */
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Sofa Belle — Analytics",
@@ -17,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ro">
-      <body className={inter.className}>
+    <html lang="ro" className={`${geist.variable} ${inter.variable}`}>
+      <body className="font-sans">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
         {process.env.NODE_ENV === "development" && <Agentation endpoint="http://localhost:4747" />}
       </body>

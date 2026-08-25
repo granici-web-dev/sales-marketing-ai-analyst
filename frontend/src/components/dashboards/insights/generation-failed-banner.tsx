@@ -13,7 +13,7 @@ export function GenerationFailedBanner() {
 
   return (
     <div
-      className="border-l-4 border-destructive bg-red-50 px-4 py-3 text-red-700 rounded-r-md flex items-start gap-2"
+      className="flex items-start gap-2 rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-danger"
       role="alert"
     >
       <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" aria-hidden="true" />

@@ -1,47 +1,197 @@
 @import "tailwindcss";
 
-@theme {
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(240 10% 4%);
-  --color-secondary: hsl(240 5% 96%);
-  --color-accent: hsl(221 83% 53%);
-  --color-accent-foreground: hsl(0 0% 100%);
-  --color-border: hsl(240 6% 90%);
-  --color-muted-foreground: hsl(240 4% 46%);
-  --color-destructive: hsl(0 72% 51%);
-  --color-ring: hsl(221 83% 53%);
-  --color-input: hsl(240 6% 90%);
-  --radius: 0.5rem;
-}
+/* ─────────────────────────────────────────────────────────────────────────
+   Палитра портала Davoq.
+
+   Значения перенесены из кабинета движка (apps/engine/src/engine/admin) без
+   изменений: аналитик продаётся как один из агентов Davoq, и попадая из
+   портала в его кабинет человек не должен чувствовать, что сменил продукт.
+
+   Один слой истины. Раньше их было два — блок `@theme` для утилит Tailwind
+   и отдельный `:root` с тройками HSL для компонентов — и они уже разошлись:
+   в `@theme` не было `--color-primary`, `--color-card` и `--color-muted`,
+   хотя компоненты звали `bg-primary`, `bg-card` и `bg-muted`. Проверено по
+   собранному CSS: эти классы не генерировались вовсе, то есть у кнопок не
+   было фона, а у карточек — подложки.
+
+   Теперь цвета живут здесь в `:root`, а `@theme` только даёт им имена для
+   утилит. Смена темы работает потому, что Tailwind подставляет `var()`,
+   а не значение на этапе сборки.
+   ───────────────────────────────────────────────────────────────────────── */
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 4%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 4%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 4%;
-  --primary: 221 83% 53%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 240 5% 96%;
-  --secondary-foreground: 240 10% 4%;
-  --muted: 240 5% 96%;
-  --muted-foreground: 240 4% 46%;
-  --accent: 221 83% 53%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 240 6% 90%;
-  --input: 240 6% 90%;
-  --ring: 221 83% 53%;
-  --radius: 0.5rem;
+  /* Бумага, а не белое: белые карточки на ней читаются как карточки. */
+  --paper: #f4f3ef;
+  --fg: #12140f;
+  --card: #ffffff;
+  --muted: #edebe4;
+  /* 4.5:1 и на бумаге, и на белом — проверено в портале. */
+  --muted-fg: #63665c;
+  --border: #e4e1d8;
+  --input: #d5d1c5;
+
+  /* Почти чёрное — основное действие. Лайм остаётся акцентом,
+     а не кнопкой: им помечено выбранное и подтверждённое. */
+  --primary: #12140f;
+  --primary-fg: #f7f7f4;
+  --primary-hover: #2a2d25;
+  --accent: #9fe870;
+  --accent-strong: #7fd246;
+  --accent-fg: #14240a;
+
+  --ring: #12140f;
+  --ring-wash: #12140f1f;
+
+  /* Смысловые цвета отдельно от акцента: «хорошо» не должно
+     выглядеть как «выбрано». */
+  --ok: #2f7a3e;
+  --warn: #8a5a08;
+  --danger: #b3261e;
+
+  --radius: 14px;
+  --radius-sm: 10px;
+
+  --shadow-sm: 0 1px 2px 0 #12140f0a;
+  --shadow: 0 6px 20px -8px #12140f1f, 0 1px 2px 0 #12140f0d;
 }
 
-* {
-  border-color: hsl(var(--border));
+@media (prefers-color-scheme: dark) {
+  /* Явно выбранная светлая перебивает тёмную систему. */
+  :root:not([data-theme="light"]) {
+    --paper: #121310;
+    --fg: #f2f1ea;
+    --card: #1b1c18;
+    --muted: #24261f;
+    --muted-fg: #a6a99c;
+    --border: #2c2e26;
+    --input: #3a3d33;
+    --primary: #f2f1ea;
+    --primary-fg: #12140f;
+    --primary-hover: #dad8cd;
+    --accent: #9fe870;
+    --accent-strong: #b6f58c;
+    --accent-fg: #14240a;
+    --ring: #9fe870;
+    --ring-wash: #9fe87033;
+    --ok: #7bc98a;
+    --warn: #e0a93b;
+    --danger: #f0837b;
+    --shadow-sm: 0 1px 2px 0 #00000059;
+    --shadow: 0 8px 24px -10px #00000080, 0 1px 2px 0 #00000059;
+  }
 }
 
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+/* И явно выбранная тёмная перебивает светлую систему. */
+:root[data-theme="dark"] {
+  --paper: #121310;
+  --fg: #f2f1ea;
+  --card: #1b1c18;
+  --muted: #24261f;
+  --muted-fg: #a6a99c;
+  --border: #2c2e26;
+  --input: #3a3d33;
+  --primary: #f2f1ea;
+  --primary-fg: #12140f;
+  --primary-hover: #dad8cd;
+  --accent: #9fe870;
+  --accent-strong: #b6f58c;
+  --accent-fg: #14240a;
+  --ring: #9fe870;
+  --ring-wash: #9fe87033;
+  --ok: #7bc98a;
+  --warn: #e0a93b;
+  --danger: #f0837b;
+  --shadow-sm: 0 1px 2px 0 #00000059;
+  --shadow: 0 8px 24px -10px #00000080, 0 1px 2px 0 #00000059;
+}
+
+@theme inline {
+  --color-background: var(--paper);
+  --color-foreground: var(--fg);
+  --color-card: var(--card);
+  --color-card-foreground: var(--fg);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--fg);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-fg);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--muted);
+  --color-secondary-foreground: var(--fg);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-fg);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-foreground: var(--accent-fg);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: #ffffff;
+
+  --radius-card: var(--radius);
+  --radius-control: var(--radius-sm);
+
+  --shadow-card: var(--shadow-sm);
+  --shadow-raised: var(--shadow);
+
+  --font-sans: var(--font-geist), var(--font-inter), ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    /* Цифры в таблицах и KPI обязаны стоять в колонку: этот кабинет
+       читают, сравнивая величины, а не читая слова. */
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "ss01";
+  }
+
+  /* Поверхности, которые рисует браузер, а не мы. Оставленные по умолчанию,
+     они принадлежат ничьей дизайн-системе и выдают сборку. */
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  :where(input, textarea) {
+    caret-color: var(--accent-strong);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  * {
+    scrollbar-color: var(--input) transparent;
+    scrollbar-width: thin;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--input);
+    border: 3px solid var(--paper);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-fg);
+  }
 }

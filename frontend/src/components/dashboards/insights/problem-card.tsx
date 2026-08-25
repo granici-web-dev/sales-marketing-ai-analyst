@@ -14,11 +14,15 @@ import { formatRON } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import type { Problem } from "@/hooks/useInsights";
 
-const SEVERITY_CLASSES: Record<string, string> = {
-  high: "bg-red-100 text-red-700 border border-red-200",
-  medium: "bg-orange-100 text-orange-700 border border-orange-200",
-  low: "bg-yellow-100 text-yellow-700 border border-yellow-200",
-};
+/* Три степени, но цветов два. Высокая и средняя получают смысловые
+   токены, низкая остаётся нейтральной: её место в списке уже говорит,
+   что она низкая, а третий оттенок рядом читался бы как ещё одна
+   степень тревоги. */
+const SEVERITY_TONE = {
+  high: "danger",
+  medium: "warn",
+  low: "neutral",
+} as const;
 
 interface ProblemCardProps {
   problem: Problem;
@@ -45,10 +49,10 @@ export function ProblemCard({ problem }: ProblemCardProps) {
           >
             <div className="flex items-center gap-2 flex-wrap text-left">
               <Badge
-                className={cn(
-                  "text-xs font-semibold border",
-                  SEVERITY_CLASSES[problem.severity] ?? SEVERITY_CLASSES.low,
-                )}
+                variant={
+                  SEVERITY_TONE[problem.severity as keyof typeof SEVERITY_TONE] ??
+                  SEVERITY_TONE.low
+                }
               >
                 {t(`severity.${problem.severity}`)}
               </Badge>
