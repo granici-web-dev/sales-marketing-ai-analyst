@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Plug,
   Settings,
+  Boxes,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,6 +24,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: "/", icon: LayoutDashboard, labelKey: "overview" },
+  /* Портал один на всех агентов: этот раздел — список того, что
+     оплачено, и того, что можно включить. Стоит сразу под обзором,
+     потому что остальные пункты имеют смысл только для включённых. */
+  { href: "/agents", icon: Boxes, labelKey: "agents" },
   { href: "/marketing", icon: TrendingUp, labelKey: "marketing" },
   { href: "/sales", icon: Briefcase, labelKey: "sales" },
   { href: "/salespeople", icon: Users, labelKey: "salespeople" },
