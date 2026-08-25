@@ -24,7 +24,7 @@ function withAuthHeader(options?: RequestInit): RequestInit {
   return { ...options, headers, credentials: "include" };
 }
 
-async function apiFetch(url: string, options?: RequestInit): Promise<Response> {
+export async function apiFetch(url: string, options?: RequestInit): Promise<Response> {
   const response = await fetch(url, withAuthHeader(options));
 
   if (response.status === 401) {

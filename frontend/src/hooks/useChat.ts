@@ -17,12 +17,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { parseSSEChunk, type SSEEvent } from "@/lib/chat/parseSSE";
-
-function readAccessToken(): string | null {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
+import { apiFetch } from "@/lib/api-client";
 
 export interface ToolPillState {
   tool_use_id: string;
@@ -117,20 +112,19 @@ export function useChat(options?: UseChatOptions): UseChatResult {
       const ac = new AbortController();
       abortRef.current = ac;
 
-      const token = readAccessToken();
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
       let resp: Response;
       try {
-        resp = await fetch(
+        // Route through apiFetch so an expired 15-min access token triggers
+        // refresh-then-retry (D-02) instead of failing the turn with a generic
+        // error. Body is a plain JSON string (not a consumed stream), so the
+        // single retry replays safely; the SSE stream is read from resp.body
+        // below. The raw fetch here previously bypassed the 401 interceptor —
+        // that was the auth-expiry bug (2nd message after token expiry → 401).
+        resp = await apiFetch(
           `/api/v1/chat/conversations/${conversationId}/messages`,
           {
             method: "POST",
-            headers,
-            credentials: "include",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ content }),
             signal: ac.signal,
           },
