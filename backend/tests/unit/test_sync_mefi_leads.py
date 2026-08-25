@@ -189,7 +189,15 @@ class TestTaskChainHalt:
         """If _sync_async raises, sync_mefi_leads propagates (PIPE-02)."""
         from app.tasks.etl.sync_mefi_leads import sync_mefi_leads
 
-        with patch("app.tasks.etl.sync_mefi_leads.asyncio") as mock_asyncio:
+        # _sync_async is patched alongside asyncio, not left real. Patching only
+        # asyncio still lets `asyncio.run(_sync_async(...))` evaluate the inner
+        # call, building a coroutine that nothing ever awaits — Python reports
+        # it as a RuntimeWarning whenever the garbage collector happens to run,
+        # so the noise surfaced in an unrelated test and moved around as tests
+        # were added.
+        with patch("app.tasks.etl.sync_mefi_leads.asyncio") as mock_asyncio, patch(
+            "app.tasks.etl.sync_mefi_leads._sync_async", MagicMock()
+        ):
             mock_asyncio.run = MagicMock(side_effect=RuntimeError("No data for today"))
             with pytest.raises(RuntimeError, match="No data for today"):
                 sync_mefi_leads.run("00000000-0000-0000-0000-000000000001")
@@ -207,14 +215,19 @@ class TestTaskChainHalt:
 class TestDailyPipeline:
     """Tests for daily_pipeline() chain composition — D-18, PIPE-01."""
 
-    def test_daily_pipeline_chains_calculate_daily_kpis(self) -> None:
-        """daily_pipeline() returns a 3-task chain after Phase 4 extension (D-15).
+    def test_daily_pipeline_is_the_documented_chain(self) -> None:
+        """The chain is sync → kpis → anomalies → insights, in that order.
 
-        D-15: Phase 4 extended the chain to:
-        sync_mefi_leads → calculate_daily_kpis → detect_anomalies → (Phase 5: generate_daily_insights)
+        Asserted as a whole sequence rather than task-by-task. The previous
+        version checked `len(tasks) == 3` and the first three names, and its own
+        docstring listed generate_daily_insights as "(Phase 5:)" — a future that
+        arrived in Phase 5 and left this test red ever since. A length plus
+        prefix check cannot notice a step appended at the end, which is exactly
+        how steps get added here.
 
-        All tasks use .si() (immutable signature). Task names must match the
-        explicit name= kwargs in @celery_app.task decorators (WR-07).
+        Task names must match the explicit `name=` kwargs on the @celery_app.task
+        decorators (WR-07): the chain is built from those strings at runtime, so
+        a renamed task fails as a missing route in production, not at import.
         """
         from uuid import UUID
 
@@ -223,20 +236,34 @@ class TestDailyPipeline:
         TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
         chain_obj = daily_pipeline(str(TENANT_ID))
 
-        # Celery 5.x chain exposes .tasks as a list of Signature objects
-        tasks = chain_obj.tasks
-        assert len(tasks) == 3, (
-            f"daily_pipeline() must return a 3-task chain (Phase 4 extension), got {len(tasks)} tasks: "
-            f"{[t.name for t in tasks]}"
-        )
-        assert tasks[0].name == "tasks.etl.sync_mefi_leads", (
-            f"First task must be 'tasks.etl.sync_mefi_leads', got '{tasks[0].name}'"
-        )
-        assert tasks[1].name == "tasks.etl.calculate_daily_kpis", (
-            f"Second task must be 'tasks.etl.calculate_daily_kpis', got '{tasks[1].name}' "
-            "(D-18 chain position)"
-        )
-        assert tasks[2].name == "tasks.etl.detect_anomalies", (
-            f"Third task must be 'tasks.etl.detect_anomalies', got '{tasks[2].name}' "
-            "(D-15 Phase 4 chain extension)"
-        )
+        assert [t.name for t in chain_obj.tasks] == [
+            "tasks.etl.sync_mefi_leads",
+            "tasks.etl.calculate_daily_kpis",
+            "tasks.etl.detect_anomalies",
+            "tasks.insights.generate_daily_insights",
+        ]
+
+    def test_daily_pipeline_uses_immutable_signatures(self) -> None:
+        """Every step takes tenant_id only — never the previous step's result (D-12).
+
+        A mutable signature makes Celery prepend the parent's return value to
+        the arguments. Each of these tasks takes `tenant_id` first, so the
+        tenant would silently become whatever the previous task returned, and
+        the run would compute another tenant's numbers rather than fail.
+        """
+        from uuid import UUID
+
+        from app.tasks.etl.sync_mefi_leads import daily_pipeline
+
+        TENANT_ID = "00000000-0000-0000-0000-000000000001"
+        chain_obj = daily_pipeline(TENANT_ID)
+
+        for task in chain_obj.tasks:
+            assert task.immutable, (
+                f"{task.name} must be added with .si(), not .s() (D-12)"
+            )
+            assert task.args == (TENANT_ID,), (
+                f"{task.name} must receive exactly the tenant_id, got {task.args}"
+            )
+        # UUID parses — a malformed id would reach the worker and fail there.
+        UUID(TENANT_ID)

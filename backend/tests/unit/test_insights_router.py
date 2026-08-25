@@ -4,6 +4,13 @@ from __future__ import annotations
 
 Tests the rate-limit logic in POST /api/v1/insights/refresh in isolation —
 no real Redis or Celery required.
+
+These call the handler as a plain coroutine rather than through the app, so
+FastAPI never resolves the signature. Anything FastAPI would have supplied has
+to be passed explicitly — `target_date` included. Omitting it does not give the
+default `None`: it hands the handler the `Query(None)` marker object itself,
+and the first `target_date.isoformat()` inside raises AttributeError. That is
+what broke both tests here (fixed 2026-08-25); the endpoint was always correct.
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -24,8 +31,12 @@ async def test_refresh_rate_limit_first_call_enqueues() -> None:
     mock_task = MagicMock()
     mock_task.id = "abc123-task-id"
 
-    mock_pipeline = MagicMock()
-    mock_pipeline.return_value.delay.return_value = mock_task
+    # The endpoint dispatches ONLY insight generation. It used to enqueue the
+    # whole daily pipeline, and this test still patched `daily_pipeline` long
+    # after that changed — patching a name the handler no longer calls, which
+    # asserts nothing.
+    mock_generate = MagicMock()
+    mock_generate.delay.return_value = mock_task
 
     mock_r = AsyncMock()
     mock_r.set = AsyncMock(return_value=True)
@@ -37,16 +48,24 @@ async def test_refresh_rate_limit_first_call_enqueues() -> None:
     mock_response = MagicMock()
 
     with patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx):
-        with patch("app.tasks.etl.sync_mefi_leads.daily_pipeline", mock_pipeline):
+        with patch(
+            "app.tasks.insights.generate_daily_insights.generate_daily_insights",
+            mock_generate,
+        ):
             result = await refresh_insights(
                 response=mock_response,
+                target_date=None,
                 session=AsyncMock(),
                 current_user=mock_user,
             )
 
     assert result.pipeline_run_id == "abc123-task-id"
     assert result.enqueued_at is not None
-    mock_pipeline.return_value.delay.assert_called_once()
+    mock_generate.delay.assert_called_once()
+    # No date given → the task must be told "latest", not a stringified marker.
+    tenant_id, kpi_date = mock_generate.delay.call_args.args
+    assert kpi_date is None, f"expected no date, task received {kpi_date!r}"
+    assert tenant_id
 
 
 @pytest.mark.asyncio
@@ -73,6 +92,7 @@ async def test_refresh_rate_limit_second_call_returns_429() -> None:
         with pytest.raises(HTTPException) as exc_info:
             await refresh_insights(
                 response=mock_response,
+                target_date=None,
                 session=AsyncMock(),
                 current_user=mock_user,
             )

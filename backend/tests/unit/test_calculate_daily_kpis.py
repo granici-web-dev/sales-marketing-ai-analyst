@@ -160,7 +160,14 @@ class TestPipelineChain:
         """
         task = _get_task()
 
-        with patch("app.tasks.etl.calculate_daily_kpis.asyncio") as mock_asyncio:
+        # _calc_async is patched alongside asyncio: patching only asyncio still
+        # evaluates the inner `_calc_async(...)` call to build the argument, so a
+        # coroutine is created and never awaited. Python reports that whenever
+        # the collector next runs, which lands the warning on some unrelated
+        # test — it was showing up under test_celery_app.
+        with patch("app.tasks.etl.calculate_daily_kpis.asyncio") as mock_asyncio, patch(
+            "app.tasks.etl.calculate_daily_kpis._calc_async", MagicMock()
+        ):
             mock_asyncio.run = MagicMock(side_effect=RuntimeError("DB connection failed"))
             with pytest.raises(Exception):
                 task.run(str(TENANT_ID), calculation_date=None)

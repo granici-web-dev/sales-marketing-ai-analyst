@@ -1,17 +1,38 @@
-from __future__ import annotations
-
 """Unit tests for SourceKpiService.
 
 Tests mock AsyncSession — no live DB required.
-Coverage: 7-source-category production (D-04), designer detection (D-02), TikTok folding (D-03).
 
-Requirements: METR-03
-Tests D-02 (designer from status_id=24 in history), D-03 (TikTok→mail_fb_ig),
-D-04 (exactly 7 rows per day per tenant).
+Requirements: METR-03.
+
+## Why this file was rewritten (2026-08-25)
+
+It encoded the pre-2026-05-28 design and had been failing ever since that
+design was replaced. Five tests asserted the old shape:
+
+  - seven categories `mail_fb_ig | telefon | whatsapp | site | designer |
+    alte | google` — there are now eleven, and three of those names are gone;
+  - `_categorize_lead(source_id, is_designer)` — the parameter no longer
+    exists, so those tests raised TypeError rather than failing an assertion;
+  - `source_id=1 → "google"` — source 1 does not occur in Sofa Belle's data at
+    all; Google traffic arrives as source 6 (Site).
+
+A sixth passed for the wrong reason: it asserted `"tiktok" not in sources`
+against a mocked-empty result, so the body never ran. A test that is green
+because it checked nothing is worse than a red one — it is counted as
+coverage.
+
+The categories are now read FROM the service rather than restated here. The
+old copy is exactly how these tests went stale: the service changed and the
+literal in this file did not, and nothing connected the two.
+
+Designer coverage is not dropped, it moved. Designer is a MEFI *status*
+(status_id=24), never a source, and it is counted in `daily_kpi.leads_designer`
+by a CTE over `mefi_lead_history` in `daily_kpi_service`. The test below pins
+the boundary so nobody reintroduces it here.
 """
+from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 
@@ -19,163 +40,150 @@ import pytest
 
 TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 
-# D-04: Exact 7 source categories, in this order
-EXPECTED_CATEGORIES = ["mail_fb_ig", "telefon", "whatsapp", "site", "designer", "alte", "google"]
+
+def _categories() -> list[str]:
+    """Canonical categories, read from the service — never restated."""
+    from app.services.metrics.source_kpi_service import CANONICAL_CATEGORIES
+
+    return list(CANONICAL_CATEGORIES)
 
 
 def _make_service(mock_session=None):
-    """Build SourceKpiService with mocked AsyncSession.
-
-    Import deferred — file parses (RED) before Plan 03 implementation exists.
-    """
+    """Build SourceKpiService with a mocked AsyncSession."""
     from app.services.metrics.source_kpi_service import SourceKpiService  # noqa: PLC0415
 
     session = mock_session or AsyncMock()
     return SourceKpiService(session, TENANT_ID), session
 
 
+def _empty_session() -> AsyncMock:
+    session = AsyncMock()
+    result = MagicMock()
+    result.__iter__ = MagicMock(return_value=iter([]))
+    session.execute = AsyncMock(return_value=result)
+    return session
+
+
 class TestSourceCategorization:
-    """Tests for 7-source-category production — METR-03, D-04."""
+    """One row per canonical category per day — METR-03."""
 
     @pytest.mark.asyncio
-    async def test_seven_source_rows_per_day(self) -> None:
-        """source_daily_kpi must produce exactly 7 rows per day per tenant — D-04.
+    async def test_every_canonical_category_emitted_even_with_no_leads(self) -> None:
+        """Zero-fill is the contract: a missing row and a zero row are not the same.
 
-        D-04: Seven fixed categories: mail_fb_ig | telefon | whatsapp | site |
-        designer | alte | google. All 7 must be emitted even when some have 0 leads.
-        Gap 3: ROADMAP SC#1 says 6 categories but CONTEXT.md D-04 locks in 7 —
-        CONTEXT takes precedence.
+        The dashboard charts a fixed set of sources. If a category with no leads
+        simply vanished from the result, the chart would silently reshape itself
+        day to day and a source that died would look like a source that was
+        never configured.
         """
-        session = AsyncMock()
-        # Mock aggregate query returning rows for all 7 categories
-        mock_rows = []
-        for cat in EXPECTED_CATEGORIES:
-            row = MagicMock()
-            row.source = cat
-            row.leads = 0 if cat == "google" else 3
-            mock_rows.append(row)
+        service, _ = _make_service(_empty_session())
+        rows = await service.compute_source_kpis(date(2026, 5, 24))
 
-        mock_result = MagicMock()
-        mock_result.__iter__ = MagicMock(return_value=iter(mock_rows))
-        session.execute = AsyncMock(return_value=mock_result)
-
-        service, _ = _make_service(session)
-        rows = await service.compute_source_kpis(date(2026, 5, 24))  # type: ignore[attr-defined]
-
-        assert rows is not None, "compute_source_kpis must return a list"
-        # Even when DB returns 7 rows, service must surface them
         sources = [r["source"] if isinstance(r, dict) else r.source for r in rows]
-        assert len(sources) == 7, (
-            f"Must produce exactly 7 source rows per day (D-04), got {len(sources)}: {sources}"
+        expected = _categories()
+
+        assert sources == expected, (
+            "every canonical category must be emitted, in canonical order, even "
+            f"on a day with no leads at all.\n  expected: {expected}\n  got:      {sources}"
         )
-        for expected_cat in EXPECTED_CATEGORIES:
-            assert expected_cat in sources, (
-                f"Category '{expected_cat}' missing from source_daily_kpi output (D-04)"
-            )
 
     @pytest.mark.asyncio
-    async def test_tiktok_folded_into_mail_fb_ig(self) -> None:
-        """TikTok leads (Meta source_ids 2/11) folded into mail_fb_ig (D-03).
+    async def test_no_category_outside_the_canonical_set(self) -> None:
+        """Unmapped source IDs collapse into `other`, never into a new category.
 
-        D-03: TikTok has no dedicated source_id in MEFI — leads fall under Meta
-        source IDs (2 or 11). No separate 'tiktok' category exists in Phase 3.
+        source_daily_kpi.source is TEXT, so a stray category name would insert
+        happily and only surface as an unexplained slice on a chart.
         """
-        # Verify no 'tiktok' category is emitted
-        session = AsyncMock()
-        mock_result = MagicMock()
-        mock_result.__iter__ = MagicMock(return_value=iter([]))
-        session.execute = AsyncMock(return_value=mock_result)
+        service, _ = _make_service(_empty_session())
+        rows = await service.compute_source_kpis(date(2026, 5, 24))
 
-        service, _ = _make_service(session)
-        rows = await service.compute_source_kpis(date(2026, 5, 24))  # type: ignore[attr-defined]
+        allowed = set(_categories())
+        seen = {r["source"] if isinstance(r, dict) else r.source for r in rows}
+        assert seen <= allowed, f"categories outside the canonical set: {sorted(seen - allowed)}"
 
-        if rows:
-            sources = [r.get("source") if isinstance(r, dict) else r.source for r in rows]
-            assert "tiktok" not in sources, (
-                "No 'tiktok' category must appear in Phase 3 (D-03) — "
-                "TikTok folded into mail_fb_ig"
-            )
 
-    @pytest.mark.asyncio
-    async def test_zero_leads_category_still_emitted(self) -> None:
-        """Categories with 0 leads must still produce a row (D-04 — always 7 rows).
+class TestLeadCategorization:
+    """`_categorize_lead` — the source_id → category mapping."""
 
-        All 7 source categories must be emitted even when count is 0.
-        Dashboard depends on consistently seeing all 7 rows for charts.
+    @pytest.mark.parametrize(
+        ("source_id", "expected"),
+        [
+            (5, "showroom"),
+            (11, "mail"),
+            (10, "telefon"),
+            (9, "whatsapp"),
+            (6, "site"),
+            (2, "meta"),
+            (3, "recomandare"),
+            (12, "colaborare"),
+            (7, "arhitect"),
+            (13, "client_fidel"),
+        ],
+    )
+    def test_known_source_ids(self, source_id: int, expected: str) -> None:
+        """Verified against Sofa Belle's own source IDs on 2026-05-28."""
+        service, _ = _make_service()
+        assert service._categorize_lead(source_id) == expected
+
+    @pytest.mark.parametrize("source_id", [None, 0, 1, 99, 12345])
+    def test_unknown_source_ids_fall_into_other(self, source_id) -> None:
+        """Including `1`.
+
+        source_id=1 is Google in MEFI's own list, and an earlier version of this
+        file asserted it produced a `google` category. It does not, and should
+        not: no lead in Sofa Belle's data carries it — their Google traffic
+        arrives through the website form as source 6. Inventing a `google`
+        bucket would put a permanent zero on the chart.
         """
-        session = AsyncMock()
-        mock_result = MagicMock()
-        mock_result.__iter__ = MagicMock(return_value=iter([]))
-        session.execute = AsyncMock(return_value=mock_result)
+        service, _ = _make_service()
+        assert service._categorize_lead(source_id) == "other"
 
-        service, _ = _make_service(session)
-        rows = await service.compute_source_kpis(date(2026, 5, 24))  # type: ignore[attr-defined]
+    def test_every_mapped_category_is_canonical(self) -> None:
+        """The mapping may not produce a name the zero-fill does not know about."""
+        service, _ = _make_service()
+        allowed = set(_categories())
+        produced = {service._categorize_lead(sid) for sid in range(0, 40)}
+        assert produced <= allowed, f"unmapped category names: {sorted(produced - allowed)}"
 
-        assert rows is not None, "Service must return a list even with no leads"
 
+class TestDesignerIsNotASource:
+    """Designer is a status, and lives in daily_kpi — not here.
 
-class TestDesignerDetection:
-    """Tests for designer source detection — D-02, METR-03."""
+    Pinned deliberately. The previous version of this file asserted the
+    opposite (`is_designer=True` overriding source_id), which is how it came to
+    fail: the design moved and the tests stayed. Asserting the boundary makes
+    the move visible instead of leaving a hole where the old tests were.
+    """
 
-    @pytest.mark.asyncio
-    async def test_designer_category_overrides_source_id(self) -> None:
-        """Lead with source_id=2 (mail_fb_ig) but to_status_id=24 in history → 'designer'.
+    def test_designer_is_not_a_source_category(self) -> None:
+        assert "designer" not in _categories(), (
+            "designer is a MEFI status (24), not a source — it is counted in "
+            "daily_kpi.leads_designer, see daily_kpi_service"
+        )
 
-        D-02: Designer leads derived from status_id=24 in mefi_lead_history.
-        If a lead EVER had status 24, its source category is 'designer' regardless
-        of source_id. Designer is a MEFI status, not a source field.
+    def test_categorize_lead_takes_only_source_id(self) -> None:
+        """No `is_designer` parameter — a status must not leak into source logic."""
+        import inspect
+
+        from app.services.metrics.source_kpi_service import SourceKpiService
+
+        params = list(inspect.signature(SourceKpiService._categorize_lead).parameters)
+        assert params == ["self", "source_id"], (
+            f"_categorize_lead must classify by source alone, got {params}"
+        )
+
+    def test_designer_counting_still_exists_somewhere(self) -> None:
+        """Guards against the coverage being deleted rather than relocated.
+
+        If the CTE on status 24 disappears from daily_kpi_service, the tests
+        above would keep passing while the metric quietly stopped existing.
         """
-        session = AsyncMock()
-        # Mock designer detection subquery returning lead_external_id 'lead-abc'
-        mock_result = MagicMock()
-        mock_result.__iter__ = MagicMock(return_value=iter([]))
-        session.execute = AsyncMock(return_value=mock_result)
+        import inspect
 
-        service, _ = _make_service(session)
+        from app.services.metrics import daily_kpi_service
 
-        # Simulate categorization: lead source_id=2, but has status_24 in history
-        # Service must classify this lead as 'designer', not 'mail_fb_ig'
-        category = service._categorize_lead(  # type: ignore[attr-defined]
-            source_id=2,
-            is_designer=True,  # flag from designer subquery
-        )
-        assert category == "designer", (
-            f"Lead with is_designer=True must be categorized as 'designer', "
-            f"got '{category}' (D-02 — designer overrides source_id)"
-        )
-
-    @pytest.mark.asyncio
-    async def test_designer_from_current_status_24(self) -> None:
-        """Lead currently at status_id=24 (DESIGNER) → categorized as 'designer' (D-02)."""
-        service, _ = _make_service()
-        category = service._categorize_lead(  # type: ignore[attr-defined]
-            source_id=10,  # telefon
-            is_designer=True,
-        )
-        assert category == "designer", (
-            "Current status_id=24 lead must be 'designer' even if source_id is telefon (D-02)"
-        )
-
-    @pytest.mark.asyncio
-    async def test_google_source_categorized_correctly(self) -> None:
-        """source_id=1 (Google) → 'google' category (D-01)."""
-        service, _ = _make_service()
-        category = service._categorize_lead(  # type: ignore[attr-defined]
-            source_id=1,
-            is_designer=False,
-        )
-        assert category == "google", (
-            f"source_id=1 must be 'google' category, got '{category}' (D-01)"
-        )
-
-    @pytest.mark.asyncio
-    async def test_non_designer_lead_uses_source_id(self) -> None:
-        """Lead with is_designer=False, source_id=9 → 'whatsapp' (normal mapping)."""
-        service, _ = _make_service()
-        category = service._categorize_lead(  # type: ignore[attr-defined]
-            source_id=9,
-            is_designer=False,
-        )
-        assert category == "whatsapp", (
-            f"source_id=9 with is_designer=False must be 'whatsapp', got '{category}'"
+        source = inspect.getsource(daily_kpi_service)
+        assert "leads_designer" in source and "24" in source, (
+            "designer leads are no longer counted in daily_kpi_service — if the "
+            "metric moved again, move this assertion with it"
         )
