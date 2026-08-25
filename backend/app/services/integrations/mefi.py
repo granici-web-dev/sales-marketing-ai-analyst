@@ -59,13 +59,14 @@ class MefiClient(BaseIntegration):
         source_name: Integration identifier used in SyncResult and logs.
         _REQUEST_INTERVAL: Minimum seconds between requests — proactive
             throttle to stay under the 100 req/10s burst limit (10 req/s).
-            0.15s ≈ 6.7 req/s, ~33% headroom below the hard ceiling.
-            Tune this if MEFI tightens limits or concurrent tasks share the token.
+            0.35s ≈ 2.8 req/s, ~72% headroom below the hard ceiling.
+            Raised from 0.15s after observing burst-limit hits at page 11
+            when search + detail fetches combined exceeded 100 req/10s.
     """
 
     BASE_URL: str = "https://bellesofa.meficrm.com/api/v1"
     source_name: str = "mefi"
-    _REQUEST_INTERVAL: float = 0.15  # seconds between requests (~6.7 req/s)
+    _REQUEST_INTERVAL: float = 0.35  # seconds between requests (~2.8 req/s)
 
     def __init__(self, api_key: str) -> None:
         """Create a MefiClient with a read key.
