@@ -47,16 +47,42 @@ Lead ──► Vizita ──► Oferta ──► Contract
 
 ## Lead Categories (как у клиента)
 
-Клиент в MEFI размечает лиды по этим категориям:
+**Verified 2026-05-28 from raw_mefi_leads (1000 leads, source IDs confirmed):**
 
-| Категория | Описание | Откуда приходят |
-|---|---|---|
-| **Mail/FB/IG** | Email заявки + Facebook/Instagram Lead Ads | Meta Ads, формы на FB/IG |
-| **Telefon** | Входящие звонки | Реклама с номером телефона |
-| **WhatsApp** | Заявки через WhatsApp Business | Кнопка WhatsApp на сайте/в рекламе |
-| **Site** | Формы на sofabelle.ro | Органика, прямые заходы, Google Ads |
-| **Designer** | Заявки на услугу дизайнера интерьера | Отдельная услуга компании |
-| **Alte** | Прочие источники | Рекомендации, walk-in, мероприятия |
+| MEFI source_id | Название | Лидов | Описание |
+|---|---|---|---|
+| 5 | Showroom | 266 | Визит в шоурум — человек зашёл лично. **Это = "Vizita" в Excel** |
+| 11 | Mail | 326 | Email заявки |
+| 10 | Telefon | 164 | Входящие звонки |
+| 9 | WhatsApp | 123 | WhatsApp Business |
+| 6 | Site | 91 | Формы на sofabelle.ro |
+| 12 | Colaborare | 12 | Партнёрские рефералы |
+| 3 | Recomandare | 6 | Сарафанное радио |
+| 2 | Meta ADS | 6 | Facebook/Instagram реклама |
+| 7 | Arhitect | 3 | Рефералы от архитекторов |
+| 13 | Client Fidel | 2 | Повторные клиенты |
+
+**Важно:** Google (source_id=1) в данных Sofa Belle отсутствует — Google-трафик приходит через Site (id=6).
+
+### Уточнение по воронке (выявлено 2026-05-28)
+
+**"Vizita" в Excel клиента ≠ статус SHOWROOM (id=17) в MEFI.**
+
+"Vizita" = лиды с source_id=5 (пришли в шоурум лично). Это не этап воронки ПОСЛЕ лида — это источник лида. Человек пришёл в шоурум → сразу стал лидом.
+
+Фактическая воронка:
+```
+Все лиды (из любого источника)
+  ├── Showroom walk-ins (source_id=5) → высокая конверсия в оферту
+  ├── Телефон / WhatsApp / Email / Сайт → нужна активная работа
+  └── ...
+      ↓
+   Офертa (status=3 или offer_sent_flag=true)
+      ↓
+   Контракт (status=1)
+```
+
+**Открытый вопрос для Sofa Belle:** В колонке "Conversie vizita" их Excel — это (showroom лиды / всего лидов) или учитываются все лиды которые потом всё-таки приехали в шоурум (включая тех кто позвонил сначала)? Если второе — это IT2-01 (status history tracking).
 
 ## Marketing Channels
 

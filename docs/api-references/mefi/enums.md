@@ -51,25 +51,56 @@ Aggregating these reveals patterns ("40% of losses are to competitors → compet
 
 ## Source IDs
 
-| ID | Name | Maps to category (Sofa Belle Excel) |
-|---|---|---|
-| 1 | Google | (varies — Google Ads vs Google Organic, check UTM) |
-| 2 | Meta ADS | `Leads Mail/FB/IG` |
-| 3 | Recomandare | `Leads Alte` |
-| 4 | Teren | `Leads Alte` |
-| 5 | Showroom | `Leads Alte` (walk-in) |
-| 6 | Site | `Leads Site` |
-| 7 | Arhitect | `Leads Alte` |
-| 9 | WhatsApp | `Leads WhatsApp` |
-| 10 | Telefon | `Leads Telefon` |
-| 11 | Mail | `Leads Mail/FB/IG` |
-| 12 | Colaborare | `Leads Alte` |
-| 13 | Client Fidel | `Leads Alte` (repeat customer) |
+**Verified from raw_mefi_leads (2026-05-28, 1000 leads ingested):**
 
-### ⚠️ Missing: TikTok and Designer
+| ID | Name | Leads (actual) | Metric category | Notes |
+|---|---|---|---|---|
+| 5 | Showroom | 266 | `showroom` | Walk-in to physical showroom — **this is "Vizita" in Sofa Belle's Excel** |
+| 11 | Mail | 326 | `mail` | Email leads (forms, direct email) |
+| 10 | Telefon | 164 | `telefon` | Inbound phone calls |
+| 9 | WhatsApp | 123 | `whatsapp` | WhatsApp Business leads |
+| 6 | Site | 91 | `site` | Website contact forms |
+| 12 | Colaborare | 12 | `colaborare` | Partner/collaboration referrals |
+| 3 | Recomandare | 6 | `recomandare` | Word-of-mouth referrals |
+| 2 | Meta ADS | 6 | `meta` | Facebook/Instagram paid ads |
+| 7 | Arhitect | 3 | `arhitect` | Interior architect referrals |
+| 13 | Client Fidel | 2 | `client_fidel` | Repeat customers |
+| null | (unknown) | 1 | `other` | Source not captured |
 
-- **TikTok** is not in the source list. TikTok leads currently land under source `2 = Meta ADS` (combined) or `6 = Site` (with UTM). **Verify with Sofa Belle.**
-- **Designer** as a lead category in client's Excel is NOT a source — it's a status (`24 = DESIGNER`) or possibly a custom field. **Verify with Sofa Belle.**
+**Source IDs NOT present in Sofa Belle's data:**
+- `1 = Google` — zero leads. Google traffic comes in via `site` (id=6) or direct. No separate Google source.
+- `4 = Teren` — zero leads in current dataset.
+
+### ⚠️ Funnel model clarification (2026-05-28)
+
+**"Vizita" in Sofa Belle's Excel ≠ status SHOWROOM (id=17).**
+
+Sofa Belle's "Vizita" = **leads with source_id=5 (Showroom walk-ins)**. These are people who walk into a physical showroom and become a lead there and then. They do NOT flow through a "booking" step — they are walk-ins by definition.
+
+This means the funnel is NOT `Lead → Visit → Offer → Contract` in the traditional sense. It is:
+
+```
+All leads (from any source)
+  ├── Showroom walk-ins (source_id=5)  → naturally higher offer/contract rates
+  ├── Phone / WhatsApp / Email / Web   → need outreach to get to offer stage
+  └── ...
+      ↓
+   Offer (status=3 OR offer_sent_flag=true)
+      ↓
+   Contract (status=1)
+```
+
+Metrics we compute:
+- `visits_count` = COUNT(leads with source_id=5) — matches Sofa Belle's Excel "Vizita"
+- `conversion_l_to_v` = visits / total leads (showroom walk-in rate)
+- `conversion_v_to_o` = offers from showroom leads / showroom leads (showroom → offer rate)
+- `conversion_l_to_o`, `conversion_o_to_c`, `conversion_l_to_c` — all leads (source-agnostic)
+
+**Open question for Sofa Belle:** In their Excel "Conversie vizita" column — do they mean (showroom leads / total leads) or (total leads that ever visited the showroom / total leads)? If the latter, some phone/web leads may also visit the showroom before getting an offer, and that visit is not tracked in MEFI source. **IT2-01** tracks this for Iteration 2.
+
+### ⚠️ Designer as status, not source
+
+`DESIGNER` (status_id=24) is a MEFI status indicating a designer consultation was requested. It is tracked separately in `daily_kpi.leads_designer` via `mefi_lead_history` joins. It is NOT a source in the source_daily_kpi breakdown.
 
 ## Salesperson IDs (assigned_to / created_by)
 
