@@ -16,6 +16,10 @@ Covers per the plan <behavior> block R1-R12:
   R11 GET /suggested-questions hybrid (5 static + ≤2 dynamic) — fault tolerant
   R12 SSE endpoint returns text/event-stream + X-Accel-Buffering: no (LM-5)
 
+Plus the CR-02 guard-ordering regressions (plan 08-08):
+  R13 a contended stream-lock (409) never touches the rate-limit counter
+  R14 a rate-limited request (429) releases the lock it just took
+
 These tests mock AsyncSession, Redis, and ChatOrchestrator — no real DB or API.
 """
 
@@ -478,3 +482,88 @@ async def test_r12_sse_endpoint_sets_text_event_stream_and_x_accel_buffering() -
     assert response.media_type == "text/event-stream"
     assert response.headers.get("x-accel-buffering") == "no"  # LM-5 mitigation
     assert response.headers.get("cache-control") == "no-cache"
+
+
+# ── R13/R14 — CR-02: the 409 must be free, the 429 must not leave a lock ─────
+#
+# These two assert an ORDER, which is the whole of CR-02 and the one thing the
+# existing R5/R6 cannot see: both of those pass under either ordering, because
+# each only checks the status code it provoked.
+
+
+@pytest.mark.asyncio
+async def test_r13_cr02_stream_lock_conflict_does_not_burn_rate_limit() -> None:
+    """R13: a 409 costs nothing from the hourly budget.
+
+    A contended lock means the user's previous message is still streaming —
+    the ordinary result of a double-tap or a reconnect, not abuse. Under the
+    old order the counter was INCR'd first and never decremented, so ~30
+    accidental retries locked a user out of their own chat for an hour.
+    """
+    from fastapi import HTTPException
+
+    from app.api.v1.chat import send_message
+
+    ctx, r = _make_redis_mock(set_nx_return=False)
+
+    body = MagicMock()
+    body.content = "Test"
+    mock_request = MagicMock()
+    mock_request.is_disconnected = AsyncMock(return_value=False)
+
+    conv_repo = AsyncMock()
+    conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=uuid4()))
+
+    with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
+        with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
+            with pytest.raises(HTTPException) as exc_info:
+                await send_message(
+                    conversation_id=uuid4(),
+                    request=mock_request,
+                    body=body,
+                    session=AsyncMock(),
+                    current_user=_make_user(),
+                )
+
+    assert exc_info.value.status_code == 409
+    r.incr.assert_not_called()
+    r.expire.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_r14_cr02_rate_limited_request_releases_the_stream_lock() -> None:
+    """R14: taking the lock first means a 429 must give it back.
+
+    The lock is normally released in the SSE generator's `finally`, but a 429
+    is raised before that generator exists. Without an explicit delete the
+    conversation would stay locked for STREAM_LOCK_TTL on top of the 429 —
+    trading CR-02's bug for a worse one.
+    """
+    from fastapi import HTTPException
+
+    from app.api.v1.chat import send_message
+
+    conversation_id = uuid4()
+    ctx, r = _make_redis_mock(incr_return=31, ttl_return=900)
+
+    body = MagicMock()
+    body.content = "Test"
+    mock_request = MagicMock()
+    mock_request.is_disconnected = AsyncMock(return_value=False)
+
+    conv_repo = AsyncMock()
+    conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=conversation_id))
+
+    with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
+        with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
+            with pytest.raises(HTTPException) as exc_info:
+                await send_message(
+                    conversation_id=conversation_id,
+                    request=mock_request,
+                    body=body,
+                    session=AsyncMock(),
+                    current_user=_make_user(),
+                )
+
+    assert exc_info.value.status_code == 429
+    r.delete.assert_awaited_once_with(f"chat:stream:{conversation_id}")

@@ -303,10 +303,13 @@ async def send_message(
     Pre-stream guards (executed BEFORE the StreamingResponse is constructed so
     HTTP error responses can carry the correct status code + headers):
 
-      1. **Rate-limit (D-24):** Redis INCR + EXPIRE counted per-user, per-hour.
-         Exceeds 30 → 429 with `Retry-After` header + Romanian message.
-      2. **Stream-lock (D-11):** Redis SET NX EX per conversation. Contended →
+      1. **Stream-lock (D-11):** Redis SET NX EX per conversation. Contended →
          409 with Romanian message. Released in the generator's `finally`.
+      2. **Rate-limit (D-24):** Redis INCR + EXPIRE counted per-user, per-hour.
+         Exceeds 30 → 429 with `Retry-After` header + Romanian message.
+
+    The lock is taken FIRST so a 409 costs nothing from the hourly budget
+    (CR-02) — see the inline note at the guard itself.
 
     Stream events emitted (per D-09): `conversation_meta`, `tool_use`,
     `tool_result`, `assistant_chunk`, `regenerate_notice`, `done`, `error`.
@@ -326,9 +329,8 @@ async def send_message(
     #
     # This MUST run before the rate-limit INCR and the stream-lock SET NX so
     # a probing attacker cannot burn the legitimate owner's rate-limit budget
-    # or grab a lock they don't have ownership of. CR-02 (plan 08-08) will
-    # further reorder the rate-limit / stream-lock pair; this 404 stays in
-    # front of BOTH.
+    # or grab a lock they don't have ownership of. This 404 stays in front of
+    # BOTH guards below.
     conv_repo = ConversationRepository(session, tenant_id, current_user.id)
     conv_row = await conv_repo.get_by_id(conversation_id)
     if conv_row is None:
@@ -345,24 +347,36 @@ async def send_message(
     lock_key = f"chat:stream:{conversation_id}"
 
     async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:
+        # ── 1. Stream-lock (D-11) — BEFORE the rate-limit counter (CR-02) ────
+        # Order matters. A 409 means "your previous message is still being
+        # answered", which is the normal outcome of a double-tap or a flaky
+        # connection retry — not abuse. Counting it against the hourly budget
+        # let a user with a bad connection lock themselves out of their own
+        # chat after ~30 accidental retries, and the counter was never
+        # decremented. Taking the lock first makes a 409 free.
+        was_set = await r.set(lock_key, "1", nx=True, ex=STREAM_LOCK_TTL)
+        if not was_set:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Așteaptă răspunsul curent înainte de a trimite alt mesaj.",
+            )
+
+        # ── 2. Rate-limit (D-24) ─────────────────────────────────────────────
         count = await r.incr(rate_key)
         if count == 1:
             await r.expire(rate_key, RATE_LIMIT_TTL)
         if count > RATE_LIMIT_MAX:
+            # The lock is normally released in the generator's `finally`, but
+            # we raise before the generator exists — nobody would release it,
+            # and the conversation would stay locked for STREAM_LOCK_TTL on
+            # top of the 429. Release it here.
+            await r.delete(lock_key)
             ttl = await r.ttl(rate_key)
             retry_after = str(max(int(ttl or 0), 0))
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Ai trimis prea multe mesaje. Așteaptă câteva minute și încearcă din nou.",
                 headers={"Retry-After": retry_after},
-            )
-
-        # ── 2. Stream-lock (D-11) ───────────────────────────────────────────
-        was_set = await r.set(lock_key, "1", nx=True, ex=STREAM_LOCK_TTL)
-        if not was_set:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Așteaptă răspunsul curent înainte de a trimite alt mesaj.",
             )
 
     # ── 3. SSE event generator with heartbeat (Pitfall 1) ────────────────────

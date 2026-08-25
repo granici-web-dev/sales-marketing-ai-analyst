@@ -765,3 +765,204 @@ class TestToolHandlerException:
         kwargs = tool_repo.insert_tool_call.await_args.kwargs
         assert kwargs["error"] is not None
         assert "DB connection lost" in kwargs["error"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test O13 + O14 — CR-05 commit boundaries, CR-03 detached title session
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestCommitBoundaries:
+    @pytest.mark.asyncio
+    async def test_o13_cr05_tool_audit_survives_assistant_persist_failure(self) -> None:
+        """CR-05 / D-21: the audit rows must outlive the turn that fails.
+
+        D-21 promises "every tool call writes exactly one row". Before this
+        fix the orchestrator only flushed the audit rows and committed once,
+        at the very end — so when finalizing the assistant message raised, the
+        session rolled back and took every chat_tool_calls row with it. The
+        record vanished on exactly the failure path worth recording.
+
+        A flush is not a save. This asserts the commits, not the inserts.
+        """
+        from app.services.chat import orchestrator as orch
+        from app.services.chat.orchestrator import ChatOrchestrator
+
+        patches, (uid, aid, msg_repo, _, tool_repo) = _orchestrator_patches()
+
+        round1_final = _build_final_message(
+            stop_reason="tool_use",
+            content=[
+                _build_tool_use_block(
+                    id="toolu_1",
+                    name="get_funnel_data",
+                    input={"date_from": "2026-05-01", "date_to": "2026-05-29"},
+                )
+            ],
+            usage={"input_tokens": 2400, "output_tokens": 320},
+        )
+        round2_final = _build_final_message(
+            stop_reason="end_turn",
+            content=[_build_text_block("Finalizat.")],
+            usage={"input_tokens": 100, "output_tokens": 5},
+        )
+
+        client = MagicMock()
+        client.messages = MagicMock()
+        client.messages.stream = MagicMock(
+            side_effect=[
+                _build_stream_ctx([], round1_final),
+                _build_stream_ctx([], round2_final),
+            ]
+        )
+
+        tool_mock = MagicMock()
+        tool_mock.input_schema.model_validate = MagicMock(return_value=MagicMock())
+        tool_mock.handler = AsyncMock(return_value={"funnel": 1})
+
+        with patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)), patch.object(
+            orch, "TOOLS_REGISTRY", {"get_funnel_data": tool_mock}
+        ), patch.object(orch, "get_all_tools", MagicMock(return_value=[])):
+            for p in patches:
+                p.start()
+            try:
+                # The turn dies where CR-05 says it hurts most.
+                msg_repo.finalize_assistant_message = AsyncMock(
+                    side_effect=RuntimeError("assistant persist blew up")
+                )
+                session = AsyncMock()
+                o = ChatOrchestrator(session, TENANT_ID, USER_ID)
+                events = await _drain(o.run_turn(CONV_ID, "Compară lunile", _noop_disconnect))
+            finally:
+                for p in patches:
+                    p.stop()
+
+        # The turn did fail — otherwise this test proves nothing.
+        assert events[-1][0] == "error"
+        assert tool_repo.insert_tool_call.await_count == 1
+
+        # Two boundaries closed before the failure: the user message (so the
+        # ids handed to the frontend in conversation_meta are durable) and the
+        # tool round. The final commit never runs on this path.
+        assert session.commit.await_count >= 2, (
+            "audit rows and the user message must be committed before the "
+            f"assistant persist can roll them back; got {session.commit.await_count} commits"
+        )
+
+    @pytest.mark.asyncio
+    async def test_o14_cr05_user_message_committed_before_conversation_meta(self) -> None:
+        """CR-05: never advertise a UUID that a rollback can erase.
+
+        `conversation_meta` tells the frontend which rows to swap its optimistic
+        messages onto. Those rows have to exist by then.
+        """
+        from app.services.chat import orchestrator as orch
+        from app.services.chat.orchestrator import ChatOrchestrator
+
+        patches, (uid, aid, msg_repo, _, _) = _orchestrator_patches()
+
+        final = _build_final_message(
+            stop_reason="end_turn",
+            content=[_build_text_block("Salut")],
+            usage={"input_tokens": 100, "output_tokens": 5},
+        )
+        client = MagicMock()
+        client.messages = MagicMock()
+        client.messages.stream = MagicMock(return_value=_build_stream_ctx([], final))
+
+        commits_at_meta: list[int] = []
+
+        with patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)):
+            for p in patches:
+                p.start()
+            try:
+                session = AsyncMock()
+                o = ChatOrchestrator(session, TENANT_ID, USER_ID)
+                async for name, _payload in o.run_turn(CONV_ID, "Cum stăm?", _noop_disconnect):
+                    if name == "conversation_meta":
+                        commits_at_meta.append(session.commit.await_count)
+            finally:
+                for p in patches:
+                    p.stop()
+
+        assert commits_at_meta == [1], (
+            "exactly one commit must have landed by the time conversation_meta "
+            f"is emitted; saw {commits_at_meta}"
+        )
+
+
+class TestDetachedTitleSession:
+    @pytest.mark.asyncio
+    async def test_o15_cr03_title_callback_opens_its_own_session(self) -> None:
+        """CR-03: the title arrives after the request's session is gone.
+
+        `schedule_title_generation` fires a task that finishes ~3s later, by
+        which point FastAPI's `get_session` dependency has closed the session
+        the orchestrator ran on. The old callback committed on that dead
+        session and swallowed the result with a bare `except: pass`, so every
+        title in production silently failed to persist and nothing said so.
+
+        The callback must therefore build its own session, its own repository
+        scoped to the same (tenant, user), and commit there.
+        """
+        from app.services.chat import orchestrator as orch
+        from app.services.chat.orchestrator import ChatOrchestrator
+        from app.db import session as session_mod
+
+        patches, (uid, aid, msg_repo, conv_repo, _) = _orchestrator_patches(history=[])
+
+        final = _build_final_message(
+            stop_reason="end_turn",
+            content=[_build_text_block("Salut")],
+            usage={"input_tokens": 100, "output_tokens": 5},
+        )
+        client = MagicMock()
+        client.messages = MagicMock()
+        client.messages.stream = MagicMock(return_value=_build_stream_ctx([], final))
+
+        with patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)), patch.object(
+            orch, "schedule_title_generation", MagicMock()
+        ) as schedule_mock:
+            for p in patches:
+                p.start()
+            try:
+                session = AsyncMock()
+                o = ChatOrchestrator(session, TENANT_ID, USER_ID)
+                await _drain(o.run_turn(CONV_ID, "Cum stăm?", _noop_disconnect))
+            finally:
+                for p in patches:
+                    p.stop()
+
+        schedule_mock.assert_called_once()
+        callback = schedule_mock.call_args.args[3]
+
+        commits_before_callback = session.commit.await_count
+
+        # Run the callback the way the detached task will: after the request's
+        # session is long gone.
+        detached = AsyncMock()
+        factory_ctx = MagicMock()
+        factory_ctx.__aenter__ = AsyncMock(return_value=detached)
+        factory_ctx.__aexit__ = AsyncMock(return_value=None)
+        factory = MagicMock(return_value=factory_ctx)
+
+        repo_ctor = MagicMock(return_value=MagicMock(update_title=AsyncMock()))
+
+        with patch.object(session_mod, "AsyncSessionLocal", factory), patch.object(
+            orch, "ConversationRepository", repo_ctor
+        ):
+            await callback(CONV_ID, "Titlu generat")
+
+        # Its own session, resolved through the module so a post-fork rebind
+        # of AsyncSessionLocal is honoured (INFRA-05).
+        factory.assert_called_once()
+        detached.commit.assert_awaited_once()
+
+        # Scoped to the same tenant AND user as the turn — CR-01 must not be
+        # reopened through the back door of a detached task.
+        assert repo_ctor.call_args.args[0] is detached
+        assert repo_ctor.call_args.args[1] == TENANT_ID
+        assert repo_ctor.call_args.args[2] == USER_ID
+
+        # And it must not have touched the request's session.
+        assert session.commit.await_count == commits_before_callback

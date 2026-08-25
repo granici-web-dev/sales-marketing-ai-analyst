@@ -191,6 +191,22 @@ class ChatOrchestrator:
             )
             return
 
+        # CR-05. `conversation_meta` hands the frontend two UUIDs and it swaps
+        # its optimistic rows onto them. Until now nothing was committed until
+        # the very end of the turn, so a failure downstream rolled both rows
+        # back and the frontend was left pointing at ids that exist nowhere.
+        # Commit before advertising them: what we promise the client has to
+        # outlive the rest of the turn.
+        try:
+            await self._session.commit()
+        except Exception:  # noqa: BLE001 — sanitize per T-08-03
+            log_.exception("chat.user_commit_failed")
+            yield (
+                "error",
+                {"code": "internal", "message_ro": "A apărut o problemă. Te rog încearcă din nou."},
+            )
+            return
+
         yield (
             "conversation_meta",
             {
@@ -348,6 +364,17 @@ class ChatOrchestrator:
                             }
                         )
 
+                    # CR-05 / D-21: "every tool call writes exactly one row".
+                    # Flushed rows are not kept rows — if finalizing the
+                    # assistant message failed later in the turn, the session
+                    # rolled back and took every audit row with it, wiping the
+                    # record precisely on the failure path where it is worth
+                    # having. Close the round here instead.
+                    try:
+                        await self._session.commit()
+                    except Exception:  # noqa: BLE001 — sanitize per T-08-03
+                        log_.exception("chat.tool_round_commit_failed")
+
                     # Append assistant + user(tool_result) to messages for next round.
                     messages.append({"role": "assistant", "content": content})
                     messages.append({"role": "user", "content": tool_results_for_claude})
@@ -413,13 +440,15 @@ class ChatOrchestrator:
             )
             return
 
-        # Persist all writes from this turn — without this, get_session's
-        # `async with AsyncSessionLocal()` closes the session without committing
-        # and SQLAlchemy rolls back EVERY write from the turn (user message,
-        # assistant stub, tool_calls, finalize UPDATE). chat_messages stays
-        # empty across all turns and history.load_history returns nothing on
-        # follow-up turns. Plan 08-08 CR-05 refines this into per-section
-        # commit boundaries; for now ONE final commit makes /chat usable.
+        # Close the turn. `get_session`'s `async with AsyncSessionLocal()`
+        # exits without committing, so anything still uncommitted here is
+        # rolled back — chat_messages would stay empty across every turn and
+        # load_history would return nothing on the follow-up.
+        #
+        # This is now the third boundary, not the only one: the user message
+        # and stub were committed before `conversation_meta`, and each tool
+        # round committed its audit rows (CR-05). What remains for this commit
+        # is the finalize UPDATE that fills the assistant stub with its text.
         try:
             await self._session.commit()
         except Exception:  # noqa: BLE001 — sanitize per T-08-03
@@ -456,14 +485,35 @@ class ChatOrchestrator:
 
         # ── 5. D-14: fire-and-forget title generation on turn 1 only ───────
         if is_first_turn:
+            # CR-03. The title arrives ~3s later, from a task that outlives
+            # this request. By then FastAPI's `get_session` dependency has
+            # already left its `async with` block and closed `self._session`,
+            # so a commit on it does nothing — every title silently failed to
+            # persist, and the bare `except: pass` that used to sit here hid
+            # it. The detached task must therefore own its session.
+            #
+            # Only the two ids are captured, never the session or the
+            # repository built on it.
+            tenant_id = self._tenant_id
+            user_id = self._user_id
+            log_ = self._log
+
             async def _update_title(cid: UUID, title: str) -> None:
-                await conv_repo.update_title(cid, title)
-                # The title generator runs detached — commit explicitly so
-                # the UPDATE lands even after the main request closes.
-                try:
-                    await self._session.commit()
-                except Exception:  # noqa: BLE001
-                    pass
+                # Resolved through the module, not bound at import: Celery's
+                # worker_process_init rebinds AsyncSessionLocal after fork
+                # (INFRA-05), and a name captured at import time would keep
+                # handing out the dead parent engine's sessions.
+                from app.db import session as session_mod
+
+                async with session_mod.AsyncSessionLocal() as detached:
+                    repo = ConversationRepository(detached, tenant_id, user_id)
+                    try:
+                        await repo.update_title(cid, title)
+                        await detached.commit()
+                    except Exception as exc:  # noqa: BLE001 — sanitize per T-08-03
+                        # WR-10: a lost title is cosmetic and must not take the
+                        # turn down, but it stops being invisible.
+                        log_.warning("chat.title.commit_failed", error=str(exc)[:200])
 
             try:
                 schedule_title_generation(
