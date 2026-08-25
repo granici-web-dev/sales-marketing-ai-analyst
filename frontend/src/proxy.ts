@@ -30,9 +30,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  /* Отсутствующий секрет — это поломка настройки, а не неверный токен,
+     и вести себя как неверный токен он не должен. `!` в
+     `process.env.JWT_SECRET_KEY!` — утверждение TypeScript, оно ничего не
+     проверяет: без переменной jwtVerify получал бы кодировку строки
+     "undefined" и отвергал КАЖДЫЙ верный токен, отправляя человека на вход
+     по кругу без единого объяснения. Ровно это и происходило, пока файл
+     лежал не там и не исполнялся. */
+  const rawSecret = process.env.JWT_SECRET_KEY;
+  if (!rawSecret) {
+    throw new Error(
+      "JWT_SECRET_KEY не задан — проверить токен невозможно. " +
+        "Смотрите frontend/.env.example: значение обязано совпадать с секретом бэкенда.",
+    );
+  }
+
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET_KEY!);
-    await jwtVerify(accessToken, secret);
+    await jwtVerify(accessToken, new TextEncoder().encode(rawSecret));
   } catch {
     return NextResponse.redirect(new URL("/login", request.url));
   }
