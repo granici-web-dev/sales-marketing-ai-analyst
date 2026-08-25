@@ -135,6 +135,23 @@
       "medium": "High",
       "low": "Medium"
     },
+    "sections": {
+      "problems": "Critical problems",
+      "warnings": "Warnings",
+      "positives": "Wins and positive signals",
+      "weeklyPlan": "Weekly action plan",
+      "emptyAll": "No notable observations for this day."
+    },
+    "warning": {
+      "badge": "Warning"
+    },
+    "positive": {
+      "badge": "Win",
+      "recommendation": "Recommendation"
+    },
+    "weeklyPlan": {
+      "heading": "Weekly action plan"
+    },
     "refreshButton": "Generate insight",
     "refreshCountdown": "Generate insight ({remaining})",
     "rateLimitMessage": "You can regenerate this day once per hour. {minutes} minutes remaining.",

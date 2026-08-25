@@ -12,6 +12,9 @@ import {
 } from "@/hooks/useInsights";
 import { InsightSummary } from "@/components/dashboards/insights/insight-summary";
 import { ProblemCard } from "@/components/dashboards/insights/problem-card";
+import { WarningCard } from "@/components/dashboards/insights/warning-card";
+import { PositiveCard } from "@/components/dashboards/insights/positive-card";
+import { WeeklyActionPlan } from "@/components/dashboards/insights/weekly-action-plan";
 import { GenerationFailedBanner } from "@/components/dashboards/insights/generation-failed-banner";
 import { FallbackAnomalyList } from "@/components/dashboards/insights/fallback-anomaly-list";
 import { formatTimestamp } from "@/lib/formatters";
@@ -219,7 +222,7 @@ function InsightsPageContent() {
             <>
               {/* Normal success path */}
               {activeData.payload !== null && activeData.payload !== undefined && (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {/* INSI-01: AI summary paragraph */}
                   {/* B3 fix: pass payload.summary NOT payload.summary_ro */}
                   <InsightSummary
@@ -227,14 +230,58 @@ function InsightsPageContent() {
                     insightDate={activeData.date}
                   />
 
-                  {/* Up to 3 problem cards — collapsed by default */}
+                  {/* Problems — critical issues with action plans */}
                   {activeData.payload.problems.length > 0 && (
-                    <div className="space-y-3">
+                    <section className="space-y-3">
+                      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                        {t("sections.problems")}
+                      </h2>
                       {activeData.payload.problems.map((p) => (
                         <ProblemCard key={p.id} problem={p} />
                       ))}
-                    </div>
+                    </section>
                   )}
+
+                  {/* Warnings — weak signals worth monitoring */}
+                  {activeData.payload.warnings.length > 0 && (
+                    <section className="space-y-3">
+                      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                        {t("sections.warnings")}
+                      </h2>
+                      {activeData.payload.warnings.map((w, idx) => (
+                        <WarningCard key={`warning-${idx}`} warning={w} />
+                      ))}
+                    </section>
+                  )}
+
+                  {/* Positives — what worked, scale or maintain */}
+                  {activeData.payload.positives.length > 0 && (
+                    <section className="space-y-3">
+                      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                        {t("sections.positives")}
+                      </h2>
+                      {activeData.payload.positives.map((p, idx) => (
+                        <PositiveCard key={`positive-${idx}`} positive={p} />
+                      ))}
+                    </section>
+                  )}
+
+                  {/* Weekly action plan — flat numbered list synthesized by Claude */}
+                  {activeData.payload.weekly_action_plan.length > 0 && (
+                    <WeeklyActionPlan
+                      items={activeData.payload.weekly_action_plan}
+                    />
+                  )}
+
+                  {/* Empty edge case — payload present but every section empty */}
+                  {activeData.payload.problems.length === 0 &&
+                    activeData.payload.warnings.length === 0 &&
+                    activeData.payload.positives.length === 0 &&
+                    activeData.payload.weekly_action_plan.length === 0 && (
+                      <p className="text-sm text-muted-foreground italic">
+                        {t("sections.emptyAll")}
+                      </p>
+                    )}
                 </div>
               )}
             </>

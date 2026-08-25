@@ -135,6 +135,23 @@
       "medium": "Ridicată",
       "low": "Medie"
     },
+    "sections": {
+      "problems": "Probleme critice",
+      "warnings": "Avertismente",
+      "positives": "Reușite și aspecte pozitive",
+      "weeklyPlan": "Plan de acțiune săptămânal",
+      "emptyAll": "Nu s-au identificat aspecte demne de menționat pentru această zi."
+    },
+    "warning": {
+      "badge": "Avertisment"
+    },
+    "positive": {
+      "badge": "Reușită",
+      "recommendation": "Recomandare"
+    },
+    "weeklyPlan": {
+      "heading": "Plan de acțiune săptămânal"
+    },
     "refreshButton": "Generează insight",
     "refreshCountdown": "Generează insight ({remaining})",
     "rateLimitMessage": "Poți regenera această zi o dată pe oră. Mai ai {minutes} minute.",
