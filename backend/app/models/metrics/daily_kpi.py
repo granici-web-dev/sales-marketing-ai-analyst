@@ -73,10 +73,9 @@ class DailyKpi(Base, TenantScopedMixin):
     cpl_overall: Mapped[Decimal | None] = mapped_column(Numeric(8, 2), nullable=True)
     cpl_by_channel: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
-    # ── Funnel counts (NOT NULL — Phase 3 always populates these) ────────────
-    visits_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0"
-    )
+    # ── Funnel counts ─────────────────────────────────────────────────────────
+    # visits_count is NULL when MEFI history is unavailable (KI-03 / migration 006).
+    visits_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     offers_count: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
     )
@@ -84,12 +83,13 @@ class DailyKpi(Base, TenantScopedMixin):
         Integer, nullable=False, server_default="0"
     )
 
-    # ── Conversion rates — NUMERIC(5,4) per SPEC.md §7 ───────────────────────
-    conversion_l_to_v: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
-    conversion_v_to_o: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
-    conversion_l_to_o: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
-    conversion_o_to_c: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
-    conversion_l_to_c: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
+    # ── Conversion rates — NUMERIC(8,4) — widened from NUMERIC(5,4) in migration 005
+    # Daily counts are cohort-independent: e.g. 13 offers / 1 visit = 13.0 is valid.
+    conversion_l_to_v: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
+    conversion_v_to_o: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
+    conversion_l_to_o: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
+    conversion_o_to_c: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
+    conversion_l_to_c: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
 
     # ── Revenue — NUMERIC(12,2) per DATA-04 ──────────────────────────────────
     revenue: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)

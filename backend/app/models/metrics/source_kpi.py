@@ -76,8 +76,8 @@ class SourceDailyKpi(Base, TenantScopedMixin):
     # ── Revenue — NUMERIC(12,2) per DATA-04 ──────────────────────────────────
     revenue: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
 
-    # ── Conversion rate — NUMERIC(5,4) ───────────────────────────────────────
-    conversion_rate: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
+    # ── Conversion rate — NUMERIC(8,4) — widened from NUMERIC(5,4) in migration 005
+    conversion_rate: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
 
     # ── Calculation timestamp ─────────────────────────────────────────────────
     calculated_at: Mapped[datetime] = mapped_column(

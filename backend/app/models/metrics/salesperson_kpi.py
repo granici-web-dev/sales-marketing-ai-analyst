@@ -70,11 +70,11 @@ class SalespersonDailyKpi(Base, TenantScopedMixin):
     # ── Revenue — NUMERIC(12,2) per DATA-04 ──────────────────────────────────
     revenue: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
 
-    # ── Conversion rates — NUMERIC(5,4) per SPEC.md §7 ───────────────────────
-    conversion_l_to_v: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
-    conversion_v_to_o: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
-    conversion_o_to_c: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
-    conversion_l_to_c: Mapped[Decimal | None] = mapped_column(Numeric(5, 4), nullable=True)
+    # ── Conversion rates — NUMERIC(8,4) — widened from NUMERIC(5,4) in migration 005
+    conversion_l_to_v: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
+    conversion_v_to_o: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
+    conversion_o_to_c: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
+    conversion_l_to_c: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
 
     # ── Revenue per deal ─────────────────────────────────────────────────────
     avg_deal_size: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
