@@ -99,8 +99,15 @@ async function main() {
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
 
-  const server = spawn("npx", ["next", "start", "-p", String(port)], {
+  /* Напрямую двоичный файл, а не через npx: npx порождает внука, и сигнал
+     доходит только до посредника. И своей группой процессов, чтобы гасить
+     всё дерево разом — иначе `next start` переживает уборку, держит трубы
+     открытыми, и узел не завершается вовсе. Именно так этот скрипт и повесил
+     первый прогон CI на одиннадцать минут. */
+  const nextBin = path.join(FRONTEND_ROOT, "node_modules/.bin/next");
+  const server = spawn(nextBin, ["start", "-p", String(port)], {
     cwd: FRONTEND_ROOT,
+    detached: true,
     env: {
       ...process.env,
       // Значения-заглушки: ни один из проверяемых ответов до них не доходит —
@@ -182,8 +189,39 @@ async function main() {
     console.error(log.join("").slice(-2000));
     process.exitCode = 1;
   } finally {
+    await shutdown(server);
+  }
+}
+
+/** Погасить дерево процессов и дождаться, пока оно действительно умрёт. */
+async function shutdown(server) {
+  if (server.exitCode !== null || server.signalCode !== null) return;
+
+  const died = new Promise((resolve) => server.once("exit", resolve));
+  try {
+    process.kill(-server.pid, "SIGTERM");
+  } catch {
     server.kill("SIGTERM");
+  }
+
+  const killed = await Promise.race([
+    died.then(() => true),
+    new Promise((r) => setTimeout(() => r(false), 5_000)),
+  ]);
+
+  if (!killed) {
+    try {
+      process.kill(-server.pid, "SIGKILL");
+    } catch {
+      server.kill("SIGKILL");
+    }
+    await died;
   }
 }
 
 await main();
+
+/* Явный выход. Трубы дочернего процесса могли остаться в очереди событий,
+   а повисший узел в CI выглядит как бесконечно идущая проверка, а не как
+   отказ, и съедает время до самого предела. */
+process.exit(process.exitCode ?? 0);
