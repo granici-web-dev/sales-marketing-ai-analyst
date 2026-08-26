@@ -17,7 +17,7 @@ const SESSION_COOKIE = "aw_session";
 
 /* Открытые пути. `/portal` — это вход и мост к движку: закрыть их проверкой
    сессии значило бы требовать сессию для того, чтобы её получить. */
-const PUBLIC_PATHS = ["/login", "/portal", "/api"];
+export const PUBLIC_PATHS = ["/login", "/portal", "/api"] as const;
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

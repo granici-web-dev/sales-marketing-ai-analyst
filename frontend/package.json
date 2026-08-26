@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest",
+    "test:routes": "node scripts/route-protection.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

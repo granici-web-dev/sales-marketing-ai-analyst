@@ -93,6 +93,27 @@ Nothing here is speculative — every claim was measured against the code.
       failing on `chat.py`'s own comments explaining why it is one. 36 tests
       still skip for want of `TEST_DATABASE_URL`.
 
+- [x] **Route protection is proved, in both halves.** The cheap half:
+      `src/__tests__/proxy-location.test.ts` asserts `proxy.ts` sits beside
+      `app/` and nowhere else, in a file that imports nothing from the app so
+      the check does not depend on loading the thing it checks.
+      `src/__tests__/route-protection.test.ts` enumerates every page under
+      `(dashboard)` from the filesystem — a new protected page is covered
+      without anyone remembering to add it — and drives `proxy()` directly.
+      `PUBLIC_PATHS` is exported and its contents asserted, because widening
+      that list is the one way to disable protection without touching a line
+      of logic.
+      The expensive half: `pnpm test:routes` (`scripts/route-protection.mjs`)
+      boots the built app on a free port and asks it, 24 requests. This is the
+      half that catches what the other cannot — the original bug was a
+      perfectly correct function in a file Next never loaded.
+      Both halves were seen red before being trusted: `proxy.ts` moved to the
+      project root (11 protected paths answered 200, and `Proxy (Middleware)`
+      vanished from the build output), the cookie check deleted, the matcher
+      narrowed, `/marketing` added to `PUBLIC_PATHS`, and `/login` rewritten to
+      a locale that does not exist — the last reproducing the next-intl bug and
+      caught only by the request half.
+
 - [x] **CI exists.** `.github/workflows/ci.yml`, two jobs. Backend: ruff,
       `ruff format --check`, mypy, `alembic upgrade head`, pytest against a
       postgres and a redis service. Frontend: eslint, tsc, vitest, `next build`,
@@ -148,17 +169,6 @@ Nothing here is speculative — every claim was measured against the code.
       comment, and a comment is not a procedure.
       *Fix:* a command that links by client, and a check at startup that says
       out loud how many tenants are unlinked.
-
-- [ ] **Nothing proves route protection is switched on.** All three findings
-      above shared one cause: the file was not running, and code that does not
-      run does not fail. Moving, renaming or misplacing `src/proxy.ts` again
-      silently disables authentication for the whole dashboard, and every test
-      in the suite stays green.
-      *Fix:* a test that asserts an unauthenticated request to a protected
-      route redirects to `/login` — against the running app, not against the
-      file's contents. A source-level check that `proxy.ts` sits beside `app/`
-      is the cheap half and catches the original mistake; only a request
-      catches the other two.
 
 ---
 
@@ -253,10 +263,18 @@ remaining surfaces.
       parser, the API client's refresh-and-retry path, a few components. Not
       covered: most of the dashboard.
 
-- [ ] **The Playwright spec has never run.** `frontend/tests/e2e/chat.spec.ts`
-      exists; Playwright is not in `package.json`, so `pnpm test:e2e` does not
-      exist either. Either install it and run the spec, or delete the spec —
-      a test file nobody can run reads as coverage that is not there.
+- [ ] **The Playwright spec has never run, and its premise is gone.**
+      `frontend/tests/e2e/chat.spec.ts` exists; Playwright is not in
+      `package.json`, so `pnpm test:e2e` does not exist either. Its own header
+      says plan 08-06 would install it; 08-06 shipped and it never did. Worse,
+      the contract it documents starts "user logs in with seeded test
+      credentials" — password login was removed, identity comes from the engine
+      now, so the spec could not pass even with Playwright installed.
+      *Fix:* rewrite it around an engine session cookie and install Playwright,
+      or delete it. A test file nobody can run reads as coverage that is not
+      there, and this one also documents a login that no longer exists.
+      Note the route-protection half of what e2e was for is now covered by
+      `pnpm test:routes`, which needs no browser.
 
 - [ ] **No query plans measured.** `EXPLAIN ANALYZE` needs a database with real
       data and the stack was not running. Indexes exist on every tenant-scoped
