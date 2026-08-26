@@ -28,10 +28,13 @@
 
 - Docker 24+ and Docker Compose v2
 - Python 3.11+ (for local development without Docker)
-- Node.js 20+ for frontend development. pnpm is not installed by hand: the
-  version lives in `frontend/package.json` under `packageManager`, and
-  `corepack enable pnpm` in that directory fetches exactly it. Pinning the
-  version in three places is how the project ended up on three of them.
+- Node.js 20+ and pnpm 10+ for frontend development. Which pnpm you get is not
+  your choice to make: `frontend/package.json` declares it under
+  `packageManager`, and pnpm 10 switches itself to that version on every
+  command — including downwards, for repositories still on 9. So any pnpm 10+
+  will do, however you install it (`npm i -g pnpm`, `corepack enable pnpm`,
+  brew). Pinning the version by hand in three places is how this project ended
+  up running three of them.
 - An Anthropic API key
 - (Eventually) Access to: MEFI API, Meta Business Manager, Google Ads, TikTok for Business, GA4, Search Console
 
