@@ -59,15 +59,19 @@ class MefiClient(BaseIntegration):
         BASE_URL: MEFI base URL for Sofa Belle's instance.
         source_name: Integration identifier used in SyncResult and logs.
         _REQUEST_INTERVAL: Minimum seconds between requests — proactive
-            throttle to stay under the 100 req/10s burst limit (10 req/s).
-            0.35s ≈ 2.8 req/s, ~72% headroom below the hard ceiling.
-            Raised from 0.15s after observing burst-limit hits at page 11
-            when search + detail fetches combined exceeded 100 req/10s.
+            throttle. The binding limit is the per-IP burst, and it is
+            10 requests / 10 s, not the 100 req/10 s this docstring claimed
+            and not the token's 600/min. Measured: at 0.35 s the 429 lands on
+            the 11th request, every time. 1.2 s ≈ 0.83 req/s sits under it.
+
+            Retries handle the 429 correctly (up to 20, exponential,
+            Retry-After honoured), so the wrong value cost time and log noise
+            rather than data — which is why it survived this long.
     """
 
     BASE_URL: str = "https://bellesofa.meficrm.com/api/v1"
     source_name: str = "mefi"
-    _REQUEST_INTERVAL: float = 0.35  # seconds between requests (~2.8 req/s)
+    _REQUEST_INTERVAL: float = 1.2  # seconds between requests (~0.83 req/s)
 
     def __init__(self, api_key: str) -> None:
         """Create a MefiClient with a read key.
@@ -200,8 +204,8 @@ class MefiClient(BaseIntegration):
         """Execute an HTTP request with proactive throttling and rate-limit awareness.
 
         Sleeps _REQUEST_INTERVAL before every request (proactive throttle) so
-        the call rate stays below the 100 req/10s burst ceiling regardless of
-        how many concurrent tasks share the same API token.
+        the call rate stays below the 10 req/10s per-IP burst ceiling
+        regardless of how many concurrent tasks share the same API token.
 
         Also reads X-RateLimit-Remaining after every response and adds an extra
         proportional pause when the remaining budget drops below 20 — a reactive
@@ -223,7 +227,7 @@ class MefiClient(BaseIntegration):
             httpx.HTTPStatusError: For other 4xx/5xx responses.
         """
         # Proactive throttle — fires before every request, including retries.
-        # Keeps sustained rate at ~6.7 req/s, well under 10 req/s burst limit.
+        # Keeps sustained rate at ~0.83 req/s, under the 10 req/10 s burst.
         await asyncio.sleep(self._REQUEST_INTERVAL)
 
         response = await self._client.request(method, path, **kwargs)

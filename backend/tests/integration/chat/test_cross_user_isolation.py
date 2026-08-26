@@ -63,7 +63,7 @@ def _override_user_a_as_caller(mock_session: AsyncMock | None = None):
     authenticated principal to USER_A_ID so cross-user assertions are
     unambiguous about which side of the (A vs B) boundary the test sits on.
     """
-    from app.core.dependencies import get_current_user
+    from app.api.deps import get_current_user
     from app.core.tenancy import set_tenant_id
     from app.db.deps import get_session
     from app.main import app

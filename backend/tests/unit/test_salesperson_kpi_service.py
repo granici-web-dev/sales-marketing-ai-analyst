@@ -74,7 +74,7 @@ class TestPerSalespersonMetrics:
         service, _ = _make_service(session)
 
         # Service must apply is_active=True filter; call with a date and check
-        rows = await service.compute_salesperson_kpis(date(2026, 5, 24))  # type: ignore[attr-defined]
+        rows = await service.compute_for_date(date(2026, 5, 24))
         assert rows == [] or rows is not None, (
             "Inactive salesperson (is_active=False) must not appear in output (D-17)"
         )
@@ -91,7 +91,7 @@ class TestPerSalespersonMetrics:
         session.execute = AsyncMock(return_value=mock_result)
 
         service, _ = _make_service(session)
-        rows = await service.compute_salesperson_kpis(date(2026, 5, 24))  # type: ignore[attr-defined]
+        rows = await service.compute_for_date(date(2026, 5, 24))
         # Result may be list or similar — just assert no exception raised
         assert rows is not None, "Active salesperson must appear in output"
 
@@ -111,7 +111,7 @@ class TestTimeToFirstTouch:
         service, _ = _make_service(session)
 
         # Method _compute_time_to_first_touch with empty history must return None
-        result = service._compute_time_to_first_touch(  # type: ignore[attr-defined]
+        result = service._compute_time_to_first_touch(
             "lead-1",
             history_rows=[],
         )
@@ -135,7 +135,7 @@ class TestTimeToFirstTouch:
 
         history_rows = [{"changed_at": first_touch}]
 
-        result = service._compute_time_to_first_touch(  # type: ignore[attr-defined]
+        result = service._compute_time_to_first_touch(
             "lead-1",
             history_rows=history_rows,
             lead_created_at=created_at,
@@ -166,7 +166,7 @@ class TestDataCompletenessPct:
         session.execute = AsyncMock(return_value=mock_result)
 
         service, _ = _make_service(session)
-        rows = await service.compute_salesperson_kpis(date(2026, 5, 24))  # type: ignore[attr-defined]
+        rows = await service.compute_for_date(date(2026, 5, 24))
         # Just assert no exception — detailed assertion happens in integration test
         assert rows is not None
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_current_user
+from app.api.deps import get_current_user
 from app.core.tenancy import require_tenant_id
 from app.db.deps import get_session
 from app.schemas.auth import UserOut

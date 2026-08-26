@@ -137,20 +137,6 @@ class SalespersonKpiService:
             lead_created_at, first_touch, open_time, close_time, work_days, tz
         )
 
-    async def compute_salesperson_kpis(self, kpi_date: date) -> list[dict]:
-        """Compute per-salesperson KPIs for the given date.
-
-        Public method aliased from compute_for_date for backwards compatibility
-        with tests. Calls compute_for_date internally.
-
-        Args:
-            kpi_date: The calendar date (Bucharest local) to compute KPIs for.
-
-        Returns:
-            List of dicts, one per active salesperson.
-        """
-        return await self.compute_for_date(kpi_date)
-
     async def compute_for_date(self, kpi_date: date) -> list[dict]:
         """Compute per-salesperson KPIs for the given date.
 

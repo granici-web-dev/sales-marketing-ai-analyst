@@ -7,7 +7,7 @@ from celery.result import AsyncResult
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from app.core.dependencies import get_current_user
+from app.api.deps import get_current_user
 from app.core.redis import redis_client
 from app.core.tenancy import require_tenant_id
 from app.schemas.auth import UserOut

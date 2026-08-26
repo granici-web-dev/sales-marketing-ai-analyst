@@ -241,8 +241,8 @@ async def test_r6_post_messages_returns_409_when_stream_lock_held() -> None:
 def test_r7_endpoints_require_authentication_via_get_current_user_dependency() -> None:
     """R7: every router operation must include the get_current_user dependency
     in its dependencies graph (FastAPI then raises 401 on missing/invalid token)."""
+    from app.api.deps import get_current_user
     from app.api.v1.chat import router
-    from app.core.dependencies import get_current_user
 
     # Inspect every route's dependencies and ensure get_current_user is wired
     # somewhere in the dependency chain (FastAPI stores Depends as `dependant`).

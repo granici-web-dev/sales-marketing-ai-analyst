@@ -78,7 +78,7 @@ class TestSourceCategorization:
         never configured.
         """
         service, _ = _make_service(_empty_session())
-        rows = await service.compute_source_kpis(date(2026, 5, 24))
+        rows = await service.compute_for_date(date(2026, 5, 24))
 
         sources = [r["source"] if isinstance(r, dict) else r.source for r in rows]
         expected = _categories()
@@ -96,7 +96,7 @@ class TestSourceCategorization:
         happily and only surface as an unexplained slice on a chart.
         """
         service, _ = _make_service(_empty_session())
-        rows = await service.compute_source_kpis(date(2026, 5, 24))
+        rows = await service.compute_for_date(date(2026, 5, 24))
 
         allowed = set(_categories())
         seen = {r["source"] if isinstance(r, dict) else r.source for r in rows}

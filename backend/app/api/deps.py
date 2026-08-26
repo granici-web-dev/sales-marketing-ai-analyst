@@ -1,4 +1,10 @@
-"""Кто делает запрос.
+"""Зависимости обработчиков: кто делает запрос и за какой период.
+
+Лежит под `api/`, а не в `core/`. В `core/` этот модуль давал единственный
+цикл в графе зависимостей — `core ⇄ db`: он тянул `app.db.deps`, а `db`
+тянет `app.core.config` и `app.core.tenancy`. На выполнение это не влияло
+(цикл был на уровне пакетов), но и пользы в нём не было никакой: проводка
+FastAPI — это слой веба, а не ядро.
 
 ## Что изменилось и почему
 
@@ -16,8 +22,11 @@ Davoq должна быть одна учётная запись на семь �
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from datetime import date
+
 import structlog
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.deps import get_session
@@ -74,3 +83,52 @@ async def get_current_user(
             status_code=403,
             detail="Аналитик не подключён для этого клиента.",
         ) from exc
+
+
+# ── Период выборки ────────────────────────────────────────────────────────
+
+# Потолок периода. Самая широкая кнопка в интерфейсе — «Tot anul», то есть
+# не больше 366 дней; два года оставлены с запасом на сравнение год к году
+# через API напрямую.
+#
+# Потолок нужен не от злоумышленника: доступ сюда только у вошедшего клиента.
+# Он нужен от опечатки в дате — запрос за двести лет это семьдесят тысяч
+# строк на каждую из трёх таблиц, и стоит он ровно один неверный символ.
+MAX_RANGE_DAYS = 731
+
+
+@dataclass(frozen=True)
+class DateRange:
+    """Разобранный и проверенный период выборки."""
+
+    from_date: date
+    to_date: date
+
+
+def date_range(
+    from_date: date = Query(..., alias="from"),
+    to_date: date = Query(..., alias="to"),
+) -> DateRange:
+    """Проверить период до того, как он дойдёт до базы.
+
+    Порядок дат проверяется отдельно от длины: перепутанные местами `from`
+    и `to` давали не ошибку, а пустой ответ — то есть график без данных
+    и никакого объяснения, почему.
+
+    Raises:
+        HTTPException(422): даты переставлены местами или период шире потолка.
+    """
+    if from_date > to_date:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Начало периода ({from_date}) позже конца ({to_date}).",
+        )
+
+    span = (to_date - from_date).days + 1
+    if span > MAX_RANGE_DAYS:
+        raise HTTPException(
+            status_code=422,
+            detail=(f"Период {span} дн. шире допустимых {MAX_RANGE_DAYS}. Проверьте год в датах."),
+        )
+
+    return DateRange(from_date=from_date, to_date=to_date)

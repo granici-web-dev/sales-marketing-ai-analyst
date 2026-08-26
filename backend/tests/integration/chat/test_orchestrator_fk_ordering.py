@@ -61,7 +61,7 @@ async def real_session():
         pytest.skip("TEST_DATABASE_URL not set")
     # Tenant ContextVar must be set or the global with_loader_criteria event
     # listener (app.db.session._add_tenant_filter) raises TenantIsolationError
-    # on every SELECT. In production this is set by app.core.dependencies on
+    # on every SELECT. In production this is set by app.api.deps on
     # every HTTP request; in tests we set it manually for the duration.
     from app.core.tenancy import set_tenant_id  # deferred (INFRA-05)
 

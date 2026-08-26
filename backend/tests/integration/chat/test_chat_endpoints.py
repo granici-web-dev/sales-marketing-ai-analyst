@@ -137,7 +137,7 @@ def _make_mock_orchestrator_for_multi_tool() -> MagicMock:
 
 def _override_app_dependencies(mock_session: AsyncMock | None = None):
     """Install standard dependency overrides for chat integration tests."""
-    from app.core.dependencies import get_current_user
+    from app.api.deps import get_current_user
     from app.core.tenancy import set_tenant_id
     from app.db.deps import get_session
     from app.main import app

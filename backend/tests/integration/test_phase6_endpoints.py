@@ -15,7 +15,7 @@ Success Criteria coverage:
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
@@ -35,7 +35,7 @@ MOCK_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 @pytest.fixture(autouse=False)
 def override_deps():
     """Override get_current_user and get_session for all tests in this module."""
-    from app.core.dependencies import get_current_user
+    from app.api.deps import get_current_user
     from app.core.tenancy import set_tenant_id
     from app.db.deps import get_session
     from app.main import app
@@ -419,3 +419,74 @@ async def test_sc6_health_stale_true_propagates(override_deps) -> None:
             r = await c.get("/api/v1/health/data", headers={"Authorization": "Bearer dummy"})
 
     assert r.json()["stale"] is True
+
+
+# ──────────────────────────────────────────────
+# Период выборки: порядок дат и потолок
+# ──────────────────────────────────────────────
+
+
+async def _get(url: str) -> tuple[int, dict]:
+    """Запрос к дашбордам с подменённой службой чтения."""
+    from app.main import app
+    from tests.factories.dashboard_factory import DashboardFactory
+
+    mock_data = DashboardFactory.build_sales_response(date(2026, 5, 1), date(2026, 5, 19))
+    with patch("app.api.v1.dashboards.DashboardReadService") as MockSvc:
+        instance = MockSvc.return_value
+        instance.get_sales_dashboard = AsyncMock(return_value=mock_data)
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers={"Authorization": "Bearer dummy"},
+        ) as c:
+            r = await c.get(url)
+        return r.status_code, {"called": instance.get_sales_dashboard.await_count}
+
+
+async def test_range_rejects_reversed_dates(override_deps) -> None:
+    """Переставленные `from` и `to` — это ошибка, а не пустой график.
+
+    До затвора такой запрос доходил до базы, возвращал ноль строк и рисовал
+    пустой дашборд: человек видел «данных нет» там, где данные есть, и
+    ничего не объясняло, почему.
+    """
+    status, svc = await _get("/api/v1/dashboards/sales?from=2026-05-19&to=2026-05-01")
+
+    assert status == 422, f"переставленные даты должны отвергаться, получено {status}"
+    assert svc["called"] == 0, "затвор обязан сработать ДО обращения к базе"
+
+
+async def test_range_rejects_absurd_period(override_deps) -> None:
+    """Период шире потолка отвергается.
+
+    Опечатка в годе — самый дешёвый способ попросить выборку за два столетия;
+    стоит она один неверный символ, а базе обходится в десятки тысяч строк
+    на каждую из трёх таблиц.
+    """
+    status, svc = await _get("/api/v1/dashboards/sales?from=1826-05-01&to=2026-05-19")
+
+    assert status == 422, f"двухсотлетний период должен отвергаться, получено {status}"
+    assert svc["called"] == 0
+
+
+async def test_range_allows_exactly_the_ceiling(override_deps) -> None:
+    """Ровно потолок проходит.
+
+    Граница проверяется с обеих сторон: затвор, отрезающий на день раньше
+    объявленного, — это не защита, а необъяснимый отказ.
+    """
+    from app.api.deps import MAX_RANGE_DAYS
+
+    start = date(2026, 1, 1)
+    last = start + timedelta(days=MAX_RANGE_DAYS - 1)
+    status, svc = await _get(f"/api/v1/dashboards/sales?from={start}&to={last}")
+
+    assert status == 200, f"период ровно в {MAX_RANGE_DAYS} дн. должен проходить"
+    assert svc["called"] == 1
+
+    over = last + timedelta(days=1)
+    status_over, svc_over = await _get(f"/api/v1/dashboards/sales?from={start}&to={over}")
+
+    assert status_over == 422, "день сверх потолка должен отвергаться"
+    assert svc_over["called"] == 0

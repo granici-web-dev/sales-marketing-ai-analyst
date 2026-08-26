@@ -129,13 +129,6 @@ class SourceKpiService:
             "other": [],  # null/unknown source_id — handled by ELSE in SQL
         }
 
-    async def compute_source_kpis(self, kpi_date: date) -> list[dict]:
-        """Compute per-source KPIs for the given date.
-
-        Public method aliased from compute_for_date for test compatibility.
-        """
-        return await self.compute_for_date(kpi_date)
-
     async def compute_for_date(self, kpi_date: date) -> list[dict]:
         """Compute per-source daily KPIs for the given date.
 

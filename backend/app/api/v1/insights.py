@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_current_user
+from app.api.deps import get_current_user
 from app.core.redis import redis_client
 from app.core.tenancy import require_tenant_id
 from app.db.deps import get_session

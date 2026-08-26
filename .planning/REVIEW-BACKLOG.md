@@ -204,21 +204,18 @@ Done. All four, plus what the work uncovered — see *Done* above for the detail
 
 ## Worth doing, no hurry
 
-- [ ] **Dashboard date ranges are unbounded and unordered.**
-      `backend/app/api/v1/dashboards.py`, three endpoints. No ceiling on the
-      period, no check that `from <= to`, no rate limit (unlike chat and insights
-      refresh). Authenticated-only, one tenant, one row per day per table — a
-      200-year request is ~73 000 rows, so this is cheap to abuse and cheap to
-      survive. Matters more under multi-tenancy.
-      *Fix:* `from <= to` plus a maximum period in the Pydantic schema.
+- [x] **Dashboard date ranges are unbounded and unordered.** Both checks now sit
+      in one `date_range` dependency in `app/api/deps.py`, shared by the three
+      endpoints. Ceiling is 731 days — the widest button in the interface asks
+      for 366, and two years leaves room for a year-on-year comparison through
+      the API. Reversed dates were the worse half: they returned an empty chart
+      rather than an error, so the reader saw "no data" where data exists.
+      Three tests, each branch mutation-tested.
 
-- [ ] **MEFI request interval is roughly three times too fast.**
-      `_REQUEST_INTERVAL = 0.35` in `services/integrations/mefi.py`. The binding
-      limit is the per-IP burst, 10 requests / 10 s ≈ 1 req/s, not the token's
-      600/min. Measured: at 0.35 s the 429 lands on the 11th request every time.
-      Retries are handled correctly (up to 20, exponential, `Retry-After`
-      honoured), so this costs time and log noise rather than availability.
-      *Fix:* raise to 1.2 s.
+- [x] **MEFI request interval is roughly three times too fast.** Raised to 1.2 s.
+      The docstring was wrong too, and that is why the value survived: it claimed
+      the ceiling was 100 req/10 s, so 0.35 s looked like ample headroom instead
+      of triple the real rate. Both corrected together.
 
 - [x] **Eight transitive advisories remain**, all through `next` itself. Closed
       by waiting rather than overriding, which was the right half of the choice:
@@ -227,18 +224,15 @@ Done. All four, plus what the work uncovered — see *Done* above for the detail
       `sharp@0.35.3` — trivy reports zero HIGH/CRITICAL. One LOW remains in
       `@babel/core`, below the gate.
 
-- [ ] **Two public methods exist only as aliases.**
-      `compute_source_kpis` and `compute_salesperson_kpis` each consist of one
-      call to `compute_for_date`. One cites "test compatibility", the other
-      "backwards compatibility" — with one client and no external API consumers
-      there is no backwards to be compatible with.
-      *Fix:* delete both, point the tests at the real name.
+- [x] **Two public methods exist only as aliases.** Deleted; the five test call
+      sites use `compute_for_date`. Three of them carried
+      `# type: ignore[attr-defined]` — the alias was invisible to mypy, so the
+      compatibility it provided was never typed either.
 
-- [ ] **FastAPI dependency wiring lives in `core/`.**
-      `core/dependencies.py` holds `get_current_user` and imports `db.deps`,
-      which is the sole cause of the one cycle in the module graph
-      (`core ⇄ db`, package level only, no runtime effect).
-      *Fix:* move it under `api/`. Small, and it makes the graph acyclic.
+- [x] **FastAPI dependency wiring lives in `core/`.** Moved to `app/api/deps.py`.
+      Nothing under `app/core/` imports `app/db/` any more, so the `core ⇄ db`
+      pair is gone. The new module also hosts `date_range`, which is where the
+      range guard above belongs: both are request wiring.
 
 - [x] **12 unused imports** in `app/`. Gone with the linter pass; `ruff check --select F401` is clean.
 
