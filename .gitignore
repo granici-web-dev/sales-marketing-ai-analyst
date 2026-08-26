@@ -41,3 +41,7 @@ frontend/.pnpm-store/
 .pytest_cache/
 .ruff_cache/
 *.tsbuildinfo
+
+# Метаданные сборки: появляются при `pip install -e .`, содержимое выводится
+# из pyproject.toml и в репозитории не нужно.
+*.egg-info/
