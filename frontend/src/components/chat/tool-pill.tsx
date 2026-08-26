@@ -135,9 +135,9 @@ export function ToolPill({ name, input, state }: ToolPillProps) {
       className={cn(
         "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs",
         state === "error"
-          ? "bg-[hsl(0_72%_51%)]/10 text-[hsl(0_72%_51%)]"
-          : "bg-[hsl(240_5%_96%)] text-foreground",
-        state === "done" && "text-[hsl(240_4%_46%)]",
+          ? "bg-danger/10 text-danger"
+          : "bg-muted text-foreground",
+        state === "done" && "text-muted-foreground",
       )}
     >
       <Icon
@@ -148,8 +148,8 @@ export function ToolPill({ name, input, state }: ToolPillProps) {
       <span className="font-mono">{name}</span>
       {hint && (
         <>
-          <span className="text-[hsl(240_4%_46%)]">·</span>
-          <span className="text-[hsl(240_4%_46%)]">{hint}</span>
+          <span className="text-muted-foreground">·</span>
+          <span className="text-muted-foreground">{hint}</span>
         </>
       )}
       {state === "error" && (

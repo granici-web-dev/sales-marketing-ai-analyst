@@ -155,7 +155,7 @@ export function ChatMain({ conversationId, onMobileMenu }: ChatMainProps) {
     return (
       <div className="flex flex-1 flex-col">
         <div className="flex flex-1 items-center justify-center px-4 py-12 text-center">
-          <p className="text-sm text-[hsl(240_4%_46%)]">
+          <p className="text-sm text-muted-foreground">
             {t("selectConversation")}
           </p>
         </div>
@@ -178,7 +178,7 @@ export function ChatMain({ conversationId, onMobileMenu }: ChatMainProps) {
           <button
             type="button"
             onClick={() => router.push("/chat")}
-            className="text-sm text-[hsl(221_83%_53%)] underline min-h-[44px]"
+            className="text-sm text-primary underline min-h-[44px]"
           >
             {t("conversation.startNew")}
           </button>
@@ -258,7 +258,7 @@ export function ChatMain({ conversationId, onMobileMenu }: ChatMainProps) {
           );
         })}
         {chat.error && (
-          <div className="rounded-md border border-[hsl(0_72%_51%)] bg-[hsl(0_72%_51%)]/10 p-3 text-sm text-[hsl(0_72%_51%)]">
+          <div className="rounded-md border border-danger bg-danger/10 p-3 text-sm text-danger">
             {chat.error}
           </div>
         )}

@@ -208,7 +208,7 @@ function RefreshDataButton() {
     icon = <Loader2 size={16} className="animate-spin" />;
   } else if (state.kind === "success") {
     label = t("refreshDataSuccess");
-    icon = <Check size={16} className="text-green-600" />;
+    icon = <Check size={16} className="text-ok" />;
     variant = "default";
   } else if (state.kind === "rate-limited") {
     label = t("refreshDataRateLimited");

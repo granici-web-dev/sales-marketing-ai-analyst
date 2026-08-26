@@ -58,7 +58,7 @@ export function MessageBubble({
         role="article"
         aria-label={t("userAriaLabel")}
         className={cn(
-          "self-end max-w-[90%] md:max-w-[75%] bg-[hsl(240_5%_96%)] rounded-lg px-4 py-3 text-sm",
+          "self-end max-w-[90%] md:max-w-[75%] bg-muted rounded-lg px-4 py-3 text-sm",
           userState === "pending" && "opacity-70",
         )}
       >
@@ -90,7 +90,7 @@ export function MessageBubble({
       className={cn(
         "self-start max-w-[90%] md:max-w-[75%] bg-background border rounded-lg px-4 py-3",
         (isFallback || isError) &&
-          "border-l-4 border-l-[hsl(0_72%_51%)] text-[hsl(0_72%_51%)]",
+          "border-l-4 border-l-danger text-danger",
       )}
     >
       {/* Tool pills sit above the markdown — collapsed when complete. */}

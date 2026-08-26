@@ -15,7 +15,7 @@ export function AdSpendPlaceholder() {
           className="mb-3 text-muted-foreground"
           aria-hidden="true"
         />
-        <p className="text-sm font-medium text-[hsl(240_10%_4%)]">
+        <p className="text-sm font-medium text-foreground">
           {t("adSpendTitle")}
         </p>
         <p className="mt-1 max-w-xs text-xs text-muted-foreground">

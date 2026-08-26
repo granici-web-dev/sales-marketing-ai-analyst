@@ -24,7 +24,7 @@ export function WelcomeCard({ onSelectQuestion }: WelcomeCardProps) {
           <h1 className="text-xl md:text-2xl font-semibold text-foreground">
             {t("heading")}
           </h1>
-          <p className="text-sm text-[hsl(240_4%_46%)] max-w-prose">
+          <p className="text-sm text-muted-foreground max-w-prose">
             {t("body")}
           </p>
           <SuggestedQuestions onSelect={onSelectQuestion} />

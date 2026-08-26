@@ -4,26 +4,36 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Кнопка пришла из shadcn нетронутой: синяя заливка, белый текст, радиус 6 px.
+ * Ни то, ни другое, ни третье не принадлежало этой дизайн-системе — карточки
+ * скруглены на 14 px, а действие в ней обозначается почти-чёрным в светлой
+ * теме и почти-белым в тёмной, а не синим из палитры Tailwind.
+ *
+ * Отдельно про белый текст: он был написан словом, а не токеном, поэтому
+ * в тёмной теме оставался белым на почти-белой заливке. --primary-fg меняется
+ * вместе с --primary и держит пару читаемой в обеих.
+ */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(221_83%_53%)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-[hsl(221_83%_53%)] text-white shadow hover:bg-[hsl(221_83%_45%)]",
+          "bg-primary text-primary-foreground shadow-card hover:bg-primary-hover",
         destructive:
-          "bg-[hsl(0_72%_51%)] text-white shadow-sm hover:bg-[hsl(0_72%_45%)]",
+          "bg-danger text-destructive-foreground shadow-card hover:bg-danger/90",
         outline:
-          "border border-[hsl(240_6%_90%)] bg-white shadow-sm hover:bg-[hsl(240_5%_96%)] hover:text-[hsl(240_10%_4%)]",
+          "border border-border bg-card shadow-card hover:bg-muted hover:text-foreground",
         secondary:
-          "bg-[hsl(240_5%_96%)] text-[hsl(240_10%_4%)] shadow-sm hover:bg-[hsl(240_5%_92%)]",
-        ghost: "hover:bg-[hsl(240_5%_96%)] hover:text-[hsl(240_10%_4%)]",
-        link: "text-[hsl(221_83%_53%)] underline-offset-4 hover:underline",
+          "bg-muted text-foreground shadow-card hover:bg-muted/70",
+        ghost: "hover:bg-muted hover:text-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
+        sm: "h-8 rounded-control px-3 text-xs",
+        lg: "h-10 rounded-control px-8",
         icon: "h-9 w-9",
       },
     },

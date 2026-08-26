@@ -18,7 +18,7 @@ interface ThinkingIndicatorProps {
 }
 
 const DOT_CLASS =
-  "block h-2 w-2 rounded-full bg-[hsl(240_4%_46%)] motion-safe:animate-pulse";
+  "block h-2 w-2 rounded-full bg-muted-foreground motion-safe:animate-pulse";
 
 export function ThinkingIndicator({
   state = "thinking",
@@ -38,7 +38,7 @@ export function ThinkingIndicator({
       role="status"
       aria-live="polite"
       className={cn(
-        "inline-flex items-center gap-2 text-xs text-[hsl(240_4%_46%)]",
+        "inline-flex items-center gap-2 text-xs text-muted-foreground",
         className,
       )}
       data-state={state}

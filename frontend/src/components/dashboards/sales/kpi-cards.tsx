@@ -29,16 +29,16 @@ function KpiCard({ label, value, delta, format }: KpiCardProps) {
     <Card>
       <CardContent className="pt-4">
         <p className="text-xs text-muted-foreground mb-1">{label}</p>
-        <p className="text-3xl font-bold text-[hsl(240_10%_4%)]">
+        <p className="text-3xl font-bold text-foreground">
           {displayValue}
         </p>
         {wow.label && (
           <span
             className={`text-xs font-medium mt-1 block ${
               wow.positive === true
-                ? "text-green-600"
+                ? "text-ok"
                 : wow.positive === false
-                  ? "text-red-600"
+                  ? "text-danger"
                   : "text-muted-foreground"
             }`}
           >

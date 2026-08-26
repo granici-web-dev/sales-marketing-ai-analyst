@@ -34,11 +34,11 @@ export function FunnelChart({ funnel, conversion_rates }: FunnelChartProps) {
   if (isEmpty) {
     return (
       <div className="flex flex-col items-center py-12 text-center">
-        <BarChart3 size={32} className="text-[#71717A] mb-3" aria-hidden="true" />
-        <p className="text-sm font-medium text-[#71717A]">
+        <BarChart3 size={32} className="text-muted-foreground mb-3" aria-hidden="true" />
+        <p className="text-sm font-medium text-muted-foreground">
           {t("funnel.noData")}
         </p>
-        <p className="text-xs text-[#71717A] mt-1 max-w-xs">
+        <p className="text-xs text-muted-foreground mt-1 max-w-xs">
           {t("funnel.noDataDesc")}
         </p>
       </div>
@@ -124,7 +124,7 @@ export function FunnelChart({ funnel, conversion_rates }: FunnelChartProps) {
             return (
               <div key={item.stage} className="flex flex-col items-center gap-1">
                 {idx > 0 && item.conversion && (
-                  <span className="text-xs text-[#71717A]">
+                  <span className="text-xs text-muted-foreground">
                     {formatPct(item.conversion)} →
                   </span>
                 )}
@@ -133,10 +133,10 @@ export function FunnelChart({ funnel, conversion_rates }: FunnelChartProps) {
                     variant="outline"
                     className={`text-xs ${
                       wow.positive === true
-                        ? "text-green-600 border-green-200"
+                        ? "text-ok border-ok/25"
                         : wow.positive === false
-                          ? "text-red-600 border-red-200"
-                          : "text-[#71717A]"
+                          ? "text-danger border-danger/25"
+                          : "text-muted-foreground"
                     }`}
                   >
                     {wow.label}
@@ -154,10 +154,10 @@ export function FunnelChart({ funnel, conversion_rates }: FunnelChartProps) {
           const wow = formatWowDelta(item.wowDelta);
           return (
             <div key={item.stage}>
-              <div className="flex items-center justify-between p-3 bg-[hsl(240_5%_96%)] rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex flex-col">
-                  <span className="text-xs text-[#71717A]">{item.stage}</span>
-                  <span className="text-xl font-bold text-[hsl(240_10%_4%)]">
+                  <span className="text-xs text-muted-foreground">{item.stage}</span>
+                  <span className="text-xl font-bold text-foreground">
                     {item.count}
                   </span>
                 </div>
@@ -166,10 +166,10 @@ export function FunnelChart({ funnel, conversion_rates }: FunnelChartProps) {
                     variant="outline"
                     className={`text-xs ${
                       wow.positive === true
-                        ? "text-green-600 border-green-200"
+                        ? "text-ok border-ok/25"
                         : wow.positive === false
-                          ? "text-red-600 border-red-200"
-                          : "text-[#71717A]"
+                          ? "text-danger border-danger/25"
+                          : "text-muted-foreground"
                     }`}
                   >
                     {wow.label}
@@ -178,14 +178,14 @@ export function FunnelChart({ funnel, conversion_rates }: FunnelChartProps) {
               </div>
               {idx < mobileStages.length - 1 && item.nextConversion && (
                 <div className="flex justify-center py-1">
-                  <span className="text-xs text-[#71717A]">
+                  <span className="text-xs text-muted-foreground">
                     ↓ {formatPct(item.nextConversion)}
                   </span>
                 </div>
               )}
               {idx < mobileStages.length - 1 && !item.nextConversion && (
                 <div className="flex justify-center py-1">
-                  <span className="text-xs text-[#71717A]">↓</span>
+                  <span className="text-xs text-muted-foreground">↓</span>
                 </div>
               )}
             </div>

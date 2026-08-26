@@ -17,7 +17,7 @@ function InlineError({ onRetry }: { onRetry: () => void }) {
   const t = useTranslations("common");
   return (
     <div className="flex flex-col items-center gap-2 py-8">
-      <p className="text-sm text-red-600">{t("error")}</p>
+      <p className="text-sm text-danger">{t("error")}</p>
       <Button variant="outline" size="sm" onClick={onRetry}>
         {t("retry")}
       </Button>
@@ -36,7 +36,7 @@ function MarketingPageContent() {
     <div className="space-y-6">
       {/* Header row: page title + date picker */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-[hsl(240_10%_4%)]">
+        <h1 className="text-xl font-semibold text-foreground">
           {t("title")}
         </h1>
         <Suspense fallback={<Skeleton className="h-10 w-64" />}>
@@ -73,7 +73,7 @@ function MarketingPageContent() {
           ) : isError ? (
             <InlineError onRetry={() => refetch()} />
           ) : data ? (
-            <p className="text-3xl font-bold text-[hsl(240_10%_4%)]">
+            <p className="text-3xl font-bold text-foreground">
               {data.site_conversion_rate !== null
                 ? formatPct(data.site_conversion_rate)
                 : "N/A"}

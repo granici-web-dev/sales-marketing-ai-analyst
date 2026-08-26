@@ -49,14 +49,17 @@ function pivotData(
   });
 }
 
-/** Multi-series color palette from CSS variables + fallback shades */
+/**
+ * Цвета рядов. Все шесть — токены: у каждого своё значение в светлой теме
+ * и в тёмной, иначе половина рядов выцветает на тёмном фоне до неразличимости.
+ */
 const SERIES_COLORS = [
-  "var(--color-accent)",
-  "hsl(221 83% 75%)",
-  "var(--color-muted-foreground)",
-  "hsl(240 3% 65%)",
-  "hsl(221 83% 40%)",
-  "hsl(240 3% 45%)",
+  "var(--color-chart-1)",
+  "var(--color-chart-2)",
+  "var(--color-chart-3)",
+  "var(--color-chart-4)",
+  "var(--color-chart-5)",
+  "var(--color-chart-6)",
 ];
 
 export function SourceVolumeChart({ leadVolumeBySource }: SourceVolumeChartProps) {

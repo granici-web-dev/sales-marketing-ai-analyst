@@ -36,11 +36,11 @@ export function RevenueTrend({ revenueSeries }: RevenueTrendProps) {
   if (isEmpty) {
     return (
       <div className="flex flex-col items-center py-12 text-center">
-        <TrendingUp size={32} className="text-[#71717A] mb-3" aria-hidden="true" />
-        <p className="text-sm font-medium text-[#71717A]">
+        <TrendingUp size={32} className="text-muted-foreground mb-3" aria-hidden="true" />
+        <p className="text-sm font-medium text-muted-foreground">
           {t("revenue.noData")}
         </p>
-        <p className="text-xs text-[#71717A] mt-1 max-w-xs">
+        <p className="text-xs text-muted-foreground mt-1 max-w-xs">
           {t("revenue.noDataDesc")}
         </p>
       </div>
@@ -75,14 +75,14 @@ export function RevenueTrend({ revenueSeries }: RevenueTrendProps) {
         {/* Hide grid on mobile for cleaner look */}
         <CartesianGrid
           strokeDasharray="3 3"
-          stroke="hsl(240 6% 90%)"
+          stroke="var(--border)"
           className="hidden sm:block"
         />
         <XAxis
           dataKey="label"
           axisLine={false}
           tickLine={false}
-          tick={{ fontSize: 11, fill: "#71717A" }}
+          tick={{ fontSize: 11, fill: "var(--muted-fg)" }}
           interval="preserveStartEnd"
         />
         <YAxis

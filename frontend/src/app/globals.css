@@ -48,6 +48,20 @@
   --warn: #8a5a08;
   --danger: #b3261e;
 
+  /* Ряды многорядных графиков.
+     Одним акцентом здесь не обойтись: на графике по источникам рядов до
+     шести, и различать их нужно глазом. Раньше недостающие брались
+     литеральными hsl() прямо в компоненте — одно значение на обе темы,
+     то есть на тёмном фоне ряды выцветали в неразличимую кашу. Оттенки
+     взяты из уже существующих: лайм акцента, зелень --ok, охра --warn
+     и три приглушённых к ним. */
+  --chart-1: #7fd246;
+  --chart-2: #2f7a3e;
+  --chart-3: #8a5a08;
+  --chart-4: #4a6fa5;
+  --chart-5: #b3563e;
+  --chart-6: #63665c;
+
   --radius: 14px;
   --radius-sm: 10px;
 
@@ -76,6 +90,12 @@
     --ok: #7bc98a;
     --warn: #e0a93b;
     --danger: #f0837b;
+    --chart-1: #9fe870;
+    --chart-2: #7bc98a;
+    --chart-3: #e0a93b;
+    --chart-4: #8fb0e0;
+    --chart-5: #e59c85;
+    --chart-6: #a6a99c;
     --shadow-sm: 0 1px 2px 0 #00000059;
     --shadow: 0 8px 24px -10px #00000080, 0 1px 2px 0 #00000059;
   }
@@ -101,6 +121,12 @@
   --ok: #7bc98a;
   --warn: #e0a93b;
   --danger: #f0837b;
+  --chart-1: #9fe870;
+  --chart-2: #7bc98a;
+  --chart-3: #e0a93b;
+  --chart-4: #8fb0e0;
+  --chart-5: #e59c85;
+  --chart-6: #a6a99c;
   --shadow-sm: 0 1px 2px 0 #00000059;
   --shadow: 0 8px 24px -10px #00000080, 0 1px 2px 0 #00000059;
 }
@@ -128,6 +154,12 @@
   --color-ok: var(--ok);
   --color-warn: var(--warn);
   --color-danger: var(--danger);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
   --color-destructive: var(--danger);
   --color-destructive-foreground: #ffffff;
 

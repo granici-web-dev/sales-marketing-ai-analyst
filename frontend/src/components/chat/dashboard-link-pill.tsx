@@ -25,7 +25,7 @@ export function DashboardLinkPill({
     <Link
       href={href}
       className={cn(
-        "inline-flex items-center gap-1 bg-[hsl(221_83%_53%)]/10 text-[hsl(221_83%_53%)] rounded-md px-2 py-0.5 text-sm hover:bg-[hsl(221_83%_53%)]/20 transition-colors",
+        "inline-flex items-center gap-1 bg-primary/10 text-primary rounded-md px-2 py-0.5 text-sm hover:bg-primary/20 transition-colors",
         className,
       )}
     >

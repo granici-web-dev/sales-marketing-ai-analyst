@@ -98,11 +98,11 @@ export function LeaderboardTable({ salespeople }: LeaderboardTableProps) {
   if (salespeople.length === 0) {
     return (
       <div className="flex flex-col items-center py-12 text-center">
-        <Users size={32} className="text-[#71717A] mb-3" aria-hidden="true" />
-        <p className="text-sm font-medium text-[hsl(240_10%_4%)]">
+        <Users size={32} className="text-muted-foreground mb-3" aria-hidden="true" />
+        <p className="text-sm font-medium text-foreground">
           {t("noData")}
         </p>
-        <p className="text-xs text-[#71717A] mt-1">{t("noDataDesc")}</p>
+        <p className="text-xs text-muted-foreground mt-1">{t("noDataDesc")}</p>
       </div>
     );
   }
@@ -218,7 +218,7 @@ export function LeaderboardTable({ salespeople }: LeaderboardTableProps) {
             return (
               <TableRow key={row.external_id}>
                 {/* Rank */}
-                <TableCell className="sticky left-0 bg-background z-10 text-[#71717A] font-medium">
+                <TableCell className="sticky left-0 bg-background z-10 text-muted-foreground font-medium">
                   {index + 1}
                 </TableCell>
                 {/* Name — sticky */}
@@ -253,7 +253,7 @@ export function LeaderboardTable({ salespeople }: LeaderboardTableProps) {
                 <TableCell
                   className={cn(
                     "text-right",
-                    ttftRed && "bg-red-50 text-red-700 font-medium",
+                    ttftRed && "bg-danger/10 text-danger font-medium",
                   )}
                 >
                   {formatDuration(row.avg_time_to_first_touch_minutes)}

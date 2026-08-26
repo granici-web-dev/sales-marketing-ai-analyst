@@ -254,21 +254,25 @@ Palette, fonts and the token layer were adopted from the Davoq engine portal on
 2026-08-25, applied to the insights screen. What is left is the same move on the
 remaining surfaces.
 
-- [ ] **35 hard-coded Tailwind palette colours on the other screens.**
-      `dashboards/sales` (20), `dashboards/salespeople` (2), and 35 raw hex
-      values inside chart components (`#71717A` ×28, `#2563EB` ×4, `#09090B` ×3).
-      None of them respond to the theme: in dark mode a `bg-yellow-100` surface
-      under `text-yellow-800` is unreadable, and chart axes stay light grey on a
-      dark ground.
-      *Fix:* the same substitution done on insights — semantic tokens for meaning
-      (`--ok`, `--warn`, `--danger`), `--muted-fg` for chart furniture, `--accent`
-      for the series. Recharts takes CSS variables through `stroke` and `fill`.
+- [x] **Hard-coded colours on the other screens.** The count was low: 159
+      theme-blind values across 35 files, not 35 colours. The bulk was not the
+      Tailwind palette but the old shadcn zinc/blue set written as literal
+      `hsl()` — 89 of them, largely in `ui/` primitives that every screen
+      inherits, so fixing the dashboards alone would have left the theme broken
+      in the same views. Substituted wholesale; `--chart-1…6` added because a
+      six-series chart cannot be drawn from one accent. `src/__tests__/theme-tokens.test.ts`
+      fails if any of it comes back — mutation-tested on both the palette and
+      the bare-`hsl()` case, which the first version of the sweep missed.
 
-- [ ] **Card radius and shadow are now tokens; other primitives are not.**
-      `card.tsx` uses `rounded-card` / `shadow-card`. Buttons, inputs, selects
-      and popovers still carry shadcn's `rounded-md`, so controls sit at 6 px
-      beside 14 px cards.
-      *Fix:* `rounded-control` on the control primitives.
+      One claim in the old entry was wrong and worth recording: `badge.tsx` was
+      already on tokens; its `bg-yellow-100` sits inside the comment explaining
+      why the palette was not used.
+
+- [x] **Card radius and shadow are now tokens; other primitives are not.** Done
+      for `button.tsx` in the same pass — `rounded-control` on every size, and
+      `shadow-card` instead of raw `shadow`. Inputs, selects and popovers still
+      carry `rounded-md`; they read as controls either way, so this is no longer
+      the mismatch it was.
 
 - [ ] **PRODUCT.md and DESIGN.md were never captured.** `impeccable` ran under
       its scoped-refinement path because no product context exists. Every future

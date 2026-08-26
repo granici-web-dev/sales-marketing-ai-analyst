@@ -41,18 +41,22 @@ export default function DataFreshnessBanner() {
   return (
     <div
       role="alert"
-      className="mb-4 flex items-start gap-3 rounded-md border-l-4 border-amber-500 bg-amber-50 p-4 text-amber-800"
+      /* Янтарная палитра Tailwind заменена токеном --warn: у неё одно
+         значение на обе темы, и светлая заливка amber-50 оставалась
+         светлым пятном на тёмной странице. Заливка на 12 % держит текст
+         на полном токене выше 4.5:1 — тот же приём, что в badge.tsx. */
+      className="mb-4 flex items-start gap-3 rounded-card border-l-4 border-warn bg-warn/12 p-4 text-warn"
     >
-      <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+      <AlertTriangle size={18} className="mt-0.5 shrink-0 text-warn" />
       <p className="flex-1 text-sm">
         {t("dataStale", { lastSync })}
       </p>
       <button
         onClick={handleDismiss}
         aria-label={t("closeMenu")}
-        className="ml-2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md hover:bg-amber-100"
+        className="ml-2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-control hover:bg-warn/20"
       >
-        <X size={16} className="text-amber-700" />
+        <X size={16} className="text-warn" />
       </button>
     </div>
   );

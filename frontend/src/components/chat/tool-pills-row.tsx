@@ -59,7 +59,7 @@ export function ToolPillsRow({ pills, state }: ToolPillsRowProps) {
       className="mb-2"
       data-state={open ? "expanded" : "collapsed"}
     >
-      <CollapsibleTrigger className="text-xs text-[hsl(240_4%_46%)] hover:text-foreground transition-colors min-h-[24px]">
+      <CollapsibleTrigger className="text-xs text-muted-foreground hover:text-foreground transition-colors min-h-[24px]">
         {summary}
       </CollapsibleTrigger>
       <CollapsibleContent className="pt-2">

@@ -25,8 +25,9 @@ describe("MarkdownRenderer — Phase 8", () => {
     const anchor = link.closest("a");
     expect(anchor).not.toBeNull();
     expect(anchor!.getAttribute("href")).toBe("/sales");
-    // Pill style: bg-accent/10 → uses bg-[hsl(221_83%_53%)]/10 token.
-    expect(anchor!.className).toMatch(/bg-\[hsl\(221_83%_53%\)\]\/10/);
+    // Плашка залита токеном действия, а не литеральным цветом: тот же
+    // приём, что у выбранного пункта в боковом меню.
+    expect(anchor!.className).toMatch(/bg-primary\/10/);
   });
 
   it("MR3: external link href becomes muted italic plain text (D-18a defense)", () => {

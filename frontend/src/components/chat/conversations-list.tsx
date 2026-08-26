@@ -55,8 +55,8 @@ function ListBody({
           onClick={handleNew}
           disabled={createConversation.isPending}
           className={cn(
-            "w-full inline-flex items-center justify-center gap-2 rounded-md bg-[hsl(221_83%_53%)] text-white px-3 min-h-[44px] text-sm font-medium",
-            "hover:bg-[hsl(221_83%_45%)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(221_83%_53%)]",
+            "w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-3 min-h-[44px] text-sm font-medium",
+            "hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             "disabled:opacity-60 disabled:pointer-events-none",
           )}
         >
@@ -69,7 +69,7 @@ function ListBody({
         aria-label={t("title")}
         className="flex-1 overflow-y-auto p-2 space-y-1"
       >
-        <p className="px-3 py-1 text-xs text-[hsl(240_4%_46%)]">
+        <p className="px-3 py-1 text-xs text-muted-foreground">
           {t("recentConversations")}
         </p>
 
@@ -82,12 +82,12 @@ function ListBody({
         )}
 
         {!isLoading && isError && (
-          <div className="px-3 py-4 text-center text-sm text-[hsl(0_72%_51%)]">
+          <div className="px-3 py-4 text-center text-sm text-danger">
             <p className="mb-2">{t("error")}</p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="text-[hsl(221_83%_53%)] underline min-h-[44px]"
+              className="text-primary underline min-h-[44px]"
             >
               {t("retry")}
             </button>
@@ -95,7 +95,7 @@ function ListBody({
         )}
 
         {!isLoading && !isError && data && data.length === 0 && (
-          <p className="px-3 py-4 text-sm text-[hsl(240_4%_46%)]">
+          <p className="px-3 py-4 text-sm text-muted-foreground">
             {t("empty")}
           </p>
         )}
@@ -140,7 +140,7 @@ export function ConversationsList(props: ConversationsListProps) {
 
   // Desktop sidebar
   return (
-    <aside className="hidden md:flex w-[260px] flex-shrink-0 border-r bg-[hsl(240_5%_96%)]">
+    <aside className="hidden md:flex w-[260px] flex-shrink-0 border-r bg-muted">
       <ListBody activeId={activeId} />
     </aside>
   );

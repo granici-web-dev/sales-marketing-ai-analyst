@@ -76,7 +76,7 @@ export function MessageList({
         <button
           type="button"
           onClick={jumpToBottom}
-          className="absolute bottom-4 right-4 inline-flex items-center gap-1 rounded-full bg-[hsl(221_83%_53%)] text-white shadow-md px-3 py-2 text-sm min-h-[44px] motion-safe:animate-in motion-safe:fade-in"
+          className="absolute bottom-4 right-4 inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground shadow-md px-3 py-2 text-sm min-h-[44px] motion-safe:animate-in motion-safe:fade-in"
           aria-label={t("newMessagesButton")}
         >
           <ChevronDown size={16} aria-hidden="true" />

@@ -42,11 +42,11 @@ export function SourceBreakdown({ sourceBreakdown }: SourceBreakdownProps) {
   if (isEmpty) {
     return (
       <div className="flex flex-col items-center py-12 text-center">
-        <PieChart size={32} className="text-[#71717A] mb-3" aria-hidden="true" />
-        <p className="text-sm font-medium text-[#71717A]">
+        <PieChart size={32} className="text-muted-foreground mb-3" aria-hidden="true" />
+        <p className="text-sm font-medium text-muted-foreground">
           {t("sources.noData")}
         </p>
-        <p className="text-xs text-[#71717A] mt-1 max-w-xs">
+        <p className="text-xs text-muted-foreground mt-1 max-w-xs">
           {t("sources.noDataDesc")}
         </p>
       </div>
@@ -78,7 +78,7 @@ export function SourceBreakdown({ sourceBreakdown }: SourceBreakdownProps) {
             width={90}
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 12, fill: "#71717A" }}
+            tick={{ fontSize: 12, fill: "var(--muted-fg)" }}
           />
           <ChartTooltip content={<ChartTooltipContent />} />
           <Bar dataKey="leads" fill="var(--color-accent)" radius={[0, 4, 4, 0]}>

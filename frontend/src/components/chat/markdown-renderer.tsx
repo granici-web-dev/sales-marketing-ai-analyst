@@ -71,7 +71,7 @@ export function MarkdownRenderer({
             <p className="text-sm leading-normal mb-2 last:mb-0">{children}</p>
           ),
           strong: ({ children }) => (
-            <strong className="font-semibold text-[hsl(221_83%_53%)]">
+            <strong className="font-semibold text-foreground">
               {children}
             </strong>
           ),
@@ -88,7 +88,7 @@ export function MarkdownRenderer({
           ),
           li: ({ children }) => <li className="text-sm">{children}</li>,
           code: ({ children }) => (
-            <code className="font-mono text-xs bg-[hsl(240_5%_96%)] px-1 py-0.5 rounded">
+            <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">
               {children}
             </code>
           ),
@@ -106,7 +106,7 @@ export function MarkdownRenderer({
             }
             // D-18a — non-whitelisted href: render as plain muted text.
             return (
-              <span className="text-[hsl(240_4%_46%)] italic">{children}</span>
+              <span className="text-muted-foreground italic">{children}</span>
             );
           },
           // Tables — shadcn Table primitives wrapped for overflow.

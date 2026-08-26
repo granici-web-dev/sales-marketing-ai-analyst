@@ -74,7 +74,7 @@ export function SuggestedQuestions({
           key={q}
           type="button"
           onClick={() => onSelect(q)}
-          className="min-h-[44px] rounded-full border border-[hsl(240_6%_90%)] bg-[hsl(240_5%_96%)] px-4 text-sm text-foreground transition-colors hover:border-[hsl(221_83%_53%)] hover:text-[hsl(221_83%_53%)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(221_83%_53%)]"
+          className="min-h-[44px] rounded-full border border-border bg-muted px-4 text-sm text-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {q}
         </button>

@@ -64,7 +64,7 @@ export function ChatHeader({ conversationId, title }: ChatHeaderProps) {
             <button
               type="button"
               aria-label={t("conversation.kebabAriaLabel")}
-              className="h-11 w-11 inline-flex items-center justify-center rounded-md hover:bg-[hsl(240_5%_96%)]"
+              className="h-11 w-11 inline-flex items-center justify-center rounded-md hover:bg-muted"
             >
               <MoreVertical size={18} aria-hidden="true" />
             </button>
@@ -88,7 +88,7 @@ export function ChatHeader({ conversationId, title }: ChatHeaderProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t("archive.cancel")}</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-[hsl(0_72%_51%)] text-white hover:bg-[hsl(0_72%_45%)]"
+              className="bg-danger text-primary-foreground hover:bg-danger/90"
               onClick={onArchive}
             >
               {t("archive.confirm")}

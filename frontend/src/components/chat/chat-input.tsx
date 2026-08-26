@@ -93,7 +93,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             placeholder={t("placeholder")}
             aria-label={t("ariaLabel")}
             rows={1}
-            className="resize-none max-h-[240px] focus-visible:ring-[hsl(221_83%_53%)]"
+            className="resize-none max-h-[240px] focus-visible:ring-ring"
             disabled={false}
           />
           <button
@@ -103,8 +103,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
             aria-label={t("sendAriaLabel")}
             title={isStreaming ? t("sendDisabledTooltip") : t("sendTooltip")}
             className={cn(
-              "min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-md bg-[hsl(221_83%_53%)] text-white shadow-sm",
-              "hover:bg-[hsl(221_83%_45%)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(221_83%_53%)]",
+              "min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm",
+              "hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               "disabled:opacity-50 disabled:pointer-events-none",
             )}
           >
