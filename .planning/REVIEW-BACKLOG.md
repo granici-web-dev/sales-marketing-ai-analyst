@@ -288,13 +288,18 @@ remaining surfaces.
       writing those tests turned up a live defect (see below). The percentage
       moved 13.4 → 15.7, which is the honest size of the change.
 
-      Second pass done: `useSyncTrigger` 95%, `date-range-picker` 78%, total
-      15.7 → 21.8. Both turned up live defects (see below).
+      Three passes done, 13.4 → 24.7. Each one turned up a live defect, which
+      is the argument for aiming at consequence rather than percentage:
+      `engine-client` 100%, `useUrlDateRange` 100%, `useSyncTrigger` 95%,
+      `date-range-picker` 78%, `useConversations` 92%, `useInsights` 100%.
 
-      What is left is mostly presentational: chart wrappers, insight cards,
+      The behavioural layer is now covered. What remains uncovered in
+      `hooks/` and `lib/` is seven files of five to nine lines each — thin
+      query wrappers with no branching worth pinning.
+
+      What is left elsewhere is presentational: chart wrappers, insight cards,
       dashboard pages. Render tests there pin markup and break on every
-      restyle — the theme pass would have broken a dozen of them. Of the
-      behavioural pieces, `useConversations` and `useInsights` remain.
+      restyle — the theme pass would have broken a dozen of them.
 
       No coverage gate in CI: a threshold at 15% protects nothing, and a
       threshold that stops the build is a promise to keep raising it.
@@ -377,6 +382,25 @@ remaining surfaces.
       nothing `aria-selected`, so the selection cannot be asserted, and the
       chart needs recharts in jsdom. Fixed by inspection, stated here rather
       than claimed as covered.
+
+- [x] **Insight refresh waited ten seconds by the clock.** `useInsightsRefresh`
+      slept a fixed 10s on the reasoning that "Claude generation typically takes
+      6–8s", then invalidated the query. When it took longer, the page refetched
+      the *previous* narrative and presented it as the new one — no error, no
+      spinner, just yesterday's text under today's date. The engine already
+      learned this on Drive sync, where the comment calls waiting by the clock
+      the most common pilot failure.
+
+      The refresh endpoint returns `pipeline_run_id` and `/api/v1/sync/status`
+      takes any Celery task id, so it now polls for the task to actually finish
+      — the same shape as the refresh button, which is already tested. On
+      timeout it throws rather than claiming success.
+
+- [ ] **The insights page never shows a failed refresh.** It reads `isPending`
+      and the rate-limit payload and nothing else, so a thrown error just stops
+      the spinner with no message. That was survivable while the mutation could
+      not fail in practice; now that a timeout throws, it is a visible gap.
+      Small: one `isError` branch beside the existing spinner.
 
 ## Checked and clean
 

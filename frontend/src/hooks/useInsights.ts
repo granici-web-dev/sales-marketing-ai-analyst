@@ -57,6 +57,10 @@ export interface InsightEnvelope {
 
 // ─── Hooks ──────────────────────────────────────────────────────────────────
 
+/** Опрос состояния задачи: тот же ритм, что у кнопки «Обновить данные». */
+const REFRESH_POLL_MS = 2000;
+const REFRESH_TIMEOUT_MS = 90_000;
+
 /**
  * INSI-01: Fetch today's insight envelope.
  */
@@ -97,8 +101,17 @@ export function useInsightsByDate(date: string | null) {
  * anomalies are passed to Claude for a fresh narrative.
  *
  * On 429: returns { ok: false, retryAfterSeconds } from Retry-After header.
- * On 2xx: waits ~10s for Claude to finish, then invalidates the relevant
- * insights query so the page re-renders with the new payload.
+ *
+ * On 2xx: ждём не десять секунд по часам, а признак того, что задача
+ * действительно кончилась. Здесь стояло `setTimeout(10000)` с расчётом
+ * «Клaude обычно отвечает за 6–8 секунд»: если он отвечал за пятнадцать,
+ * страница обновлялась старым текстом и молча показывала его как свежий.
+ * Ровно эту ошибку — отсчёт по часам вместо ожидания признака — движок
+ * уже проходил на синхронизации папки, и там она названа самой частой
+ * поломкой пилота.
+ *
+ * Задача обычная celery, а `/sync/status` спрашивает любую по её
+ * идентификатору, поэтому опрос тот же, что у кнопки «Обновить данные».
  */
 export function useInsightsRefresh() {
   const queryClient = useQueryClient();
@@ -116,18 +129,35 @@ export function useInsightsRefresh() {
           : "/api/v1/insights/refresh";
       const res = await apiClient.post(url, {});
       if (res.status === 429) {
-        const retryAfter = parseInt(
-          res.headers.get("Retry-After") ?? "0",
-          10,
-        );
+        // Ноль здесь — законное значение: срок ожидания истёк ровно сейчас,
+        // и повторить можно немедленно. А вот дата вместо числа (RFC её
+        // разрешает) даёт NaN, и обратный отсчёт на странице считает
+        // неизвестно от чего.
+        const parsed = parseInt(res.headers.get("Retry-After") ?? "0", 10);
+        const retryAfter = Number.isFinite(parsed) && parsed >= 0 ? parsed : 60;
         return { ok: false, retryAfterSeconds: retryAfter, date };
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      // Claude generation typically takes 6–8s. Wait before resolving so the
-      // mutation stays `isPending` (button spinner stays visible) until the
-      // new payload is ready to fetch.
-      await new Promise((resolve) => setTimeout(resolve, 10000));
-      return { ok: true, retryAfterSeconds: null, date };
+
+      const { pipeline_run_id: taskId } = (await res.json()) as {
+        pipeline_run_id: string;
+      };
+
+      const deadline = Date.now() + REFRESH_TIMEOUT_MS;
+      while (Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, REFRESH_POLL_MS));
+        const statusRes = await apiClient.get(
+          `/api/v1/sync/status?task_id=${taskId}`,
+        );
+        // Один сорвавшийся опрос — не повод считать сорванной саму задачу.
+        if (!statusRes.ok) continue;
+        const status = (await statusRes.json()) as { done: boolean };
+        if (status.done) return { ok: true, retryAfterSeconds: null, date };
+      }
+
+      // Не дождались. Сказать «готово» значило бы обновить страницу прежним
+      // текстом и выдать его за новый.
+      throw new Error("Insight generation timed out");
     },
     onSuccess: (data) => {
       if (!data.ok) return;
