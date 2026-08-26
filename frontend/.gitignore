@@ -43,3 +43,7 @@ next-env.d.ts
 # them that day — a different React, a different Tailwind, a different set of
 # advisories than the one that was audited. pnpm-workspace.yaml was already
 # tracked despite being listed here, which is how the inconsistency showed.
+
+# Артефакты прогона в браузере — снимки, трассы, отчёт.
+test-results/
+playwright-report/

@@ -304,18 +304,27 @@ remaining surfaces.
       No coverage gate in CI: a threshold at 15% protects nothing, and a
       threshold that stops the build is a promise to keep raising it.
 
-- [ ] **The Playwright spec has never run, and its premise is gone.**
-      `frontend/tests/e2e/chat.spec.ts` exists; Playwright is not in
-      `package.json`, so `pnpm test:e2e` does not exist either. Its own header
-      says plan 08-06 would install it; 08-06 shipped and it never did. Worse,
-      the contract it documents starts "user logs in with seeded test
-      credentials" — password login was removed, identity comes from the engine
-      now, so the spec could not pass even with Playwright installed.
-      *Fix:* rewrite it around an engine session cookie and install Playwright,
-      or delete it. A test file nobody can run reads as coverage that is not
-      there, and this one also documents a login that no longer exists.
-      Note the route-protection half of what e2e was for is now covered by
-      `pnpm test:routes`, which needs no browser.
+- [x] **The Playwright spec has never run, and its premise is gone.** Rewritten
+      and turned on. It authenticates with a session cookie — `proxy.ts` checks
+      only that `aw_session` is present, since the value is opaque and the real
+      check runs on the backend at every data request — so no password login is
+      involved, which is what made the old spec unrunnable.
+
+      What it earns its keep for: jsdom cannot stream a response body, and the
+      bot's answer arrives over SSE in pieces that append into one bubble. Two
+      chunks, deliberately, so replacing rather than appending fails. Both
+      mutations — replace-instead-of-append, and ignore chunks entirely — kill
+      it. The engine and the backend are stubbed: with them this would be a
+      full-stack run costing real model calls per push, and it would no longer
+      be testing rendering.
+
+      A stub engine had to come with it. The dashboard shell asks the engine
+      for entitlements *server-side*, and `page.route` never sees those — they
+      leave Next, not the browser. It answers exactly the two paths the shell
+      reads and 404s everything else, so a third request cannot slip in unseen.
+
+      In CI after the build, chromium only. `tests/e2e` is no longer excluded
+      from `tsconfig`, so the spec is typechecked like everything else.
 
 - [ ] **No query plans measured.** `EXPLAIN ANALYZE` needs a database with real
       data and the stack was not running. Indexes exist on every tenant-scoped
