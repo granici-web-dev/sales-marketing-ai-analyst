@@ -3,7 +3,12 @@ from __future__ import annotations
 import asyncio
 
 from sqlalchemy import event
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import Session, with_loader_criteria
 
 from app.core.config import settings
@@ -11,7 +16,7 @@ from app.core.tenancy import get_current_tenant_id
 from app.db.base import TenantScopedMixin
 
 
-def _create_engine():
+def _create_engine() -> AsyncEngine:
     """Create a new SQLAlchemy async engine from settings.
 
     Extracted as a callable function so init_worker_process() can create
@@ -27,7 +32,7 @@ def _create_engine():
     )
 
 
-def _create_session_factory(eng):
+def _create_session_factory(eng: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     """Create a new async session factory bound to the given engine.
 
     Extracted as a callable function so init_worker_process() can rebind
@@ -96,13 +101,14 @@ def init_worker_process(**kwargs) -> None:  # type: ignore[no-untyped-def]
     signal in app/tasks/celery_app.py. It fires in each child after the
     prefork pool creates it.
 
-    Uses sys.modules[__name__] to reassign module-level attributes without
-    the `global` keyword — required for Python module attribute reassignment
-    from within a function scope.
+    Rebinds the module globals, so a caller that reaches
+    `session_mod.AsyncSessionLocal` at call time sees the post-fork factory.
+    A caller that did `from app.db.session import AsyncSessionLocal` keeps the
+    pre-fork object forever — that is a property of the import, not of how the
+    rebind is written.
     """
-    import sys
+    global engine, AsyncSessionLocal
 
-    mod = sys.modules[__name__]
-    asyncio.run(mod.engine.dispose())
-    mod.engine = _create_engine()
-    mod.AsyncSessionLocal = _create_session_factory(mod.engine)
+    asyncio.run(engine.dispose())
+    engine = _create_engine()
+    AsyncSessionLocal = _create_session_factory(engine)

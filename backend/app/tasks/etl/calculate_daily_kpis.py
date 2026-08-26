@@ -31,6 +31,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import structlog
+from celery import Task
 
 from app.tasks.celery_app import celery_app
 
@@ -67,7 +68,7 @@ logger = structlog.get_logger(__name__)
     name="tasks.etl.calculate_daily_kpis",
 )
 def calculate_daily_kpis(
-    self,
+    self: Task,
     tenant_id: str,
     calculation_date: str | None = None,
 ) -> dict:

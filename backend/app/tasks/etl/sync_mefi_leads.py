@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Iterable
 from datetime import UTC, date, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 import httpx
@@ -15,7 +17,7 @@ logger = structlog.get_logger(__name__)
 _LOCK_TTL = 36000  # 10 hours — covers worst-case full backfill runtime
 
 
-def get_cf(fields: object, field_id: int) -> object:
+def get_cf(fields: Iterable[Any] | None, field_id: int) -> Any:
     """Extract a custom field value by form-cf-ID from MEFI custom_fields.
 
     None-safe: returns None if fields is None, empty, or the field is absent.
@@ -24,7 +26,7 @@ def get_cf(fields: object, field_id: int) -> object:
     """
     if not fields:
         return None
-    for f in fields:  # type: ignore[union-attr]
+    for f in fields:
         if hasattr(f, "field_id"):
             # Pydantic MefiCustomField object — use attribute access
             if f.field_id == field_id:

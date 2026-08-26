@@ -76,7 +76,7 @@ class SalespersonKpiService:
         result = await self._session.execute(stmt)
         row = result.fetchone()
         if row and row[0] and "business_hours" in row[0]:
-            return row[0]["business_hours"]
+            return dict(row[0]["business_hours"])
         return dict(_DEFAULT_BH)
 
     def _compute_time_to_first_touch(

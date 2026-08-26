@@ -48,6 +48,7 @@ import json
 from collections.abc import AsyncIterator, Awaitable, Callable
 from decimal import Decimal
 from time import perf_counter
+from typing import Any
 from uuid import UUID, uuid4
 
 import structlog
@@ -56,6 +57,7 @@ import structlog
 # Phase 5 InsightService and Phase 8 title_generator). Instantiated INSIDE
 # `run_turn` per INFRA-05 fork safety (D-29) — NEVER at module level.
 from anthropic import AsyncAnthropic
+from anthropic.types import MessageParam, ToolResultBlockParam
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.chat.hallucination_guard import (
@@ -225,7 +227,10 @@ class ChatOrchestrator:
         except Exception:  # noqa: BLE001 — sanitize per T-08-03
             history = []
         # D-16: D-16 anchor + recent is built by load_history; we just append the new user message.
-        base_messages: list[dict] = list(history) + [{"role": "user", "content": user_text}]
+        base_messages: list[MessageParam] = [
+            *history,
+            {"role": "user", "content": user_text},
+        ]
         is_first_turn = len(history) == 0
 
         try:
@@ -329,7 +334,7 @@ class ChatOrchestrator:
                     )
 
                     # Emit tool_result events + audit row + extend conversation.
-                    tool_results_for_claude: list[dict] = []
+                    tool_results_for_claude: list[ToolResultBlockParam] = []
                     for block, result, is_error, duration_ms in results:
                         accumulated_tool_results.append(result)
                         try:
@@ -389,7 +394,8 @@ class ChatOrchestrator:
                 if guard_attempt < GUARD_RETRY_BUDGET:
                     # D-08: emit regenerate_notice + corrective user message.
                     yield ("regenerate_notice", {"reason": "hallucination_guard"})
-                    base_messages = list(history) + [
+                    base_messages = [
+                        *history,
                         {"role": "user", "content": user_text},
                         {
                             "role": "user",
@@ -565,7 +571,7 @@ def _compute_cost(total_usage: dict[str, int]) -> Decimal:
     return Decimal(str((input_tok / 1_000_000) * 3.0 + (output_tok / 1_000_000) * 15.0))
 
 
-def _to_jsonable(value: object) -> object:
+def _to_jsonable(value: object) -> Any:
     """Recursively coerce Decimals to str + UUIDs to str + dates to ISO for JSONB."""
     if isinstance(value, Decimal):
         return str(value)

@@ -84,9 +84,8 @@ class TestEngineReplacement:
     def test_rebinding_is_visible_to_other_modules(self) -> None:
         """The rebind must reach callers that resolve it through the module.
 
-        `init_worker_process` assigns via `sys.modules[__name__]` rather than
-        `global`. Code that did `from app.db.session import AsyncSessionLocal`
-        keeps the pre-fork object forever; code that reaches
+        Code that did `from app.db.session import AsyncSessionLocal` keeps the
+        pre-fork object forever; code that reaches
         `session_mod.AsyncSessionLocal` at call time sees the new one. This
         pins that the module attribute really moves — the chat orchestrator's
         detached title task depends on it.

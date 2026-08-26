@@ -33,6 +33,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 import structlog
+from celery import Task
 
 from app.tasks.celery_app import celery_app
 
@@ -46,7 +47,7 @@ logger = structlog.get_logger(__name__)
     default_retry_delay=60,
     name="tasks.etl.detect_anomalies",
 )
-def detect_anomalies(self, tenant_id: str) -> dict:
+def detect_anomalies(self: Task, tenant_id: str) -> dict:
     """Run anomaly detection rules for the given tenant.
 
     Third link in the PIPE-01 daily pipeline chain (D-15).

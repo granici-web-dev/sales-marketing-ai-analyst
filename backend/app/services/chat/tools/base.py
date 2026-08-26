@@ -25,18 +25,24 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# The tool's own input model. `Tool` is generic over it because a handler that
+# accepts `GetLeadsInput` is not a handler that accepts any `BaseModel`: callable
+# parameters are contravariant, so declaring the handler as taking `BaseModel`
+# claimed each handler could be called with some other tool's input.
+TInput = TypeVar("TInput", bound=BaseModel)
+
 # LM-3 handler signature: (tenant_id, session, validated_input) -> dict
-ToolHandler = Callable[[UUID, AsyncSession, BaseModel], Awaitable[dict]]
+ToolHandler = Callable[[UUID, AsyncSession, TInput], Awaitable[dict[str, Any]]]
 
 
 @dataclass(frozen=True)
-class Tool:
+class Tool(Generic[TInput]):
     """A single chat tool registered in ``TOOLS_REGISTRY``.
 
     Attributes:
@@ -53,5 +59,5 @@ class Tool:
 
     name: str
     definition: dict[str, Any]
-    input_schema: type[BaseModel]
-    handler: ToolHandler
+    input_schema: type[TInput]
+    handler: ToolHandler[TInput]

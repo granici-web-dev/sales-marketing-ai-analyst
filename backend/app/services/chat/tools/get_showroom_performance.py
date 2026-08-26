@@ -102,7 +102,9 @@ async def _handler(
     contracts_rows = (
         contracts_result.all() if hasattr(contracts_result, "all") else list(contracts_result)
     )
-    contracts_by_showroom: dict[str, int] = {
+    # A showroom with no name in the source data yields a None key; the code
+    # below looks it up the same way, so say so rather than claiming `str`.
+    contracts_by_showroom: dict[str | None, int] = {
         getattr(r, "showroom", None): int(getattr(r, "contracts", 0) or 0) for r in contracts_rows
     }
     leads_lookup = {getattr(r, "showroom", None): r for r in rows}

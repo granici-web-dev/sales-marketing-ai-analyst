@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import asyncio
 from calendar import monthrange
+from collections.abc import Iterable
 from datetime import UTC, date, datetime
+from typing import Any
 from uuid import UUID
 
 import structlog
@@ -12,7 +14,7 @@ from app.tasks.celery_app import celery_app
 logger = structlog.get_logger(__name__)
 
 
-def get_cf(fields: object, field_id: int) -> object:
+def get_cf(fields: Iterable[Any] | None, field_id: int) -> Any:
     """Extract a custom field value by form-cf-ID from MEFI custom_fields.
 
     None-safe: returns None if fields is None, empty, or the field is absent.
@@ -23,7 +25,7 @@ def get_cf(fields: object, field_id: int) -> object:
     """
     if not fields:
         return None
-    for f in fields:  # type: ignore[union-attr]
+    for f in fields:
         if hasattr(f, "field_id"):
             if f.field_id == field_id:
                 return f.value

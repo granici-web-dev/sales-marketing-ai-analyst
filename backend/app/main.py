@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import uuid as uuid_mod
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
 from structlog.contextvars import bind_contextvars, clear_contextvars
 
 from app.api.v1.router import api_router
@@ -16,7 +18,7 @@ logger = structlog.get_logger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # configure_logging only — set_tenant_id MUST NOT be called here.
     # ContextVars set in lifespan do not propagate to HTTP request coroutines;
     # each request runs in its own asyncio task with a fresh context copy (D-05).
@@ -57,10 +59,10 @@ class StructlogContextMiddleware:
     copy issues that would break bind_contextvars propagation (Pitfall #5).
     """
 
-    def __init__(self, app: object) -> None:
+    def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-    async def __call__(self, scope: dict, receive: object, send: object) -> None:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
             clear_contextvars()
             bind_contextvars(

@@ -20,6 +20,8 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from anthropic.types import TextBlockParam
+
 # ── Base system prompt (Romanian) — D-26 ──────────────────────────────────────
 # Inherits the structure of docs/CHAT.md §5 with Sofa Belle facts inlined.
 SYSTEM_PROMPT_TEXT = """Ești un asistent AI specializat în analiză de business pentru Sofa Belle — un retailer românesc de mobilă premium. Răspunzi DOAR în limba română, într-un stil direct, profesional și ușor de înțeles. Nu folosi jargon excesiv.
@@ -150,7 +152,7 @@ _RO_MONTHS = (
 )
 
 
-def _build_today_block(today: date | None = None) -> dict:
+def _build_today_block(today: date | None = None) -> TextBlockParam:
     # Appended AFTER the cache-control sentinel so the cached prefix is stable
     # across days. Without this, Claude doesn't know the current date and
     # mis-resolves "luna asta" / "săptămâna trecută" against its training cutoff,
@@ -173,7 +175,7 @@ def _build_today_block(today: date | None = None) -> dict:
     }
 
 
-def build_system_prompt(tenant_facts: dict | None = None) -> list[dict]:
+def build_system_prompt(tenant_facts: dict | None = None) -> list[TextBlockParam]:
     """Build the Claude system prompt as a list of cache-aware text blocks.
 
     D-27: returns a 2-element list:

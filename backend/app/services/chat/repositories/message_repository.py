@@ -13,8 +13,10 @@ T-08-01: cross-tenant write attempts raise ValueError before the SQL round-trip.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Literal, cast
 from uuid import UUID, uuid4
 
+from anthropic.types import MessageParam
 from sqlalchemy import asc, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -58,7 +60,7 @@ class MessageRepository:
             .values(last_message_at=datetime.now(UTC))
         )
         await self._session.execute(bump)
-        return new_id
+        return UUID(str(new_id))
 
     async def insert_assistant_message(
         self,
@@ -145,7 +147,7 @@ class MessageRepository:
         )
         await self._session.execute(conv_bump)
 
-    async def load_history(self, conversation_id: UUID, limit: int = 20) -> list[dict[str, str]]:
+    async def load_history(self, conversation_id: UUID, limit: int = 20) -> list[MessageParam]:
         """Load conversation history scoped to user+assistant messages (D-16).
 
         ANCHOR + RECENT strategy (D-16):
@@ -183,4 +185,9 @@ class MessageRepository:
             else:
                 keep = recent
 
-        return [{"role": r.role, "content": r.content or ""} for r in keep]
+        # `role` is a plain column; the API accepts only these two values and the
+        # insert paths write only these two.
+        return [
+            {"role": cast("Literal['user', 'assistant']", r.role), "content": r.content or ""}
+            for r in keep
+        ]

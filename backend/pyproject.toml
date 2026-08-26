@@ -43,6 +43,8 @@ dev = [
     # Configured in this file since the start and never declared as a dependency,
     # so CI would have had nothing to run.
     "ruff>=0.15,<1",
+    # Same story: `strict = true` was configured and mypy was absent.
+    "mypy>=2.3,<3",
 ]
 
 [tool.pytest.ini_options]
@@ -116,3 +118,28 @@ ignore = [
 [tool.mypy]
 python_version = "3.11"
 strict = true
+plugins = ["pydantic.mypy"]
+# Checked over `app` only. The test suite is not held to strict typing; the
+# application it exercises is.
+files = ["app"]
+
+# `strict = true` was declared here from the first commit and mypy was never
+# installed, so nothing checked the claim. First run: 212 errors across 56 of
+# 111 modules. They are now zero — the declaration is true. What follows is the
+# one blanket relaxation, plus the two library gaps that force it.
+
+# 138 of those 212 were bare `dict` / `list` annotations. That is a breadth of
+# annotation debt, not a correctness problem, and turning it on today would make
+# the gate red on arrival for no defect found. Left off deliberately, to be
+# turned on once the annotations are filled in.
+disallow_any_generics = false
+
+# celery and redbeat ship no type information, so `@celery_app.task` is an
+# untyped decorator and, under strict, every task it wraps becomes untyped too.
+[[tool.mypy.overrides]]
+module = ["celery.*", "redbeat.*", "celery_redbeat.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "app.tasks.*"
+disallow_untyped_decorators = false

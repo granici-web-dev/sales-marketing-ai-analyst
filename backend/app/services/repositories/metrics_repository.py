@@ -16,8 +16,10 @@ Phase 3 Plan 03 — repository layer for MetricsService writes.
 
 from __future__ import annotations
 
+from typing import Any, cast
 from uuid import UUID
 
+from sqlalchemy import CursorResult
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -101,7 +103,7 @@ class MetricsRepository:
             set_={col: stmt.excluded[col] for col in update_cols},
         )
         # WR-04 FIX: removed self._session.commit() — caller (task) commits atomically.
-        result = await self._session.execute(stmt)
+        result = cast("CursorResult[Any]", await self._session.execute(stmt))
         return result.rowcount
 
     async def upsert_salesperson_kpis(self, rows: list[dict]) -> int:
@@ -143,7 +145,7 @@ class MetricsRepository:
                 index_elements=["tenant_id", "salesperson_external_id", "date"],
                 set_={col: stmt.excluded[col] for col in update_cols},
             )
-            result = await self._session.execute(stmt)
+            result = cast("CursorResult[Any]", await self._session.execute(stmt))
             total += result.rowcount
         await self._session.commit()
         return total
@@ -178,7 +180,7 @@ class MetricsRepository:
             set_={col: stmt.excluded[col] for col in update_cols},
         )
         # WR-04 FIX: removed self._session.commit() — caller (task) commits atomically.
-        result = await self._session.execute(stmt)
+        result = cast("CursorResult[Any]", await self._session.execute(stmt))
         return result.rowcount
 
     async def upsert_source_kpis(self, rows: list[dict]) -> int:
@@ -218,7 +220,7 @@ class MetricsRepository:
                 index_elements=["tenant_id", "source", "date"],
                 set_={col: stmt.excluded[col] for col in update_cols},
             )
-            result = await self._session.execute(stmt)
+            result = cast("CursorResult[Any]", await self._session.execute(stmt))
             total += result.rowcount
         await self._session.commit()
         return total

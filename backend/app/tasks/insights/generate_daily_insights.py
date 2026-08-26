@@ -26,10 +26,11 @@ Security:
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from uuid import UUID
 
 import structlog
+from celery import Task
 
 from app.tasks.celery_app import celery_app
 
@@ -45,7 +46,7 @@ logger = structlog.get_logger(__name__)
     soft_time_limit=120,
     time_limit=180,
 )
-def generate_daily_insights(self, tenant_id: str, kpi_date_iso: str | None = None) -> dict:
+def generate_daily_insights(self: Task, tenant_id: str, kpi_date_iso: str | None = None) -> dict:
     """Generate AI insights for the given tenant.
 
     Fourth and final link in the PIPE-01 daily pipeline chain (D-17).
@@ -73,7 +74,7 @@ def generate_daily_insights(self, tenant_id: str, kpi_date_iso: str | None = Non
 
 async def _generate_async(
     tenant_id: str | UUID,
-    kpi_date: object = None,
+    kpi_date: date | None = None,
 ) -> dict:
     """Core generation coroutine — all DB/model imports deferred (INFRA-05, Pitfall 2).
 

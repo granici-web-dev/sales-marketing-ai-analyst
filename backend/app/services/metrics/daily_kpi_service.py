@@ -117,7 +117,7 @@ class DailyKpiService:
         result = await self._session.execute(stmt)
         row = result.fetchone()
         if row and row[0]:
-            return row[0]
+            return dict(row[0])
         return {}
 
     async def compute_for_date(self, kpi_date: date) -> dict:

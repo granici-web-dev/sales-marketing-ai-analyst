@@ -41,6 +41,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
@@ -381,7 +382,7 @@ async def send_message(
             )
 
     # ── 3. SSE event generator with heartbeat (Pitfall 1) ────────────────────
-    async def event_generator():
+    async def event_generator() -> AsyncIterator[str]:
         """Wrap the orchestrator's async generator with a 15s heartbeat.
 
         Pattern: producer task pushes (event_name, payload) onto an asyncio.Queue.

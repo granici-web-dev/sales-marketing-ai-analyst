@@ -24,7 +24,9 @@ contract (see ``tests/unit/chat/test_chat_tools_registry.py``).
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
+
+from anthropic.types import ToolParam
 
 from app.services.chat.tools.base import Tool
 
@@ -53,7 +55,9 @@ from app.services.chat.tools.get_stuck_leads import TOOL as _GET_STUCK_LEADS
 from app.services.chat.tools.get_trend import TOOL as _GET_TREND
 
 # Canonical name → Tool mapping (D-04). Final 12-tool registry per D-01 + D-02.
-TOOLS_REGISTRY: dict[str, Tool] = {
+# `Tool[Any]`: the registry is keyed by name and holds tools of differing
+# input models; each entry stays precise at its own definition site.
+TOOLS_REGISTRY: dict[str, Tool[Any]] = {
     # Task 1
     _GET_KPI.name: _GET_KPI,
     _GET_FUNNEL_DATA.name: _GET_FUNNEL_DATA,
@@ -72,7 +76,7 @@ TOOLS_REGISTRY: dict[str, Tool] = {
 }
 
 
-def get_all_tools() -> list[dict[str, Any]]:
+def get_all_tools() -> list[ToolParam]:
     """Return the list of Anthropic-formatted tool definitions.
 
     Each definition has keys ``{name, description, input_schema}`` where
@@ -80,7 +84,7 @@ def get_all_tools() -> list[dict[str, Any]]:
     ``model_json_schema()`` output) — not a BaseModel class. The orchestrator
     passes this list directly to ``messages.stream(tools=...)``.
     """
-    return [tool.definition for tool in TOOLS_REGISTRY.values()]
+    return [cast("ToolParam", tool.definition) for tool in TOOLS_REGISTRY.values()]
 
 
 __all__ = ["Tool", "TOOLS_REGISTRY", "get_all_tools"]

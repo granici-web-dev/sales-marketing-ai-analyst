@@ -15,6 +15,8 @@ from __future__ import annotations
 import json
 from decimal import Decimal
 
+from anthropic.types import TextBlockParam
+
 # ── System prompt string constant ────────────────────────────────────────────
 # All stable content goes here — changes here invalidate the cache (costs $3.75/MTok write).
 # Daily-varying data (KPI snapshot, detected_problems) stays in the USER message.
@@ -60,7 +62,7 @@ weekly_action_plan: 5-7 acțiuni prioritizate, concise, gata de copiat în Whats
 Zi cu zero anomalii detectate: generează raport pozitiv bazat pe metrici bune. Nu inventa probleme care nu există în datele de intrare."""
 
 
-def build_system_prompt() -> list[dict]:
+def build_system_prompt() -> list[TextBlockParam]:
     """Build the system prompt block list for Claude API with prompt caching.
 
     D-07: Returns 2-element list of text blocks.

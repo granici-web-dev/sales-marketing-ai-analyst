@@ -23,6 +23,7 @@ from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 
 import structlog
+from celery import Task
 
 from app.tasks.celery_app import celery_app
 
@@ -35,7 +36,7 @@ logger = structlog.get_logger(__name__)
     name="tasks.etl.backfill_daily_kpis",
 )
 def backfill_daily_kpis(
-    self,
+    self: Task,
     tenant_id: str,
     date_from: str,
     date_to: str,

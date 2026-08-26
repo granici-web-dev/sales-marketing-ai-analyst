@@ -39,10 +39,11 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 import structlog
-from sqlalchemy import text
+from sqlalchemy import Row, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
@@ -112,7 +113,7 @@ class SourceKpiService:
         result = await self._session.execute(stmt)
         row = result.fetchone()
         if row and row[0] and "source_categories" in row[0]:
-            return row[0]["source_categories"]
+            return dict(row[0]["source_categories"])
         # Fall back to Sofa Belle defaults (verified 2026-05-28 from raw_mefi_leads)
         return {
             "showroom": [5],
@@ -211,7 +212,7 @@ class SourceKpiService:
         db_rows = result.all()
 
         # Build lookup from DB results
-        db_lookup: dict[str, object] = {}
+        db_lookup: dict[str, Row[Any]] = {}
         for r in db_rows:
             db_lookup[r.source_category] = r
 
@@ -263,7 +264,7 @@ class SourceKpiService:
         )
 
         contracts_result = await self._session.execute(contracts_sql)
-        contracts_lookup: dict[str, object] = {}
+        contracts_lookup: dict[str, Row[Any]] = {}
         for r in contracts_result.all():
             contracts_lookup[r.source_category] = r
 
@@ -271,10 +272,10 @@ class SourceKpiService:
         # "showroom" leads are the visits metric: leads who walked into the showroom.
         output: list[dict] = []
         for category in CANONICAL_CATEGORIES:
-            r = db_lookup.get(category)
-            if r is not None:
-                leads = int(r.leads) if r.leads is not None else 0
-                offers = int(r.offers) if r.offers is not None else 0
+            row_for_category = db_lookup.get(category)
+            if row_for_category is not None:
+                leads = int(row_for_category.leads) if row_for_category.leads is not None else 0
+                offers = int(row_for_category.offers) if row_for_category.offers is not None else 0
             else:
                 leads = 0
                 offers = 0

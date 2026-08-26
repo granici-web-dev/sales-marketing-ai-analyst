@@ -15,6 +15,13 @@ T-05-03-04: MODEL constant is "claude-sonnet-4-5" — locked. Any change visible
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
+
+from anthropic.types import ToolParam
+
+if TYPE_CHECKING:  # annotation only — the runtime import stays deferred (INFRA-05)
+    from app.schemas.insights.daily_insight_schema import DailyInsightResponse
+
 import json
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -84,7 +91,7 @@ class InsightService:
         system_blocks = build_system_prompt()
         user_content = build_user_message(kpi_row, problems_rows)
 
-        tool_schema = {
+        tool_schema: ToolParam = {
             "name": "generate_daily_insight",
             "description": "Generează raportul zilnic de business în română pentru Sofa Belle.",
             "input_schema": DailyInsightResponse.model_json_schema(),
@@ -217,7 +224,7 @@ class InsightService:
 
         return cross_check(parsed, kpi_snapshot, problems_input)
 
-    def _build_fallback(self, problems_rows: list) -> object:
+    def _build_fallback(self, problems_rows: list[Any]) -> DailyInsightResponse:
         """D-14/D-15: construct DailyInsightResponse from detected_problems without Claude.
 
         Called when all Claude retries are exhausted.

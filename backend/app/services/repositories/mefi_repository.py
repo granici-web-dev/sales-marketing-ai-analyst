@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any, cast
 from uuid import UUID
 
-from sqlalchemy import func, insert, select
+from sqlalchemy import CursorResult, func, insert, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -80,7 +81,7 @@ class MefiRepository:
             index_elements=["tenant_id", "external_id"],
             set_={col: stmt.excluded[col] for col in update_cols},
         )
-        result = await self._session.execute(stmt)
+        result = cast("CursorResult[Any]", await self._session.execute(stmt))
         await self._session.commit()
         return result.rowcount
 
@@ -112,7 +113,7 @@ class MefiRepository:
             RawMefiLead.tenant_id == self._tenant_id,
             RawMefiLead.external_id.in_(external_ids),
         )
-        result = await self._session.execute(stmt)
+        result = cast("CursorResult[Any]", await self._session.execute(stmt))
         stored = {row.external_id: row for row in result}
 
         history_rows = []
@@ -218,7 +219,7 @@ class MefiRepository:
             .where(RawMefiLead.tenant_id == self._tenant_id)
         )
         result = await self._session.execute(stmt)
-        return result.scalar_one()
+        return int(result.scalar_one())
 
     async def get_last_sync_at(self) -> datetime | None:
         """Return completed_at of the most recent successful MEFI sync.
@@ -232,5 +233,5 @@ class MefiRepository:
             SyncRun.source == "mefi",
             SyncRun.status == "success",
         )
-        result = await self._session.execute(stmt)
+        result = cast("CursorResult[Any]", await self._session.execute(stmt))
         return result.scalar_one_or_none()
