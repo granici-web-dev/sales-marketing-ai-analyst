@@ -161,7 +161,12 @@
     "noInsight": "Analiză indisponibilă",
     "noInsightDesc": "Nu există o analiză generată pentru data selectată.",
     "datePicker": "Alege data",
-    "fallbackTitle": "Probleme detectate automat"
+    "fallbackTitle": "Probleme detectate automat",
+    "refreshFailed": "Nu am reușit să reîmprospătăm analiza. Textul de mai jos rămâne cel dinainte.",
+    "refreshTimedOut": "Generarea nu s-a încheiat în 90 de secunde. Textul de mai jos rămâne cel dinainte — încercați din nou mai târziu.",
+    "loadFailed": "A apărut o eroare la încărcarea analizei.",
+    "retry": "Încearcă din nou",
+    "today": "Astăzi"
   },
   "common": {
     "loading": "Se încarcă...",

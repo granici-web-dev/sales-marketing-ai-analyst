@@ -161,7 +161,12 @@
     "noInsight": "Insight unavailable",
     "noInsightDesc": "No insight has been generated for the selected date.",
     "datePicker": "Choose date",
-    "fallbackTitle": "Automatically detected issues"
+    "fallbackTitle": "Automatically detected issues",
+    "refreshFailed": "The analysis could not be refreshed. The text below is the previous one.",
+    "refreshTimedOut": "Generation did not finish within 90 seconds. The text below is the previous one — try again later.",
+    "loadFailed": "The analysis could not be loaded.",
+    "retry": "Try again",
+    "today": "Today"
   },
   "common": {
     "loading": "Loading...",

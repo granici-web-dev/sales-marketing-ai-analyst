@@ -57,6 +57,21 @@ export interface InsightEnvelope {
 
 // ─── Hooks ──────────────────────────────────────────────────────────────────
 
+/**
+ * Задача обновления не кончилась за отведённое время.
+ *
+ * Отдельным типом, а не текстом ошибки: страница показывает по нему свою
+ * фразу, и сверять её пришлось бы со строкой из нашего кода — по-английски
+ * и с риском разъехаться при первой же правке. Сообщение внутри остаётся
+ * для журнала, посетителю оно не показывается.
+ */
+export class InsightRefreshTimeout extends Error {
+  constructor() {
+    super("Insight generation timed out");
+    this.name = "InsightRefreshTimeout";
+  }
+}
+
 /** Опрос состояния задачи: тот же ритм, что у кнопки «Обновить данные». */
 const REFRESH_POLL_MS = 2000;
 const REFRESH_TIMEOUT_MS = 90_000;
@@ -157,7 +172,7 @@ export function useInsightsRefresh() {
 
       // Не дождались. Сказать «готово» значило бы обновить страницу прежним
       // текстом и выдать его за новый.
-      throw new Error("Insight generation timed out");
+      throw new InsightRefreshTimeout();
     },
     onSuccess: (data) => {
       if (!data.ok) return;

@@ -64,3 +64,35 @@ describe.each(["ro", "en"])("словарь %s", (locale) => {
     ).not.toBe(key);
   });
 });
+
+/**
+ * Наборы ключей в языках обязаны совпадать.
+ *
+ * Проверка выше идёт по каждому языку отдельно и о пропаже не знает: забыть
+ * ключ в en.json значило просто на один тест меньше, всё зелёное. А на экране
+ * это ключ вместо текста — next-intl не бросает, а возвращает сам путь.
+ */
+describe("языки не расходятся", () => {
+  const dicts = Object.fromEntries(
+    ["ro", "en"].map((locale) => [
+      locale,
+      new Set(
+        leaves(
+          JSON.parse(readFileSync(path.join(MESSAGES, `${locale}.json`), "utf8")),
+        ).map(([key]) => key),
+      ),
+    ]),
+  );
+
+  it("в английском есть всё, что в румынском", () => {
+    const missing = [...dicts.ro!].filter((k) => !dicts.en!.has(k)).sort();
+    expect(missing).toEqual([]);
+  });
+
+  it("в румынском есть всё, что в английском", () => {
+    // Румынский — язык клиента: лишний ключ здесь означает строку,
+    // которую написали только для нас и забыли перевести обратно.
+    const missing = [...dicts.en!].filter((k) => !dicts.ro!.has(k)).sort();
+    expect(missing).toEqual([]);
+  });
+});

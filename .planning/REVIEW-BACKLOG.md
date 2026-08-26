@@ -396,11 +396,23 @@ remaining surfaces.
       — the same shape as the refresh button, which is already tested. On
       timeout it throws rather than claiming success.
 
-- [ ] **The insights page never shows a failed refresh.** It reads `isPending`
-      and the rate-limit payload and nothing else, so a thrown error just stops
-      the spinner with no message. That was survivable while the mutation could
-      not fail in practice; now that a timeout throws, it is a visible gap.
-      Small: one `isError` branch beside the existing spinner.
+- [x] **The insights page never shows a failed refresh.** Done. The timeout is
+      its own error type rather than a string to match on, so the page can say
+      "generation did not finish, the text below is the previous one" — which is
+      the part that matters: the old narrative stays on screen either way, and
+      without a word it reads as fresh. Other failures get a different sentence;
+      neither shows the English message from our own code.
+
+      Three neighbouring strings were hardcoded Romanian in the same block
+      ("Astăzi", the load-error text and its retry button) — translated in the
+      same pass, since an English-locale reader was getting Romanian there.
+
+- [x] **A missing translation in one locale was not caught by anything.** The
+      ICU test iterates each dictionary on its own, so deleting a key from
+      `en.json` simply produced one test fewer and a green run. On screen that
+      is the key path rendered instead of the sentence — next-intl reports to
+      `onError` and returns the path rather than throwing. Two parity checks
+      added, both mutation-tested in each direction.
 
 ## Checked and clean
 

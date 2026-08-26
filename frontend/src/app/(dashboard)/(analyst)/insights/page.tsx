@@ -9,6 +9,7 @@ import {
   useInsightsToday,
   useInsightsByDate,
   useInsightsRefresh,
+  InsightRefreshTimeout,
 } from "@/hooks/useInsights";
 import { InsightSummary } from "@/components/dashboards/insights/insight-summary";
 import { ProblemCard } from "@/components/dashboards/insights/problem-card";
@@ -145,7 +146,7 @@ function InsightsPageContent() {
               className="min-h-11"
               onClick={() => setSelectedDate(null)}
             >
-              Astăzi
+              {t("today")}
             </Button>
           )}
           {/* INSI-03: Reîmprospătează button */}
@@ -167,6 +168,19 @@ function InsightsPageContent() {
         </div>
       </div>
 
+      {/* Провал обновления. До этого страница читала только isPending:
+          упавшая мутация просто гасила ожидание, и человек оставался
+          с прежним текстом, не зная, что обновление не состоялось.
+          Своя фраза, а не сообщение ошибки: там наша служебная строка
+          по-английски. */}
+      {refreshMutation.isError && (
+        <p role="alert" className="text-sm text-destructive">
+          {refreshMutation.error instanceof InsightRefreshTimeout
+            ? t("refreshTimedOut")
+            : t("refreshFailed")}
+        </p>
+      )}
+
       {/* ── Loading state ──────────────────────────────────────────────── */}
       {isLoading && (
         <div className="space-y-3">
@@ -180,11 +194,9 @@ function InsightsPageContent() {
       {/* ── Error state ────────────────────────────────────────────────── */}
       {!isLoading && isError && (
         <div className="flex flex-col items-center gap-2 py-8">
-          <p className="text-sm text-destructive">
-            A apărut o eroare la încărcarea analizei. Încearcă din nou.
-          </p>
+          <p className="text-sm text-destructive">{t("loadFailed")}</p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            Încearcă din nou
+            {t("retry")}
           </Button>
         </div>
       )}
