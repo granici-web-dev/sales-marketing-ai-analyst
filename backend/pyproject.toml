@@ -31,6 +31,9 @@ dev = [
     "factory-boy",
     "freezegun",
     "respx>=0.21,<1",
+    # Dependency audit. The frontend had 17 production advisories when it was
+    # first checked; the backend had never been checked at all.
+    "pip-audit",
 ]
 
 [tool.pytest.ini_options]
