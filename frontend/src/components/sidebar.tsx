@@ -16,6 +16,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Lock, CreditCard, Settings, LogIn } from "lucide-react";
 import { SignOutButton } from "@/components/portal/sign-out-button";
+import { ThemeSwitch } from "@/components/portal/theme-switch";
 import { isLocked, type NavAgent, type PortalNav } from "@/lib/portal-nav";
 
 export function isCurrent(pathname: string, href: string): boolean {
@@ -31,7 +32,14 @@ export function isCurrent(pathname: string, href: string): boolean {
  * Соответствие держится здесь, одной таблицей.
  */
 const AGENT_PATHS: Record<string, string[]> = {
-  "data-analyst": ["/marketing", "/sales", "/salespeople", "/insights", "/chat", "/integrations"],
+  "data-analyst": [
+    "/marketing",
+    "/sales",
+    "/salespeople",
+    "/insights",
+    "/chat",
+    "/integrations",
+  ],
 };
 
 export function agentOwns(agentId: string, pathname: string): boolean {
@@ -40,7 +48,13 @@ export function agentOwns(agentId: string, pathname: string): boolean {
   return isCurrent(pathname, `/agents/${agentId}`);
 }
 
-export function AgentLink({ agent, pathname }: { agent: NavAgent; pathname: string }) {
+export function AgentLink({
+  agent,
+  pathname,
+}: {
+  agent: NavAgent;
+  pathname: string;
+}) {
   const t = useTranslations("agents");
   const locked = isLocked(agent.access);
   const active = agentOwns(agent.id, pathname);
@@ -60,7 +74,9 @@ export function AgentLink({ agent, pathname }: { agent: NavAgent; pathname: stri
     >
       <span className="min-w-0 flex-1 truncate">{t(`names.${agent.id}`)}</span>
 
-      {locked && <Lock size={13} className="shrink-0 opacity-60" aria-hidden="true" />}
+      {locked && (
+        <Lock size={13} className="shrink-0 opacity-60" aria-hidden="true" />
+      )}
 
       {/* Срок называется в меню, а не только на странице: человек должен
           споткнуться о него по дороге, а не найти, когда уже отключилось. */}
@@ -74,7 +90,13 @@ export function AgentLink({ agent, pathname }: { agent: NavAgent; pathname: stri
   );
 }
 
-export function SidebarBody({ nav, onNavigate }: { nav: PortalNav; onNavigate?: () => void }) {
+export function SidebarBody({
+  nav,
+  onNavigate,
+}: {
+  nav: PortalNav;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
   const t = useTranslations("nav");
   const tAgents = useTranslations("agents");
@@ -106,7 +128,17 @@ export function SidebarBody({ nav, onNavigate }: { nav: PortalNav; onNavigate?: 
           label={t("subscription")}
           pathname={pathname}
         />
-        <SecondaryLink href="/settings" icon={Settings} label={t("settings")} pathname={pathname} />
+        <SecondaryLink
+          href="/settings"
+          icon={Settings}
+          label={t("settings")}
+          pathname={pathname}
+        />
+
+        {/* Ниже настроек: это свойство рабочего места, а не раздел кабинета. */}
+        <div className="px-2 pt-2">
+          <ThemeSwitch />
+        </div>
       </div>
 
       <div className="border-t px-4 py-3">
@@ -114,9 +146,13 @@ export function SidebarBody({ nav, onNavigate }: { nav: PortalNav; onNavigate?: 
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
               {nav.account.tenantName && (
-                <p className="truncate text-sm font-medium">{nav.account.tenantName}</p>
+                <p className="truncate text-sm font-medium">
+                  {nav.account.tenantName}
+                </p>
               )}
-              <p className="truncate text-xs text-muted-foreground">{nav.account.email}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {nav.account.email}
+              </p>
             </div>
             <SignOutButton />
           </div>
@@ -152,7 +188,9 @@ function SecondaryLink({
       aria-current={active ? "page" : undefined}
       className={[
         "flex items-center gap-2 rounded-control px-3 py-2 text-sm transition-colors",
-        active ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-muted",
+        active
+          ? "bg-primary/10 font-medium text-primary"
+          : "text-muted-foreground hover:bg-muted",
       ].join(" ")}
     >
       <Icon size={15} aria-hidden="true" />

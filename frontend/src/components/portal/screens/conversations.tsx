@@ -48,19 +48,50 @@ interface Detail {
   fieldLabels?: Record<string, string>;
 }
 
-const EMPTY = { from: "", to: "", q: "", locale: "", hasLead: false, hasGap: false };
+const EMPTY = {
+  from: "",
+  to: "",
+  q: "",
+  locale: "",
+  hasLead: false,
+  hasGap: false,
+};
 
 export function ConversationsScreen() {
   const t = useTranslations("agentScreens.conversationsScreen");
   const format = useFormatter();
   const [filters, setFilters] = useState(EMPTY);
   const [page, setPage] = useState(0);
-  const [data, setData] = useState<{ rows: Conv[]; total: number } | null>(null);
+  const [data, setData] = useState<{ rows: Conv[]; total: number } | null>(
+    null,
+  );
   const [error, setError] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const [locales, setLocales] = useState<string[]>([]);
 
-  const when = (iso: string) => format.dateTime(new Date(iso), { dateStyle: "short", timeStyle: "short" });
+  /**
+   * Ссылка из письма о заявке: `?conversation=<id>` открывает нужный разговор
+   * сразу. Без неё письмо — тупик: прочитал и всё равно иди ищи руками среди
+   * сотни переписок.
+   *
+   * Адрес читается один раз и тут же стирается. Иначе кнопка «назад к списку»
+   * возвращала бы в тот же разговор, из которого человек только что вышел, —
+   * та же причина, по которой так было сделано в панели движка.
+   *
+   * `window.location`, а не `useSearchParams`: тот требует границы Suspense
+   * вокруг всего экрана ради одного чтения при монтировании.
+   */
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const id = url.searchParams.get("conversation");
+    if (!id) return;
+    setOpen(id);
+    url.searchParams.delete("conversation");
+    window.history.replaceState(null, "", url.pathname + url.search);
+  }, []);
+
+  const when = (iso: string) =>
+    format.dateTime(new Date(iso), { dateStyle: "short", timeStyle: "short" });
 
   const params = useMemo(() => {
     const p = new URLSearchParams();
@@ -74,9 +105,10 @@ export function ConversationsScreen() {
   }, [filters]);
 
   useEffect(() => {
-    engineApi
-      .get<{ locales: string[] }>("appearance")
-      .then((a) => setLocales(a.locales), () => undefined);
+    engineApi.get<{ locales: string[] }>("appearance").then(
+      (a) => setLocales(a.locales),
+      () => undefined,
+    );
   }, []);
 
   // Запрос уходит на каждое нажатие клавиши, а отвечают они не по порядку:
@@ -105,7 +137,9 @@ export function ConversationsScreen() {
   }, [params, page]);
 
   if (open) {
-    return <ConversationDetail id={open} onBack={() => setOpen(null)} when={when} />;
+    return (
+      <ConversationDetail id={open} onBack={() => setOpen(null)} when={when} />
+    );
   }
 
   const set = (patch: Partial<typeof EMPTY>) => {
@@ -207,7 +241,9 @@ export function ConversationsScreen() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3">
-          <span className="text-sm text-muted-foreground">{t("downloadWhatYouSee")}</span>
+          <span className="text-sm text-muted-foreground">
+            {t("downloadWhatYouSee")}
+          </span>
           <a href={exportHref("conversation")} download>
             <Button variant="outline" size="sm">
               <Download size={14} className="mr-1.5" aria-hidden="true" />
@@ -221,7 +257,9 @@ export function ConversationsScreen() {
             </Button>
           </a>
         </div>
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{t("exportNote")}</p>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          {t("exportNote")}
+        </p>
       </section>
 
       <section className="rounded-card border bg-card">
@@ -240,7 +278,9 @@ export function ConversationsScreen() {
             {t("loading")}
           </p>
         ) : data.rows.length === 0 ? (
-          <p className="px-5 py-6 text-sm text-muted-foreground">{t("empty")}</p>
+          <p className="px-5 py-6 text-sm text-muted-foreground">
+            {t("empty")}
+          </p>
         ) : (
           <ul className="divide-y divide-border">
             {data.rows.map((c) => (
@@ -257,7 +297,9 @@ export function ConversationsScreen() {
                     {c.first_question ?? "—"}
                   </span>
                   {c.has_lead && <Badge variant="accent">{t("lead")}</Badge>}
-                  {c.gap_count > 0 && <Badge variant="warn">{c.gap_count}</Badge>}
+                  {c.gap_count > 0 && (
+                    <Badge variant="warn">{c.gap_count}</Badge>
+                  )}
                   <span className="w-10 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
                     {c.message_count}
                   </span>
@@ -270,11 +312,17 @@ export function ConversationsScreen() {
 
       {data && data.total > PER && (
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === 0}
+            onClick={() => setPage(page - 1)}
+          >
             {t("previous")}
           </Button>
           <span className="text-sm tabular-nums text-muted-foreground">
-            {page * PER + 1}–{Math.min((page + 1) * PER, data.total)} / {data.total}
+            {page * PER + 1}–{Math.min((page + 1) * PER, data.total)} /{" "}
+            {data.total}
           </span>
           <Button
             variant="outline"
@@ -310,13 +358,15 @@ function ConversationDetail({
   const [approved, setApproved] = useState<Set<number>>(new Set());
 
   const load = useCallback(() => {
-    engineApi.get<Detail>(`conversations/${id}`).then(setDetail, (err: Error) => {
-      if (err instanceof EngineUnauthorized) {
-        location.reload();
-        return;
-      }
-      setError(err.message);
-    });
+    engineApi
+      .get<Detail>(`conversations/${id}`)
+      .then(setDetail, (err: Error) => {
+        if (err instanceof EngineUnauthorized) {
+          location.reload();
+          return;
+        }
+        setError(err.message);
+      });
   }, [id]);
 
   useEffect(() => load(), [load]);
@@ -325,7 +375,11 @@ function ConversationDetail({
     setBusy(true);
     setSaveError("");
     try {
-      await engineApi.send("approved", "POST", { question: ask, answer: draft, conversationId: id });
+      await engineApi.send("approved", "POST", {
+        question: ask,
+        answer: draft,
+        conversationId: id,
+      });
       setApproved(new Set(approved).add(index));
       setEditing(null);
     } catch (err) {
@@ -365,13 +419,17 @@ function ConversationDetail({
                 <dl className="mt-3 space-y-1.5 text-sm">
                   {Object.entries(detail.lead.payload).map(([k, v]) => (
                     <div key={k} className="flex justify-between gap-4">
-                      <dt className="text-muted-foreground">{detail.fieldLabels?.[k] ?? k}</dt>
+                      <dt className="text-muted-foreground">
+                        {detail.fieldLabels?.[k] ?? k}
+                      </dt>
                       <dd className="text-right">{v}</dd>
                     </div>
                   ))}
                 </dl>
               ) : (
-                <p className="mt-2 text-sm text-muted-foreground">{t("contactOnly")}</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {t("contactOnly")}
+                </p>
               )}
             </section>
           )}
@@ -403,10 +461,20 @@ function ConversationDetail({
                 const editable = turn.role !== "user" && asked !== "";
 
                 return (
-                  <div key={i} className="border-l-2 pl-4" style={{ borderColor: turn.role === "user" ? "var(--border)" : "var(--primary)" }}>
+                  <div
+                    key={i}
+                    className="border-l-2 pl-4"
+                    style={{
+                      borderColor:
+                        turn.role === "user"
+                          ? "var(--border)"
+                          : "var(--primary)",
+                    }}
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs text-muted-foreground">
-                        {turn.role === "user" ? t("visitor") : t("bot")} · {when(turn.created_at)}
+                        {turn.role === "user" ? t("visitor") : t("bot")} ·{" "}
+                        {when(turn.created_at)}
                         {turn.tool_calls ? ` · ${t("usedTool")}` : ""}
                       </span>
                       {editable &&
@@ -435,7 +503,9 @@ function ConversationDetail({
                             спросить «а в Клуж?» — утверждать ответ на такую
                             формулировку бессмысленно, по ней ничего не найдётся. */}
                         <div className="space-y-1.5">
-                          <Label htmlFor={`ask-${i}`}>{t("questionAnswered")}</Label>
+                          <Label htmlFor={`ask-${i}`}>
+                            {t("questionAnswered")}
+                          </Label>
                           <Input
                             id={`ask-${i}`}
                             value={ask}
@@ -443,7 +513,9 @@ function ConversationDetail({
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label htmlFor={`ans-${i}`}>{t("answerApproved")}</Label>
+                          <Label htmlFor={`ans-${i}`}>
+                            {t("answerApproved")}
+                          </Label>
                           <Textarea
                             id={`ans-${i}`}
                             rows={5}
@@ -466,11 +538,19 @@ function ConversationDetail({
                             onClick={() => void approve(i)}
                           >
                             {busy && (
-                              <Loader2 size={13} className="mr-1.5 animate-spin" aria-hidden="true" />
+                              <Loader2
+                                size={13}
+                                className="mr-1.5 animate-spin"
+                                aria-hidden="true"
+                              />
                             )}
                             {t("approve")}
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditing(null)}
+                          >
                             {t("cancel")}
                           </Button>
                         </div>

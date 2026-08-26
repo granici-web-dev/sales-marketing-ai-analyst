@@ -616,5 +616,11 @@
     "earlyAccessSubject": "Early access {plan}",
     "requestSent": "The request was sent",
     "setupFee": "{plan}: the initial setup costs {fee} € — once. It covers the catalogue, the price formula, your quote form and publishing on the site. We invoice it separately, after we agree together what needs doing."
+  },
+  "theme": {
+    "label": "Panel theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
   }
 }

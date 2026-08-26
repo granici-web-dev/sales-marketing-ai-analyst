@@ -616,5 +616,11 @@
     "earlyAccessSubject": "Acces anticipat {plan}",
     "requestSent": "Cererea a fost trimisă",
     "setupFee": "{plan}: configurarea inițială costă {fee} € — o singură dată. Include catalogul, formula de preț, formularul dumneavoastră de ofertă și publicarea pe site. O facturăm separat, după ce stabilim împreună ce este de făcut."
+  },
+  "theme": {
+    "label": "Tema panoului",
+    "system": "Sistem",
+    "light": "Deschis",
+    "dark": "Întunecat"
   }
 }

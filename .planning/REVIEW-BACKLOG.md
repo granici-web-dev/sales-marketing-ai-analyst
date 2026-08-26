@@ -136,6 +136,13 @@ Nothing here is speculative — every claim was measured against the code.
       went with it — that module was never written and never will be, because
       password login is gone.
 
+- [x] **Theme switch.** Three states, not two: "as the system does" is a choice
+      too, and it is the default. Remembered in the browser, not the database —
+      it is a property of the desk, not the account. Applied before first paint
+      by an inline script, or a dark-theme user gets a flash of light on every
+      navigation. It came across from the engine panel, which had it; deleting
+      the panel without it would have taken a working thing away.
+
 - [x] **CI exists.** `.github/workflows/ci.yml`, two jobs. Backend: ruff,
       `ruff format --check`, mypy, `alembic upgrade head`, pytest against a
       postgres and a redis service. Frontend: eslint, tsc, vitest, `next build`,
@@ -255,10 +262,6 @@ remaining surfaces.
       *Fix:* the same substitution done on insights — semantic tokens for meaning
       (`--ok`, `--warn`, `--danger`), `--muted-fg` for chart furniture, `--accent`
       for the series. Recharts takes CSS variables through `stroke` and `fill`.
-
-- [ ] **No theme switch in the analyst.** The tokens carry all three states —
-      system, explicit light, explicit dark — and nothing lets a person choose.
-      The portal has the control; copy it rather than inventing a second one.
 
 - [ ] **Card radius and shadow are now tokens; other primitives are not.**
       `card.tsx` uses `rounded-card` / `shadow-card`. Buttons, inputs, selects
