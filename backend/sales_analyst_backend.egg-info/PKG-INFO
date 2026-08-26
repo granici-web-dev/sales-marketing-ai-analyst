@@ -1,0 +1,33 @@
+Metadata-Version: 2.4
+Name: sales-analyst-backend
+Version: 0.1.0
+Summary: Sales & Marketing AI Analyst backend
+Requires-Python: >=3.11
+Requires-Dist: fastapi<1,>=0.111
+Requires-Dist: starlette<2,>=1.3.1
+Requires-Dist: uvicorn[standard]<1,>=0.29
+Requires-Dist: sqlalchemy[asyncio]<3,>=2.0
+Requires-Dist: asyncpg<1,>=0.29
+Requires-Dist: alembic<2,>=1.13
+Requires-Dist: pydantic[email]<3,>=2.7
+Requires-Dist: pydantic-settings<3,>=2.3
+Requires-Dist: pyjwt<3,>=2.8
+Requires-Dist: bcrypt>=4.0
+Requires-Dist: structlog<26,>=24
+Requires-Dist: celery[redis]<6,>=5.4
+Requires-Dist: celery-redbeat<3,>=2.2
+Requires-Dist: redis<6.5,>=5
+Requires-Dist: httpx<1,>=0.27
+Requires-Dist: python-multipart<1,>=0.0.9
+Requires-Dist: anthropic<1,>=0.30
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-asyncio<2,>=0.26; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+Requires-Dist: httpx; extra == "dev"
+Requires-Dist: factory-boy; extra == "dev"
+Requires-Dist: freezegun; extra == "dev"
+Requires-Dist: respx<1,>=0.21; extra == "dev"
+Requires-Dist: pip-audit; extra == "dev"
+Requires-Dist: ruff<1,>=0.15; extra == "dev"
+Requires-Dist: mypy<3,>=2.3; extra == "dev"

@@ -36,16 +36,26 @@ class TestTitleGenerator:
         from app.services.chat.title_generator import _pending, schedule_title_generation
 
         cb = AsyncMock()
-        # Patch _generate to avoid real Anthropic call
+        # `_pending` живёт на уровне модуля и переживает тест. Сливать его
+        # целиком нельзя: там могут лежать задачи предыдущих тестов, созданные
+        # на уже закрытых циклах событий, и `gather` падает на чужой задаче,
+        # а не на своей. Берём разницу — то, что добавил именно этот вызов.
+        before = set(_pending)
         with patch("app.services.chat.title_generator._generate", new=AsyncMock()):
             schedule_title_generation(CONV_ID, "Test user msg", "Test assistant msg", cb)
-            # Task should be in _pending (until it completes)
-            # Snapshot pending IDs before yielding control
-            snapshot = list(_pending)
-            assert len(snapshot) >= 1
-            # Drain
-            await asyncio.gather(*snapshot, return_exceptions=True)
-        # After completion the discard callback removes the task.
+
+            scheduled = set(_pending) - before
+            assert len(scheduled) == 1, (
+                "schedule_title_generation обязан удержать ссылку на задачу "
+                "в _pending, иначе сборщик мусора вправе её выбросить (LM-8)"
+            )
+            await asyncio.gather(*scheduled, return_exceptions=True)
+
+        # Обратный вызов на завершении убирает задачу из множества.
+        assert set(_pending) - before == set(), (
+            "задача обязана покинуть _pending после завершения — иначе множество "
+            "растёт на каждый разговор и течёт"
+        )
 
     @pytest.mark.asyncio
     async def test_tg2_falls_back_from_haiku_to_sonnet(self) -> None:

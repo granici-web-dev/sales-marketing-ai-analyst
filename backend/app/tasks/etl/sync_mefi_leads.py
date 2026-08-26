@@ -7,9 +7,9 @@ from typing import Any
 from uuid import UUID
 
 import httpx
-import redis.asyncio as aioredis
 import structlog
 
+from app.core.redis import redis_client
 from app.tasks.celery_app import celery_app
 
 logger = structlog.get_logger(__name__)
@@ -105,7 +105,7 @@ async def _sync_async(tenant_id: UUID) -> dict:
 
     # ── Step 1: Acquire Redis lock (T-02-09) ─────────────────────────────────
     lock_key = f"sync:mefi:{tenant_id}"
-    redis = aioredis.from_url(settings.redis_url, decode_responses=True)
+    redis = redis_client()
     try:
         acquired = await redis.set(lock_key, "1", nx=True, ex=_LOCK_TTL)
     except Exception:

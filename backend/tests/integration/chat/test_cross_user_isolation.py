@@ -176,7 +176,7 @@ async def test_cross_user_post_returns_404() -> None:
 
     Critical secondary assertion: the 404 MUST fire BEFORE the Redis
     rate-limit INCR + stream-lock SET NX. We verify this by patching
-    aioredis.from_url with a mock that would track its own usage — when
+    redis_client with a mock that would track its own usage — when
     the 404 fires correctly, the Redis context manager is never entered,
     so incr / set are never called. This prevents a probing attacker from
     burning the legitimate owner's 30/hour rate-limit budget.
@@ -218,7 +218,7 @@ async def test_cross_user_post_returns_404() -> None:
 
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-            with patch("app.api.v1.chat.aioredis.from_url", redis_from_url):
+            with patch("app.api.v1.chat.redis_client", redis_from_url):
                 with patch("app.api.v1.chat.ChatOrchestrator", orch_factory):
                     async with AsyncClient(
                         transport=ASGITransport(app=app), base_url="http://test"
@@ -232,7 +232,7 @@ async def test_cross_user_post_returns_404() -> None:
         )
         assert r.json()["detail"] == "Conversația nu există."
         # CR-01 ordering invariant: rate-limit + stream-lock are NOT consumed
-        # by a cross-user probe. If `aioredis.from_url` was called, the
+        # by a cross-user probe. If `redis_client` was called, the
         # 404 fired AFTER the rate-limit INCR — that's a CR-01 violation.
         redis_from_url.assert_not_called()
         # Orchestrator must also NOT have been instantiated.

@@ -61,10 +61,16 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: backend/pyproject.toml
+          cache-dependency-path: backend/requirements.lock
 
       - name: Установить зависимости
-        run: pip install -e ".[dev]"
+        # Из замка́, а не из диапазонов: диапазоны говорят, что допустимо,
+        # замо́к — что проверено. Первый прогон этого гейта поставил redis 5.3.1
+        # и pytest-asyncio 0.26 там, где на машине разработчика стояли 7.4.0
+        # и 1.2.0, и упал на том, что локально никогда не падало.
+        run: |
+          pip install -r requirements.lock
+          pip install -e . --no-deps
 
       - name: Линтер
         run: ruff check .

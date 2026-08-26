@@ -371,7 +371,7 @@ async def test_send_message_sse_basic_turn() -> None:
 
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-            with patch("app.api.v1.chat.aioredis.from_url", return_value=redis_ctx):
+            with patch("app.api.v1.chat.redis_client", return_value=redis_ctx):
                 with patch("app.api.v1.chat.ChatOrchestrator", return_value=orch):
                     async with AsyncClient(
                         transport=ASGITransport(app=app), base_url="http://test"
@@ -429,7 +429,7 @@ async def test_send_message_sse_multi_tool() -> None:
 
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-            with patch("app.api.v1.chat.aioredis.from_url", return_value=redis_ctx):
+            with patch("app.api.v1.chat.redis_client", return_value=redis_ctx):
                 with patch("app.api.v1.chat.ChatOrchestrator", return_value=orch):
                     async with AsyncClient(
                         transport=ASGITransport(app=app), base_url="http://test"
@@ -480,7 +480,7 @@ async def test_rate_limit_429() -> None:
 
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-            with patch("app.api.v1.chat.aioredis.from_url", return_value=redis_ctx):
+            with patch("app.api.v1.chat.redis_client", return_value=redis_ctx):
                 async with AsyncClient(
                     transport=ASGITransport(app=app), base_url="http://test"
                 ) as c:
@@ -523,7 +523,7 @@ async def test_concurrent_stream_409() -> None:
 
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-            with patch("app.api.v1.chat.aioredis.from_url", return_value=redis_ctx):
+            with patch("app.api.v1.chat.redis_client", return_value=redis_ctx):
                 async with AsyncClient(
                     transport=ASGITransport(app=app), base_url="http://test"
                 ) as c:

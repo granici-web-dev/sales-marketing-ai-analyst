@@ -58,7 +58,7 @@ async def test_refresh_rate_limit_first_call_enqueues() -> None:
     mock_response = MagicMock()
 
     with (
-        patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx),
+        patch("app.api.v1.insights.redis_client", return_value=mock_redis_ctx),
         patch(
             "app.tasks.insights.generate_daily_insights.generate_daily_insights",
             mock_generate,
@@ -104,7 +104,7 @@ async def test_refresh_rate_limit_second_call_returns_429() -> None:
 
     mock_response = MagicMock()
 
-    with patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx):
+    with patch("app.api.v1.insights.redis_client", return_value=mock_redis_ctx):
         with pytest.raises(HTTPException) as exc_info:
             await refresh_insights(
                 response=mock_response,

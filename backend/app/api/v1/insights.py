@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime
 
-import redis.asyncio as aioredis
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.dependencies import get_current_user
+from app.core.redis import redis_client
 from app.core.tenancy import require_tenant_id
 from app.db.deps import get_session
 from app.schemas.auth import UserOut
@@ -75,7 +74,7 @@ async def refresh_insights(
     date_key = target_date.isoformat() if target_date is not None else "default"
     rate_key = f"rate_limit:refresh:{current_user.id}:{date_key}"
 
-    async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:
+    async with redis_client() as r:
         was_set = await r.set(rate_key, "1", nx=True, ex=RATE_LIMIT_TTL)
         if not was_set:
             ttl = await r.ttl(rate_key)

@@ -46,7 +46,6 @@ from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
-import redis.asyncio as aioredis
 import structlog
 
 # Module-level import of AsyncAnthropic for LM-1 testability (Phase 5 pattern).
@@ -62,6 +61,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.dependencies import get_current_user
+from app.core.redis import redis_client
 from app.core.tenancy import require_tenant_id
 from app.db.deps import get_session
 from app.schemas.auth import UserOut
@@ -348,7 +348,7 @@ async def send_message(
     rate_key = f"chat:rate:{current_user.id}:{hour_bucket}"
     lock_key = f"chat:stream:{conversation_id}"
 
-    async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:
+    async with redis_client() as r:
         # ── 1. Stream-lock (D-11) — BEFORE the rate-limit counter (CR-02) ────
         # Order matters. A 409 means "your previous message is still being
         # answered", which is the normal outcome of a double-tap or a flaky
@@ -463,7 +463,7 @@ async def send_message(
             # Release the stream-lock in Redis. Best-effort: failures here are
             # logged but do not propagate (the lock TTL acts as a safety net).
             try:
-                async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:
+                async with redis_client() as r:
                     await r.delete(lock_key)
             except Exception:
                 logger.exception(

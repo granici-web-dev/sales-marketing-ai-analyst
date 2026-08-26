@@ -319,7 +319,7 @@ async def test_sc5_refresh_first_call_202(override_deps) -> None:
     mock_redis_ctx.__aexit__ = AsyncMock(return_value=None)
 
     with (
-        patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx),
+        patch("app.api.v1.insights.redis_client", return_value=mock_redis_ctx),
         patch(
             "app.tasks.insights.generate_daily_insights.generate_daily_insights",
             mock_generate,
@@ -353,7 +353,7 @@ async def test_sc5_refresh_second_call_429(override_deps) -> None:
     mock_redis_ctx.__aenter__ = AsyncMock(return_value=mock_r)
     mock_redis_ctx.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx):
+    with patch("app.api.v1.insights.redis_client", return_value=mock_redis_ctx):
         async with AsyncClient(
             transport=ASGITransport(app=app),
             base_url="http://test",

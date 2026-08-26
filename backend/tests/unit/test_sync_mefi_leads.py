@@ -73,7 +73,7 @@ class TestRedisLock:
         mock_engine = AsyncMock()
         mock_engine.dispose = AsyncMock()
         with (
-            patch("app.tasks.etl.sync_mefi_leads.aioredis") as mock_aioredis,
+            patch("app.tasks.etl.sync_mefi_leads.redis_client") as mock_redis_client,
             patch("app.core.tenancy.set_tenant_id"),
             patch("app.core.config.settings") as mock_settings,
             patch("sqlalchemy.ext.asyncio.create_async_engine", return_value=mock_engine),
@@ -82,7 +82,7 @@ class TestRedisLock:
             mock_settings.database_url = "postgresql+asyncpg://test:test@localhost/test"
             mock_settings.mefi_api_key = "lrd_test"
             mock_settings.sofa_belle_tenant_id = str(tenant_id)
-            mock_aioredis.from_url = MagicMock(return_value=mock_redis)
+            mock_redis_client.return_value = mock_redis
 
             result = await _sync_async(tenant_id)
 
@@ -105,7 +105,7 @@ class TestRedisLock:
         mock_engine = AsyncMock()
         mock_engine.dispose = AsyncMock()
         with (
-            patch("app.tasks.etl.sync_mefi_leads.aioredis") as mock_aioredis,
+            patch("app.tasks.etl.sync_mefi_leads.redis_client") as mock_redis_client,
             patch("app.core.tenancy.set_tenant_id"),
             patch("app.core.config.settings") as mock_settings,
             patch("sqlalchemy.ext.asyncio.create_async_engine", return_value=mock_engine),
@@ -113,7 +113,7 @@ class TestRedisLock:
             mock_settings.redis_url = "redis://localhost"
             mock_settings.database_url = "postgresql+asyncpg://test:test@localhost/test"
             mock_settings.mefi_api_key = "lrd_test"
-            mock_aioredis.from_url = MagicMock(return_value=mock_redis)
+            mock_redis_client.return_value = mock_redis
 
             await _sync_async(tenant_id)
 

@@ -40,6 +40,7 @@ import redis.asyncio as aioredis
 import structlog
 
 from app.core.config import settings
+from app.core.redis import redis_client
 
 logger = structlog.get_logger(__name__)
 
@@ -127,7 +128,7 @@ async def resolve(token: str) -> EngineIdentity | None:
     if not settings.engine_base_url:
         return None
 
-    async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:
+    async with redis_client() as r:
         cached = await _from_cache(r, token)
         if cached is not None:
             return cached

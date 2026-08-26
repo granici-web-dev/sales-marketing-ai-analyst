@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-import redis.asyncio as aioredis
 import structlog
 from celery.result import AsyncResult
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from app.core.config import settings
 from app.core.dependencies import get_current_user
+from app.core.redis import redis_client
 from app.core.tenancy import require_tenant_id
 from app.schemas.auth import UserOut
 
@@ -46,7 +45,7 @@ async def trigger_sync(
     tenant_id_str = str(require_tenant_id())
     rate_key = f"rate_limit:sync_trigger:{tenant_id_str}"
 
-    async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:
+    async with redis_client() as r:
         was_set = await r.set(rate_key, "1", nx=True, ex=RATE_LIMIT_TTL)
         if not was_set:
             ttl = await r.ttl(rate_key)

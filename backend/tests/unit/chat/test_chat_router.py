@@ -133,7 +133,7 @@ def _make_redis_mock(
     *, incr_return=1, set_nx_return=True, ttl_return=3600
 ) -> tuple[AsyncMock, AsyncMock]:
     """Build (redis_ctx, redis_client) mocks that emulate the
-    `async with aioredis.from_url(...) as r:` pattern."""
+    `async with redis_client() as r:` pattern."""
     r = AsyncMock()
     r.incr = AsyncMock(return_value=incr_return)
     r.expire = AsyncMock(return_value=True)
@@ -177,7 +177,7 @@ async def test_r5_post_messages_returns_429_when_rate_limit_exceeded() -> None:
     conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=uuid4()))
 
     with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-        with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
+        with patch("app.api.v1.chat.redis_client", return_value=ctx):
             with pytest.raises(HTTPException) as exc_info:
                 await send_message(
                     conversation_id=uuid4(),
@@ -221,7 +221,7 @@ async def test_r6_post_messages_returns_409_when_stream_lock_held() -> None:
     conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=uuid4()))
 
     with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-        with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
+        with patch("app.api.v1.chat.redis_client", return_value=ctx):
             with pytest.raises(HTTPException) as exc_info:
                 await send_message(
                     conversation_id=uuid4(),
@@ -494,7 +494,7 @@ async def test_r12_sse_endpoint_sets_text_event_stream_and_x_accel_buffering() -
     conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=uuid4()))
 
     with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-        with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
+        with patch("app.api.v1.chat.redis_client", return_value=ctx):
             with patch("app.api.v1.chat.ChatOrchestrator", return_value=fake_orch):
                 response = await send_message(
                     conversation_id=uuid4(),
@@ -541,7 +541,7 @@ async def test_r13_cr02_stream_lock_conflict_does_not_burn_rate_limit() -> None:
     conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=uuid4()))
 
     with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-        with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
+        with patch("app.api.v1.chat.redis_client", return_value=ctx):
             with pytest.raises(HTTPException) as exc_info:
                 await send_message(
                     conversation_id=uuid4(),
@@ -581,7 +581,7 @@ async def test_r14_cr02_rate_limited_request_releases_the_stream_lock() -> None:
     conv_repo.get_by_id = AsyncMock(return_value=MagicMock(id=conversation_id))
 
     with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-        with patch("app.api.v1.chat.aioredis.from_url", return_value=ctx):
+        with patch("app.api.v1.chat.redis_client", return_value=ctx):
             with pytest.raises(HTTPException) as exc_info:
                 await send_message(
                     conversation_id=conversation_id,
