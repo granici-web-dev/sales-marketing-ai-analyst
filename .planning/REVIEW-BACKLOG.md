@@ -220,11 +220,12 @@ Done. All four, plus what the work uncovered — see *Done* above for the detail
       honoured), so this costs time and log noise rather than availability.
       *Fix:* raise to 1.2 s.
 
-- [ ] **Eight transitive advisories remain**, all through `next` itself:
-      `postcss@8.4.31` (4), `nanoid` (2), `sharp` (1), `@babel/core` (1). Forcing
-      them means `pnpm overrides` against versions next pins for itself, one of
-      which is a native image library.
-      *Decision needed:* override, or wait for the next Next release.
+- [x] **Eight transitive advisories remain**, all through `next` itself. Closed
+      by waiting rather than overriding, which was the right half of the choice:
+      `next` 16.2.11 → 16.3.1 stopped pinning `postcss@8.4.31` and `sharp@0.34.5`
+      for itself. Production tree is now `postcss@8.5.23`, `nanoid@3.3.18`,
+      `sharp@0.35.3` — trivy reports zero HIGH/CRITICAL. One LOW remains in
+      `@babel/core`, below the gate.
 
 - [ ] **Two public methods exist only as aliases.**
       `compute_source_kpis` and `compute_salesperson_kpis` each consist of one
@@ -239,7 +240,7 @@ Done. All four, plus what the work uncovered — see *Done* above for the detail
       (`core ⇄ db`, package level only, no runtime effect).
       *Fix:* move it under `api/`. Small, and it makes the graph acyclic.
 
-- [ ] **12 unused imports** in `app/`. `ruff check --fix` clears them.
+- [x] **12 unused imports** in `app/`. Gone with the linter pass; `ruff check --select F401` is clean.
 
 - [ ] **`_rate` is duplicated** across `daily_kpi_service` and
       `salesperson_kpi_service`. Two copies of division-with-a-zero-guard. Rule
