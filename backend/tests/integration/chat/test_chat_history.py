@@ -32,6 +32,7 @@ MOCK_USER_ID = UUID("00000000-0000-0000-0000-000000000010")
 def _override_app_dependencies():
     """Install standard dependency overrides for chat history integration tests."""
     from app.core.dependencies import get_current_user
+    from app.core.tenancy import set_tenant_id
     from app.db.deps import get_session
     from app.main import app
     from app.schemas.auth import UserOut
@@ -41,6 +42,8 @@ def _override_app_dependencies():
     session.commit = AsyncMock()
 
     async def _mock_current_user():
+        # The real dependency also puts the tenant into the request context.
+        set_tenant_id(MOCK_TENANT_ID)
         return mock_user
 
     async def _mock_get_session():

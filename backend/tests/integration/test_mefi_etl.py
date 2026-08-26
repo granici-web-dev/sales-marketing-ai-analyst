@@ -26,15 +26,22 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 async def test_engine():
-    """Create a test engine and run alembic migrations."""
+    """A fresh engine per test, on that test's own event loop.
+
+    Module scope does not work here: pytest-asyncio runs each async test in a
+    new loop, so a connection opened by the first test is attached to a loop
+    that is closed by the time the second one borrows it. NullPool keeps
+    nothing between tests.
+    """
     if not _TEST_DB_URL:
         pytest.skip("TEST_DATABASE_URL not set")
 
     from sqlalchemy.ext.asyncio import create_async_engine
+    from sqlalchemy.pool import NullPool
 
-    engine = create_async_engine(_TEST_DB_URL, echo=False)
+    engine = create_async_engine(_TEST_DB_URL, echo=False, poolclass=NullPool)
     yield engine
     await engine.dispose()
 
@@ -132,6 +139,10 @@ async def test_funnel_config_seeded(test_engine) -> None:
 
     assert len(rows) == 1, "Sofa Belle tenant funnel_config not seeded by migration 003"
     config = rows[0][0]
-    assert "visit" in config, "funnel_config missing 'visit' stage"
-    assert "offer" in config, "funnel_config missing 'offer' stage"
-    assert "contract" in config, "funnel_config missing 'contract' stage"
+    # The stages are nested under `funnel_stages`; asserting membership on the
+    # top level passed for `offer` and `contract` only because those words also
+    # appear as keys elsewhere in the document.
+    stages = config["funnel_stages"]
+    assert "visit" in stages, "funnel_config missing 'visit' stage"
+    assert "offer" in stages, "funnel_config missing 'offer' stage"
+    assert "contract" in stages, "funnel_config missing 'contract' stage"

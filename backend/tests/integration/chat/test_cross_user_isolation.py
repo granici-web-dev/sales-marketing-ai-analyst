@@ -64,6 +64,7 @@ def _override_user_a_as_caller(mock_session: AsyncMock | None = None):
     unambiguous about which side of the (A vs B) boundary the test sits on.
     """
     from app.core.dependencies import get_current_user
+    from app.core.tenancy import set_tenant_id
     from app.db.deps import get_session
     from app.main import app
     from app.schemas.auth import UserOut
@@ -73,6 +74,8 @@ def _override_user_a_as_caller(mock_session: AsyncMock | None = None):
     session.commit = AsyncMock()
 
     async def _mock_current_user():
+        # The real dependency also puts the tenant into the request context.
+        set_tenant_id(MOCK_TENANT_ID)
         return mock_user_a
 
     async def _mock_get_session():

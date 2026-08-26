@@ -38,6 +38,22 @@ _INTEGRATION_SKIP = pytest.mark.skipif(
 )
 
 
+async def _run_task(*args: object) -> object:
+    """Run the eager Celery task off the test's event loop.
+
+    The task body calls `asyncio.run()`. Invoked directly from an async test
+    that is already inside a running loop, that raises before the task does
+    anything — which is why these tests reported the task's effects missing
+    rather than reporting the task failing. The result is returned so callers
+    can assert the run actually succeeded.
+    """
+    import asyncio
+
+    from app.tasks.etl.detect_anomalies import detect_anomalies  # deferred (INFRA-05)
+
+    return await asyncio.to_thread(detect_anomalies.apply, args=list(args))
+
+
 class TestDetectAnomaliesTask:
     """Tests for detect_anomalies Celery task — ANOM-01, PIPE-04, WR-06."""
 
@@ -99,22 +115,22 @@ class TestDetectAnomaliesTask:
         from sqlalchemy import text
         from sqlalchemy.ext.asyncio import create_async_engine
 
-        from app.tasks.etl.detect_anomalies import detect_anomalies  # deferred (INFRA-05)
-
         engine = create_async_engine(_TEST_DB_URL)
         try:
             async with engine.begin() as conn:
                 # Pre-seed a stale running SyncRun
                 await conn.execute(
                     text(
-                        "INSERT INTO sync_runs (tenant_id, source, status, started_at) "
-                        "VALUES (:tenant_id, 'anomaly', 'running', NOW() - INTERVAL '1 hour')"
+                        "INSERT INTO sync_runs (id, tenant_id, source, status, started_at) "
+                        "VALUES (gen_random_uuid(), :tenant_id, 'anomaly', 'running', "
+                        "        NOW() - INTERVAL '1 hour')"
                     ),
                     {"tenant_id": TENANT_ID},
                 )
 
             # Run the task
-            detect_anomalies.apply(args=[TENANT_ID_STR])
+            outcome = await _run_task(TENANT_ID_STR)
+            assert outcome.successful(), f"task failed: {outcome.result!r}"
 
             async with engine.connect() as conn:
                 result = await conn.execute(
@@ -152,8 +168,6 @@ class TestDetectAnomaliesTask:
         from sqlalchemy import text
         from sqlalchemy.ext.asyncio import create_async_engine
 
-        from app.tasks.etl.detect_anomalies import detect_anomalies  # deferred (INFRA-05)
-
         engine = create_async_engine(_TEST_DB_URL)
         # Match the task's exact kpi_date computation (detect_anomalies.py line 106):
         # datetime.now(BUCHAREST).date() - timedelta(days=1)
@@ -167,9 +181,8 @@ class TestDetectAnomaliesTask:
                     await conn.execute(
                         text(
                             "INSERT INTO raw_mefi_leads "
-                            "(tenant_id, external_id, lifecycle, created_date_local, "
-                            "time_to_first_touch_minutes, funnel_stage) "
-                            "VALUES (:tenant_id, :ext_id, 'junk', :yesterday, NULL, 'lead') "
+                            "(id, tenant_id, external_id, lifecycle, created_at_source) "
+                            "VALUES (gen_random_uuid(), :tenant_id, :ext_id, 'junk', :yesterday) "
                             "ON CONFLICT (tenant_id, external_id) DO NOTHING"
                         ),
                         {
@@ -185,9 +198,9 @@ class TestDetectAnomaliesTask:
                     await conn.execute(
                         text(
                             "INSERT INTO daily_kpi "
-                            "(tenant_id, date, leads_total, visits_count, offers_count, "
+                            "(id, tenant_id, date, leads_total, visits_count, offers_count, "
                             "contracts_count, conversion_l_to_v, conversion_o_to_c, avg_deal_size) "
-                            "VALUES (:tenant_id, :dt, 10, 3, 2, 1, 0.32, 0.15, 22000) "
+                            "VALUES (gen_random_uuid(), :tenant_id, :dt, 10, 3, 2, 1, 0.32, 0.15, 22000) "
                             "ON CONFLICT (tenant_id, date) DO NOTHING"
                         ),
                         {
@@ -197,7 +210,8 @@ class TestDetectAnomaliesTask:
                     )
 
             # Run detect_anomalies
-            detect_anomalies.apply(args=[TENANT_ID_STR])
+            outcome = await _run_task(TENANT_ID_STR)
+            assert outcome.successful(), f"task failed: {outcome.result!r}"
 
             # Assert no slow_first_touch row was created for junk leads
             async with engine.connect() as conn:
@@ -234,8 +248,6 @@ class TestDetectAnomaliesTask:
         from sqlalchemy import text
         from sqlalchemy.ext.asyncio import create_async_engine
 
-        from app.tasks.etl.detect_anomalies import detect_anomalies  # deferred (INFRA-05)
-
         engine = create_async_engine(_TEST_DB_URL)
         # Match the task's exact kpi_date computation (detect_anomalies.py line 106):
         # datetime.now(BUCHAREST).date() - timedelta(days=1)
@@ -251,9 +263,8 @@ class TestDetectAnomaliesTask:
                 await conn.execute(
                     text(
                         "INSERT INTO raw_mefi_leads "
-                        "(tenant_id, external_id, lifecycle, created_date_local, "
-                        "time_to_first_touch_minutes, funnel_stage) "
-                        "VALUES (:tenant_id, :ext_id, 'active', :kpi_date, NULL, 'lead') "
+                        "(id, tenant_id, external_id, lifecycle, created_at_source) "
+                        "VALUES (gen_random_uuid(), :tenant_id, :ext_id, 'active', :kpi_date) "
                         "ON CONFLICT (tenant_id, external_id) DO NOTHING"
                     ),
                     {
@@ -267,9 +278,9 @@ class TestDetectAnomaliesTask:
                     await conn.execute(
                         text(
                             "INSERT INTO daily_kpi "
-                            "(tenant_id, date, leads_total, visits_count, offers_count, "
+                            "(id, tenant_id, date, leads_total, visits_count, offers_count, "
                             "contracts_count, conversion_l_to_v, conversion_o_to_c, avg_deal_size) "
-                            "VALUES (:tenant_id, :dt, 10, 3, 2, 1, 0.32, 0.15, 22000) "
+                            "VALUES (gen_random_uuid(), :tenant_id, :dt, 10, 3, 2, 1, 0.32, 0.15, 22000) "
                             "ON CONFLICT (tenant_id, date) DO NOTHING"
                         ),
                         {
@@ -279,8 +290,11 @@ class TestDetectAnomaliesTask:
                     )
 
             # Run detect_anomalies twice
-            detect_anomalies.apply(args=[TENANT_ID_STR])
-            detect_anomalies.apply(args=[TENANT_ID_STR])
+            first = await _run_task(TENANT_ID_STR)
+            second = await _run_task(TENANT_ID_STR)
+            assert first.successful() and second.successful(), (
+                f"both runs must succeed; got {first.result!r} / {second.result!r}"
+            )
 
             # Assert no duplicates — each (tenant_id, date, rule_id) has exactly 1 row
             async with engine.connect() as conn:

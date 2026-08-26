@@ -317,12 +317,22 @@ def test_the_ai09_gate_still_sees_the_directory() -> None:
 
 @_integration_skip
 @pytest.mark.asyncio
-async def test_fallback_on_all_claude_failures() -> None:
-    """Task completes with status='fallback' when Anthropic raises on every attempt (AI-07).
+async def test_transport_failure_raises_and_leaves_no_half_written_row() -> None:
+    """A dead Anthropic endpoint must propagate, and must not leave a row at 'running'.
 
-    AI-07: All retries exhausted → fallback report from detected_problems rows.
-    status='fallback' (not 'failed') → Celery task does not raise.
-    Phase 7 frontend shows "Generare AI eșuată" banner on fallback.
+    This test previously asserted the opposite — that every Claude failure ends
+    in a fallback report and the task does not raise — and had never run, so the
+    contradiction with the code went unnoticed. The code is the one that is
+    right, and says so in two places:
+
+      - WR-04 (`insight_service.run`): only `ValidationError` is caught. A
+        malformed answer is Claude's fault and deserves the fallback report; a
+        connection failure is transport and deserves a retry.
+      - CR-05 (`generate_daily_insights`): no manual retry, `autoretry_for`
+        handles it — which requires the exception to reach Celery.
+
+    What matters, and what this now checks, is that raising does not leave the
+    audit rows half-written: both SyncRun and DailyInsight must read 'failed'.
     """
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import create_async_engine
@@ -336,27 +346,42 @@ async def test_fallback_on_all_claude_failures() -> None:
         with patch("app.services.insights.insight_service.AsyncAnthropic") as mock_cls:
             mock_client = AsyncMock()
             mock_cls.return_value = mock_client
-            # Always raises — simulates total API failure
             mock_client.messages.create = AsyncMock(
                 side_effect=Exception("Anthropic API unavailable")
             )
 
-            # Must not raise — fallback path must complete
-            await _generate_async(TENANT_ID_STR, kpi_date)
+            with pytest.raises(Exception, match="Anthropic API unavailable"):
+                await _generate_async(TENANT_ID_STR, kpi_date)
 
         async with engine.connect() as conn:
-            result = await conn.execute(
+            insight = await conn.execute(
                 text(
                     "SELECT status FROM daily_insights "
                     "WHERE tenant_id = :tenant_id AND date = :kpi_date"
                 ),
                 {"tenant_id": TENANT_ID, "kpi_date": kpi_date},
             )
-            row = result.fetchone()
+            insight_row = insight.fetchone()
 
-        assert row is not None, "_generate_async must write a row even on all-failure path (AI-07)"
-        assert row[0] in ("fallback", "failed"), (
-            f"status must be 'fallback' or 'failed' when all Claude retries fail, got '{row[0]}' (AI-07)"
+            run = await conn.execute(
+                text(
+                    "SELECT status FROM sync_runs "
+                    "WHERE tenant_id = :tenant_id AND source = 'insights' "
+                    "ORDER BY started_at DESC LIMIT 1"
+                ),
+                {"tenant_id": TENANT_ID},
+            )
+            run_row = run.fetchone()
+
+        assert insight_row is not None, (
+            "the task must write a daily_insights row before calling Claude"
+        )
+        assert insight_row[0] == "failed", (
+            f"a transport failure must close the row at 'failed', not leave it "
+            f"at '{insight_row[0]}' for a dashboard to render as in-progress forever"
+        )
+        assert run_row is not None and run_row[0] == "failed", (
+            f"the SyncRun must close too; got {run_row[0] if run_row else None!r}"
         )
     finally:
         await engine.dispose()

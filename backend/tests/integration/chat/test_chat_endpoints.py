@@ -138,6 +138,7 @@ def _make_mock_orchestrator_for_multi_tool() -> MagicMock:
 def _override_app_dependencies(mock_session: AsyncMock | None = None):
     """Install standard dependency overrides for chat integration tests."""
     from app.core.dependencies import get_current_user
+    from app.core.tenancy import set_tenant_id
     from app.db.deps import get_session
     from app.main import app
     from app.schemas.auth import UserOut
@@ -147,6 +148,10 @@ def _override_app_dependencies(mock_session: AsyncMock | None = None):
     session.commit = AsyncMock()
 
     async def _mock_current_user():
+        # The real dependency does two things: it identifies the user and it
+        # puts the tenant into the request context. Overriding only the first
+        # left every handler calling `require_tenant_id()` with nothing to find.
+        set_tenant_id(MOCK_TENANT_ID)
         return mock_user
 
     async def _mock_get_session():
