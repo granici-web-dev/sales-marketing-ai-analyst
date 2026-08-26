@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import { AnalyticsScreen } from "@/components/portal/screens/analytics";
 import { AppearanceScreen } from "@/components/portal/screens/appearance";
+import { ConversationsScreen } from "@/components/portal/screens/conversations";
 import { InstallScreen } from "@/components/portal/screens/install";
 import { KnowledgeScreen } from "@/components/portal/screens/knowledge";
 import { screensOf } from "@/lib/agent-screens";
@@ -14,6 +16,8 @@ import { loadPortalNav } from "@/lib/portal-nav.server";
  * скрытые экраны в панели движка.
  */
 const SCREENS: Record<string, () => React.ReactElement> = {
+  conversations: ConversationsScreen,
+  analytics: AnalyticsScreen,
   knowledge: KnowledgeScreen,
   appearance: AppearanceScreen,
   install: InstallScreen,

@@ -14,7 +14,13 @@ export interface AgentScreen {
   id: string;
 }
 
-const CHATBOT: AgentScreen[] = [{ id: "knowledge" }, { id: "appearance" }, { id: "install" }];
+const CHATBOT: AgentScreen[] = [
+  { id: "conversations" },
+  { id: "analytics" },
+  { id: "knowledge" },
+  { id: "appearance" },
+  { id: "install" },
+];
 
 const SCREENS: Record<string, AgentScreen[]> = {
   chatbot: CHATBOT,
