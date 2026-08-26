@@ -3,6 +3,7 @@ import { AnalyticsScreen } from "@/components/portal/screens/analytics";
 import { AppearanceScreen } from "@/components/portal/screens/appearance";
 import { ConversationsScreen } from "@/components/portal/screens/conversations";
 import { InstallScreen } from "@/components/portal/screens/install";
+import { ConnectorsScreen } from "@/components/portal/screens/connectors";
 import { DriveScreen } from "@/components/portal/screens/drive";
 import { KnowledgeScreen } from "@/components/portal/screens/knowledge";
 import { screensOf } from "@/lib/agent-screens";
@@ -21,6 +22,7 @@ const SCREENS: Record<string, () => React.ReactElement> = {
   analytics: AnalyticsScreen,
   knowledge: KnowledgeScreen,
   drive: DriveScreen,
+  connectors: ConnectorsScreen,
   appearance: AppearanceScreen,
   install: InstallScreen,
 };
