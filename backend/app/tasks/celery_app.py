@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import structlog
 from celery import Celery
 from celery.signals import worker_process_init
 
 from app.core.config import settings
+
+logger = structlog.get_logger(__name__)
 
 # Celery application instance.
 #
@@ -102,8 +105,8 @@ celery_app.conf.update(
 # stale data. The standalone daily-insights-generation entry is removed;
 # generate_daily_insights is now the 4th link in the chain.
 try:
-    from redbeat import RedBeatSchedulerEntry  # noqa: PLC0415
     from celery.schedules import crontab  # noqa: PLC0415
+    from redbeat import RedBeatSchedulerEntry  # noqa: PLC0415
 
     from app.tasks.etl.sync_mefi_leads import daily_pipeline  # noqa: PLC0415
 
@@ -116,9 +119,16 @@ try:
     )
     _entry.save()
 except Exception:  # noqa: BLE001
-    # Beat schedule registration is best-effort at import time;
-    # the beat container registers it authoritatively on startup.
-    pass
+    # This used to swallow the failure, on the grounds that "the beat
+    # container registers it authoritatively on startup". This IS the code
+    # that runs there — there is no second registration site. A bad crontab,
+    # a redbeat incompatibility or a serialization failure would leave the
+    # 04:00 run simply not happening, with nothing anywhere to say so, and
+    # the 04:00 run is the product.
+    #
+    # Still not re-raised: an import-time failure here would take down every
+    # process that imports celery_app, including the API. Loud, not fatal.
+    logger.exception("beat.schedule_registration_failed")
 
 
 @worker_process_init.connect
