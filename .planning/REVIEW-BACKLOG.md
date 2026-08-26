@@ -300,9 +300,27 @@ remaining surfaces.
       data and the stack was not running. Indexes exist on every tenant-scoped
       table; whether the funnel queries use them at volume is unverified.
 
-- [ ] **Tools that never ran:** `semgrep`, `gitleaks`, `trivy`, `bandit`. Their
-      categories — injection patterns, committed secrets, base-image CVEs — were
-      covered by hand and by `ruff`'s `S` rules, which is thinner.
+- [x] **Tools that never ran:** `semgrep`, `gitleaks`, `trivy`, `bandit`. Now in
+      `.github/workflows/security.yml`, three jobs, weekly schedule. What they
+      found on the first run: ten HIGH dependency CVEs (fixed), both Dockerfiles
+      running as root (fixed), a `.dockerignore` that kept the lockfile out of
+      the image (fixed), five unpinned action tags (pinned), and the seeded admin
+      password (migration 011). The two `S608` spots below were confirmed safe
+      by two scanners independently and are now suppressed with the reason
+      inline.
+
+- [ ] **pnpm 9 → 10.** Semgrep asks for `minimumReleaseAge`, `trustPolicy` and
+      `blockExoticSubDependencies` — the settings that would have blunted the
+      recent npm worms. All three landed in pnpm 10; the project runs pnpm 9
+      locally, in the image and in CI. Writing them now yields a file that looks
+      protected and does nothing, so they are suppressed with that reason in
+      `frontend/pnpm-workspace.yaml`. The migration is lockfile format, moving
+      `onlyBuiltDependencies` out of `package.json`, the Dockerfile and CI.
+
+- [ ] **The control set still needs Bedrock keys**, so it is not in CI. Its
+      corpus is reproducible now (`npm run seed:control` in the engine repo)
+      and it runs on any machine rather than the one holding the pilot's
+      materials — but fifteen model calls per push is a real bill.
 
 ---
 
@@ -314,8 +332,9 @@ Recorded so nobody re-investigates:
   `get_loss_reasons` takes its column from a static dict that raises `KeyError`
   on an unknown key; `get_leads` takes its table from a ternary over two
   constants. User input goes through bound parameters in both.
-- **No secrets in history.** 293 commits, no `.env` ever committed, no
-  `sk-ant-…`, `lrd_…`, `ghp_…` or private PEM anywhere.
+- **No secrets in history.** 293 commits by hand; since confirmed by gitleaks
+  over all 333 commits — zero findings. The engine repo has one, a public widget
+  key, allow-listed with the reason in `.gitleaksignore` there.
 - **Tenant filtering is explicit** on every Core select, including the ones that
   bypass the automatic loader criteria.
 - **Zero `TODO` / `FIXME` / `XXX`** in `backend/app`.
