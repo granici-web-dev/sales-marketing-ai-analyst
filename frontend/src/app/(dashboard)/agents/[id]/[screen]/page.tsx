@@ -5,6 +5,7 @@ import { ConversationsScreen } from "@/components/portal/screens/conversations";
 import { InstallScreen } from "@/components/portal/screens/install";
 import { ConnectorsScreen } from "@/components/portal/screens/connectors";
 import { DriveScreen } from "@/components/portal/screens/drive";
+import { PromotionsScreen } from "@/components/portal/screens/promotions";
 import { KnowledgeScreen } from "@/components/portal/screens/knowledge";
 import { screensOf } from "@/lib/agent-screens";
 import { isLocked, isScreenVisible } from "@/lib/portal-nav";
@@ -23,6 +24,7 @@ const SCREENS: Record<string, () => React.ReactElement> = {
   knowledge: KnowledgeScreen,
   drive: DriveScreen,
   connectors: ConnectorsScreen,
+  promotions: PromotionsScreen,
   appearance: AppearanceScreen,
   install: InstallScreen,
 };

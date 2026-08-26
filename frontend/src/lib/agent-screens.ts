@@ -29,8 +29,16 @@ const CHATBOT: AgentScreen[] = [
   { id: "install" },
 ];
 
+/**
+ * У конфигуратора экран пока один. Список всё равно списком, а не исключением:
+ * второй экран сюда дописывается строкой, а особый случай пришлось бы сначала
+ * разбирать обратно.
+ */
+const CONFIGURATOR: AgentScreen[] = [{ id: "promotions" }];
+
 const SCREENS: Record<string, AgentScreen[]> = {
   chatbot: CHATBOT,
+  configurator: CONFIGURATOR,
 };
 
 export const screensOf = (agentId: string): AgentScreen[] =>

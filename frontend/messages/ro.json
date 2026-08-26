@@ -358,6 +358,7 @@
     "install": "Instalare",
     "drive": "Google Drive",
     "connectors": "Conectori",
+    "promotions": "Promoții",
     "knowledgeScreen": {
       "addHeading": "Adaugă materiale",
       "pageUrl": "Adresa paginii",
@@ -554,6 +555,27 @@
       "rawAnswer": "Răspunsul brut al serviciului:",
       "asBotSees": "Ce vede botul din el:",
       "emptyAnswer": "(gol)"
+    },
+    "promotionsScreen": {
+      "loading": "Se încarcă…",
+      "heading": "Promoții",
+      "notAppliedUntilConfirmed": "Până la confirmare, reducerea nu intră în oferte — acestea pleacă fără ea.",
+      "empty": "Nicio promoție încă.",
+      "allProducts": "Toate produsele",
+      "until": "Până la {date}",
+      "noDeadline": "Fără termen",
+      "foundOnSite": "Găsită pe site",
+      "fromConfig": "Din configurație",
+      "source": "Sursa",
+      "confirm": "Confirmați",
+      "reject": "Respingeți",
+      "stop": "Opriți",
+      "state": {
+        "pending": "Așteaptă confirmarea",
+        "active": "Activă",
+        "rejected": "Respinsă",
+        "expired": "Expirată"
+      }
     }
   }
 }

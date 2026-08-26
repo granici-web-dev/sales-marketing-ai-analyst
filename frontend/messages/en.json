@@ -358,6 +358,7 @@
     "install": "Installation",
     "drive": "Google Drive",
     "connectors": "Connectors",
+    "promotions": "Promotions",
     "knowledgeScreen": {
       "addHeading": "Add material",
       "pageUrl": "Page address",
@@ -554,6 +555,27 @@
       "rawAnswer": "The raw answer from the service:",
       "asBotSees": "What the bot sees in it:",
       "emptyAnswer": "(empty)"
+    },
+    "promotionsScreen": {
+      "loading": "Loading…",
+      "heading": "Promotions",
+      "notAppliedUntilConfirmed": "Until you confirm it, the discount does not go into quotes — they go out without it.",
+      "empty": "No promotions yet.",
+      "allProducts": "All products",
+      "until": "Until {date}",
+      "noDeadline": "No deadline",
+      "foundOnSite": "Found on the site",
+      "fromConfig": "From the configuration",
+      "source": "Source",
+      "confirm": "Confirm",
+      "reject": "Reject",
+      "stop": "Stop",
+      "state": {
+        "pending": "Awaiting confirmation",
+        "active": "Active",
+        "rejected": "Rejected",
+        "expired": "Expired"
+      }
     }
   }
 }
