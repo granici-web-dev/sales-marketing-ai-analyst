@@ -39,11 +39,28 @@ export function useSyncTrigger() {
     mutationFn: async (): Promise<StatusResponse> => {
       const triggerRes = await apiClient.post("/api/v1/sync/trigger", {});
       if (triggerRes.status === 429) {
-        const retryAfter = parseInt(
-          triggerRes.headers.get("Retry-After") ?? "60",
-          10,
-        );
+        // Заголовок по RFC может прийти и датой, а не числом секунд. Наш
+        // бэкенд шлёт число, но между ним и браузером стоит посредник,
+        // и `parseInt` от даты даёт NaN — а это «NaNs» в подсказке и таймер,
+        // срабатывающий неизвестно когда.
+        const parsed = parseInt(triggerRes.headers.get("Retry-After") ?? "", 10);
+        const retryAfter = Number.isFinite(parsed) && parsed >= 0 ? parsed : 60;
+
         setState({ kind: "rate-limited", retryAfterSeconds: retryAfter });
+
+        // Выход из этого состояния был только один — перезагрузка страницы.
+        // Кнопка в нём заблокирована, а сбросить её было нечему: у «успеха»
+        // и «ошибки» возврат в покой есть, у этого состояния его забыли.
+        // Смысл Retry-After ровно в том, что после этих секунд можно снова;
+        // блокировать кнопку навсегда — прямо противоположное.
+        //
+        // Секунда снизу: при TTL, истёкшем в момент запроса, приходит 0,
+        // и нулевой таймер спорил бы с установкой состояния выше.
+        setTimeout(
+          () => setState((prev) => (prev.kind === "rate-limited" ? { kind: "idle" } : prev)),
+          Math.max(retryAfter, 1) * 1000,
+        );
+
         throw new Error(`429:${retryAfter}`);
       }
       if (!triggerRes.ok) {

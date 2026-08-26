@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { DayPicker, type DateRange } from "react-day-picker";
-import { format, subDays, startOfMonth, startOfYear } from "date-fns";
+import { format, parseISO, subDays, startOfMonth, startOfYear } from "date-fns";
 import { CalendarIcon, RefreshCw, Loader2, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -46,14 +46,20 @@ export function DateRangePicker() {
   const { from: validatedFrom, to: validatedTo } = useUrlDateRange();
 
   const [open, setOpen] = useState(false);
+  // parseISO, а не new Date: строку «2026-03-01» конструктор читает как
+  // полночь UTC, и западнее нулевого меридиана она превращается в предыдущий
+  // день. Проверено: в America/New_York «2026-03-01» форматируется обратно
+  // как «2026-02-28» — то есть открыть выбор периода и нажать «Применить»,
+  // ничего не меняя, сдвигало период на день назад. В Бухаресте (UTC+2/+3)
+  // этого не видно, поэтому и жило.
   const [range, setRange] = useState<DateRange | undefined>({
-    from: new Date(validatedFrom),
-    to: new Date(validatedTo),
+    from: parseISO(validatedFrom),
+    to: parseISO(validatedTo),
   });
 
   // Sync internal range with URL params (browser back/forward, external router.push, refresh)
   useEffect(() => {
-    setRange({ from: new Date(validatedFrom), to: new Date(validatedTo) });
+    setRange({ from: parseISO(validatedFrom), to: parseISO(validatedTo) });
   }, [validatedFrom, validatedTo]);
 
   function applyRange(r: DateRange | undefined) {

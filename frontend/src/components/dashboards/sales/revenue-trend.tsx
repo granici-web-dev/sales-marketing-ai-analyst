@@ -23,6 +23,8 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+import { parseISO } from "date-fns";
+
 export function RevenueTrend({ revenueSeries }: RevenueTrendProps) {
   const t = useTranslations("sales");
 
@@ -51,8 +53,10 @@ export function RevenueTrend({ revenueSeries }: RevenueTrendProps) {
   const chartData = revenueSeries.map((point) => ({
     date: point.date,
     revenue: parseFloat(point.revenue ?? "0"),
-    // Short label for x-axis
-    label: new Date(point.date).getDate().toString(),
+    // Число месяца для оси. parseISO, а не new Date: тот читает «2026-03-01»
+    // как полночь UTC, и западнее нулевого меридиана подпись показывала
+    // предыдущий день — та же грабля, что в выборе периода.
+    label: parseISO(point.date).getDate().toString(),
   }));
 
   return (

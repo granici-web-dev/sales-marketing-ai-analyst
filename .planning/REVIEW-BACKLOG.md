@@ -288,12 +288,13 @@ remaining surfaces.
       writing those tests turned up a live defect (see below). The percentage
       moved 13.4 → 15.7, which is the honest size of the change.
 
+      Second pass done: `useSyncTrigger` 95%, `date-range-picker` 78%, total
+      15.7 → 21.8. Both turned up live defects (see below).
+
       What is left is mostly presentational: chart wrappers, insight cards,
       dashboard pages. Render tests there pin markup and break on every
-      restyle — the theme pass would have broken a dozen of them. Worth doing
-      only where behaviour is at stake: `useSyncTrigger` (40 lines, polling),
-      `useConversations`, `useInsights`, and `date-range-picker` (58 lines,
-      the widest untested piece of real logic).
+      restyle — the theme pass would have broken a dozen of them. Of the
+      behavioural pieces, `useConversations` and `useInsights` remain.
 
       No coverage gate in CI: a threshold at 15% protects nothing, and a
       threshold that stops the build is a promise to keep raising it.
@@ -351,6 +352,31 @@ remaining surfaces.
       properly; a source sweep keeps the next screen from being written without
       it. `unlock-panel` keeps its own answer — reloading mid-entry would carry
       away what the person was typing — and that exception is named in the test.
+
+- [x] **The refresh button locked itself out permanently.** A 429 from
+      `/sync/trigger` put the hook in `rate-limited`, and the button is disabled
+      in that state — but nothing ever cleared it. `success` and `error` both
+      auto-reset; this one was forgotten. The whole point of `Retry-After` is
+      that the wait ends, so until the page was reloaded the client could not
+      refresh data at all. Now it returns to idle after the header's seconds,
+      and a non-numeric `Retry-After` (RFC allows a date) falls back to 60
+      instead of rendering "NaNs".
+
+- [x] **Dates shifted a day west of the meridian.** `new Date("2026-03-01")` is
+      midnight *UTC*; formatted back through a local formatter it becomes
+      `2026-02-28` anywhere west of Greenwich. Three places did it: `formatDate`
+      (the label under the period button — what the client actually reads),
+      the range picker's calendar state, and the revenue chart's axis labels.
+      All now use `parseISO`. Invisible from Bucharest, which is why it lived;
+      the suite now runs clean in both `Europe/Bucharest` and
+      `America/New_York`, and the old code fails the existing `formatDate` test
+      under the latter.
+
+      Pinned by test: `formatDate`. Not pinned: the picker's calendar state and
+      the chart labels — the calendar opens on the current month and marks
+      nothing `aria-selected`, so the selection cannot be asserted, and the
+      chart needs recharts in jsdom. Fixed by inspection, stated here rather
+      than claimed as covered.
 
 ## Checked and clean
 

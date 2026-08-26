@@ -4,6 +4,8 @@
  * All date values use DD.MM.YYYY format in Europe/Bucharest timezone.
  */
 
+import { parseISO } from "date-fns";
+
 /**
  * Format a monetary value as Romanian RON currency.
  * @param value - The value to format (string, number, null, or undefined)
@@ -48,7 +50,12 @@ export function formatDate(
   dateStr: string | Date | null | undefined,
 ): string {
   if (!dateStr) return "";
-  const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+  // parseISO, а не new Date: строку «2026-05-28» конструктор читает как
+  // полночь UTC, и западнее нулевого меридиана подпись показывала бы
+  // предыдущий день — то самое число, которое клиент и читает под кнопкой
+  // выбора периода. В Бухаресте (UTC+2/+3) расхождения нет, поэтому и жило.
+  // Полные отметки времени со смещением parseISO разбирает так же верно.
+  const d = typeof dateStr === "string" ? parseISO(dateStr) : dateStr;
   return new Intl.DateTimeFormat("ro-RO", {
     day: "2-digit",
     month: "2-digit",
@@ -65,7 +72,12 @@ export function formatTimestamp(
   dateStr: string | Date | null | undefined,
 ): string {
   if (!dateStr) return "";
-  const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+  // parseISO, а не new Date: строку «2026-05-28» конструктор читает как
+  // полночь UTC, и западнее нулевого меридиана подпись показывала бы
+  // предыдущий день — то самое число, которое клиент и читает под кнопкой
+  // выбора периода. В Бухаресте (UTC+2/+3) расхождения нет, поэтому и жило.
+  // Полные отметки времени со смещением parseISO разбирает так же верно.
+  const d = typeof dateStr === "string" ? parseISO(dateStr) : dateStr;
   return new Intl.DateTimeFormat("ro-RO", {
     timeZone: "Europe/Bucharest",
     day: "2-digit",
