@@ -42,6 +42,23 @@ Nothing here is speculative — every claim was measured against the code.
       configuration fault must not behave like a wrong password. Added
       `frontend/.env.example`. Commit `3d7c0b2`.
 
+- [x] **Two sources of truth for the tenant.** The eight endpoints in
+      `dashboards.py`, `insights.py`, `health.py` and `sync.py` now call
+      `require_tenant_id()` like chat and every Celery task; nothing reads
+      `settings.sofa_belle_tenant_id` on the request path any more. A source
+      sweep (`tests/unit/test_tenancy_source.py`) fails if the name comes back,
+      and the one unit test that called a handler directly now sets the tenant
+      itself and asserts the enqueued task received *that* tenant — an
+      assertion that fails against the old code. Commit `ed77345`.
+
+- [x] **The daily schedule can fail to register and say nothing.** Replaced the
+      bare `pass` with `logger.exception("beat.schedule_registration_failed")`,
+      and corrected the comment that claimed a second, authoritative
+      registration site exists. It does not. Commit `65ec90b`.
+
+- [x] **Python dependencies have never been checked.** `pip-audit` is in the
+      dev extras and has been run. Commit `a506afd`. Result below.
+
 ---
 
 ## Before the next deploy
@@ -57,29 +74,37 @@ Nothing here is speculative — every claim was measured against the code.
       SameSite=Strict` cookie set by the backend. If the cookie must stay, add
       `Secure` at minimum. Half a day, touches login and the API client.
 
-- [ ] **The daily schedule can fail to register and say nothing.**
-      `backend/app/tasks/celery_app.py:118`. The only registration site, wrapped
-      in `except Exception: pass` with no log line. The comment promises the beat
-      container registers it authoritatively — this *is* the code that runs
-      there. Compose gates Redis health so the common start is covered, but a bad
-      crontab, a redbeat incompatibility or a serialization failure disappears
-      silently, and the product is the 04:00 run.
-      *Fix:* `logger.exception("beat.schedule_registration_failed")` instead of
-      `pass`. One line. This is also the only place in the codebase that breaks
-      its own rule — the other 28 broad catches all log.
+- [ ] **Five advisories in starlette, on the HTTP layer.** First `pip-audit`
+      run: 12 findings in 5 packages, of which `pip`, `setuptools` and `pytest`
+      are tooling and not shipped. What is shipped: starlette 1.0.1 with
+      PYSEC-2026-248 (`request.url` rebuilt from an unvalidated path),
+      PYSEC-2026-249 (`request.form()` limits not enforced for urlencoded
+      bodies), plus two that do not apply here — `StaticFiles` on Windows and
+      `HTTPEndpoint` method dispatch, neither of which this app uses. Also
+      pydantic-settings 2.14.1, whose finding needs `secrets_dir`, unused here.
+      *Fix:* starlette >= 1.3.1 — 1.6.0 resolves cleanly against the installed
+      fastapi 0.136.1, checked with a dry run. Own commit, own test pass: it is
+      the HTTP layer.
 
-- [ ] **Two sources of truth for the tenant.** Eight endpoints in
-      `dashboards.py`, `insights.py`, `health.py`, `sync.py` read
-      `settings.sofa_belle_tenant_id`; the six in `chat.py` read the context var
-      via `require_tenant_id()`. Every Celery task does it correctly.
-      Harmless today (one tenant, both values equal) and a silent cross-tenant
-      leak the moment Iteration 4 sets the context var from the JWT: chat will
-      serve the right tenant, those eight will keep serving Sofa Belle. Same 200,
-      wrong data.
-      *Fix:* replace the eight with `require_tenant_id()`, then add a source scan
-      that fails if `sofa_belle_tenant_id` appears under `app/api/`, the way the
-      PII-in-logs check works. Mechanical, no behaviour change today. **Do it
-      before the multi-tenancy work, not inside it** — inside, nobody will see it.
+- [ ] **`/health/data` has no authentication, and now no tenant either.** It is
+      the one endpoint with no `get_current_user`, so it served Sofa Belle's
+      data to anyone who asked. It now takes the tenant from the request
+      context, which the middleware still sets for every request — same
+      behaviour today. The day that context comes from the JWT, this endpoint
+      has no tenant to take and will raise `TenantIsolationError`.
+      *Fix:* decide what it is. If it is a dashboard widget, it needs the same
+      auth as the rest; if it is a probe, it must not read tenant data.
+
+- [ ] **The green test number covered unit tests only.** `tests/unit` is 514
+      passed / 1 skipped. The integration suite is not: 35 tests skip for want
+      of `TEST_DATABASE_URL`, and four are stale-red against a live database —
+      `test_protected_route_without_token` (asks for a route that 404s),
+      `test_sc5_refresh_first_call_202` (still patches `daily_pipeline`, a name
+      the handler stopped calling — the same staleness already fixed in its unit
+      twin), `test_no_claude_calls_in_http_handlers` (circular import on reload)
+      and `test_login_invalid_credentials`. None of them fail because of the
+      code they test.
+      *Fix:* repair the four, and wire `TEST_DATABASE_URL` so the other 35 run.
 
 - [ ] **Nothing proves route protection is switched on.** All three findings
       above shared one cause: the file was not running, and code that does not
@@ -91,11 +116,6 @@ Nothing here is speculative — every claim was measured against the code.
       file's contents. A source-level check that `proxy.ts` sits beside `app/`
       is the cheap half and catches the original mistake; only a request
       catches the other two.
-
-- [ ] **Python dependencies have never been checked.** `pip-audit` is not
-      installed, so the backend got no dependency audit at all. The frontend had
-      17 production advisories; the backend number is unknown.
-      *Fix:* add `pip-audit` to the dev extras and run it. Minutes.
 
 ---
 
