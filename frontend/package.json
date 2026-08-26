@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:routes": "node scripts/route-protection.mjs"
   },
   "dependencies": {
@@ -45,6 +46,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "4.1.7",
     "agentation": "^3.0.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.11",

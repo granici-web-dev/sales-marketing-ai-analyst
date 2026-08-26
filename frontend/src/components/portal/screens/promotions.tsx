@@ -17,7 +17,7 @@ import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { engineApi, EngineUnauthorized } from "@/lib/engine-client";
+import { engineApi, reportEngineError } from "@/lib/engine-client";
 
 type PromoState = "pending" | "active" | "rejected" | "expired";
 
@@ -51,11 +51,7 @@ export function PromotionsScreen() {
     try {
       setItems(await engineApi.get<Promotion[]>("promotions"));
     } catch (err) {
-      if (err instanceof EngineUnauthorized) {
-        location.reload();
-        return;
-      }
-      setError((err as Error).message);
+      reportEngineError(err, setError);
       setItems([]);
     }
   }, []);
@@ -71,7 +67,7 @@ export function PromotionsScreen() {
       await engineApi.send(`promotions/${id}`, "POST", { state });
       await load();
     } catch (err) {
-      setError((err as Error).message);
+      reportEngineError(err, setError);
     } finally {
       setBusy("");
     }

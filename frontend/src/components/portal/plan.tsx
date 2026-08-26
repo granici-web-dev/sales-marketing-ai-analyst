@@ -16,7 +16,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { engineApi, EngineUnauthorized } from "@/lib/engine-client";
+import { engineApi, reportEngineError } from "@/lib/engine-client";
 
 /** Куда писать за пакетом, который ещё не продаётся. */
 const ACCESS_EMAIL = "hello@assistwidget.eu";
@@ -113,11 +113,7 @@ export function PlanPanel() {
     try {
       setData(await engineApi.get<SubscriptionData>("subscription"));
     } catch (err) {
-      if (err instanceof EngineUnauthorized) {
-        location.reload();
-        return;
-      }
-      setError((err as Error).message);
+      reportEngineError(err, setError);
     }
   }, []);
 
@@ -148,7 +144,7 @@ export function PlanPanel() {
       }
       await load();
     } catch (err) {
-      setError((err as Error).message);
+      reportEngineError(err, setError);
     } finally {
       setBusy("");
     }
@@ -164,7 +160,7 @@ export function PlanPanel() {
       );
       location.href = url;
     } catch (err) {
-      setError((err as Error).message);
+      reportEngineError(err, setError);
       setBusy("");
     }
   };

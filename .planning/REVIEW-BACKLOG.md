@@ -278,9 +278,25 @@ remaining surfaces.
 
 ## Coverage gaps, not defects
 
-- [ ] **Frontend has 6 test files against 85 source files.** Covered: the SSE
-      parser, the API client's refresh-and-retry path, a few components. Not
-      covered: most of the dashboard.
+- [ ] **Frontend coverage: 15.7% of lines, 89 of 109 files at zero.** Measured,
+      not counted — `pnpm test:coverage`. The old entry said "6 test files
+      against 85 source files"; the file ratio was never the number that
+      mattered, and it was stale twice over.
+
+      One pass has been made, aimed at consequence rather than percentage:
+      `lib/engine-client.ts` and `hooks/useUrlDateRange.ts` are at 100%, and
+      writing those tests turned up a live defect (see below). The percentage
+      moved 13.4 → 15.7, which is the honest size of the change.
+
+      What is left is mostly presentational: chart wrappers, insight cards,
+      dashboard pages. Render tests there pin markup and break on every
+      restyle — the theme pass would have broken a dozen of them. Worth doing
+      only where behaviour is at stake: `useSyncTrigger` (40 lines, polling),
+      `useConversations`, `useInsights`, and `date-range-picker` (58 lines,
+      the widest untested piece of real logic).
+
+      No coverage gate in CI: a threshold at 15% protects nothing, and a
+      threshold that stops the build is a promise to keep raising it.
 
 - [ ] **The Playwright spec has never run, and its premise is gone.**
       `frontend/tests/e2e/chat.spec.ts` exists; Playwright is not in
@@ -321,6 +337,20 @@ remaining surfaces.
       materials — but fifteen model calls per push is a real bill.
 
 ---
+
+- [x] **Expired session showed clients an English error and left the screen
+      dead.** Found while covering `engine-client.ts`. Eight action handlers
+      across the portal — save, upload, verify, approve, sync, checkout — had
+      no 401 branch at all, and three screens had none anywhere: they rendered
+      `err.message`, which for `EngineUnauthorized` is our own string "engine
+      session expired". A Romanian director got an English sentence out of our
+      source and a screen that would never load. Actions are where this bites
+      hardest: you open the screen, and press Save an hour later.
+
+      All of it now goes through one `reportEngineError`, which is unit-tested
+      properly; a source sweep keeps the next screen from being written without
+      it. `unlock-panel` keeps its own answer — reloading mid-entry would carry
+      away what the person was typing — and that exception is named in the test.
 
 ## Checked and clean
 

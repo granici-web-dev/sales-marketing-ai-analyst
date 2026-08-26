@@ -18,7 +18,7 @@ import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { engineApi, EngineUnauthorized } from "@/lib/engine-client";
+import { engineApi, reportEngineError } from "@/lib/engine-client";
 
 interface Connector {
   id: string;
@@ -93,11 +93,7 @@ export function ConnectorsScreen() {
         ),
       );
     } catch (err) {
-      if (err instanceof EngineUnauthorized) {
-        location.reload();
-        return;
-      }
-      setError((err as Error).message);
+      reportEngineError(err, setError);
       setData({ connectors: [], tools: [] });
     }
   }, []);
@@ -112,7 +108,7 @@ export function ConnectorsScreen() {
       await fn();
       await load();
     } catch (err) {
-      setError((err as Error).message);
+      reportEngineError(err, setError);
     }
   };
 
@@ -405,6 +401,7 @@ export function ConnectorsScreen() {
                       } catch (err) {
                         // Своя фраза, а не сырое сообщение разборщика: человек
                         // правил параметры, и ему нужно знать это, а не позицию байта.
+                        // Это ошибка разбора JSON, а не отказ движка.
                         throw new Error(
                           `${t("badParams")}: ${(err as Error).message}`,
                         );

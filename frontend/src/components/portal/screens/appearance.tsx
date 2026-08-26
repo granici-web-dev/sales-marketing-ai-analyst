@@ -15,7 +15,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { engineApi } from "@/lib/engine-client";
+import { engineApi, reportEngineError } from "@/lib/engine-client";
 
 type DarkMode = "auto" | "light" | "dark";
 
@@ -66,8 +66,10 @@ export function AppearanceScreen() {
     engineApi
       .get<Appearance>("appearance")
       .then(setData)
-      .catch((err: Error) => {
-        loadError.current = err.message;
+      .catch((err: unknown) => {
+        reportEngineError(err, (text) => {
+          loadError.current = text;
+        });
         setData(null);
       });
   }, []);
@@ -134,7 +136,7 @@ export function AppearanceScreen() {
     } catch (err) {
       // Проглоченный отказ здесь означает, что человек уходит с экрана
       // уверенный, что сохранил.
-      setNotice({ kind: "error", text: (err as Error).message });
+      reportEngineError(err, (text) => setNotice({ kind: "error", text }));
     } finally {
       setSaving(false);
     }

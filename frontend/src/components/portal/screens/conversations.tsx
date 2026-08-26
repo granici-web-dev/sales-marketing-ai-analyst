@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { engineApi, EngineUnauthorized } from "@/lib/engine-client";
+import { engineApi, reportEngineError } from "@/lib/engine-client";
 
 const PER = 25;
 
@@ -126,12 +126,12 @@ export function ConversationsScreen() {
       (next) => {
         if (seq.current === mine) setData(next);
       },
-      (err: Error) => {
-        if (err instanceof EngineUnauthorized) {
-          location.reload();
-          return;
-        }
-        if (seq.current === mine) setError(err.message);
+      (err: unknown) => {
+        // Ответ отставшего запроса не должен затирать текущий: `mine`
+        // сторожит гонку, а показывать или перезагружать — решает помощник.
+        reportEngineError(err, (text) => {
+          if (seq.current === mine) setError(text);
+        });
       },
     );
   }, [params, page]);
@@ -360,13 +360,7 @@ function ConversationDetail({
   const load = useCallback(() => {
     engineApi
       .get<Detail>(`conversations/${id}`)
-      .then(setDetail, (err: Error) => {
-        if (err instanceof EngineUnauthorized) {
-          location.reload();
-          return;
-        }
-        setError(err.message);
-      });
+      .then(setDetail, (err: unknown) => reportEngineError(err, setError));
   }, [id]);
 
   useEffect(() => load(), [load]);
@@ -383,7 +377,7 @@ function ConversationDetail({
       setApproved(new Set(approved).add(index));
       setEditing(null);
     } catch (err) {
-      setSaveError((err as Error).message);
+      reportEngineError(err, setSaveError);
     } finally {
       setBusy(false);
     }

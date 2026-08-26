@@ -13,7 +13,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { engineApi, EngineUnauthorized } from "@/lib/engine-client";
+import { engineApi, reportEngineError } from "@/lib/engine-client";
 
 interface SyncResult {
   added: number;
@@ -73,11 +73,7 @@ export function DriveScreen() {
       setSitePages(all.filter((d) => !d.filename.startsWith("drive:")).length);
       return drive;
     } catch (err) {
-      if (err instanceof EngineUnauthorized) {
-        location.reload();
-        return null;
-      }
-      setError((err as Error).message);
+      reportEngineError(err, setError);
       setState({ connected: false });
       return null;
     }
@@ -117,7 +113,7 @@ export function DriveScreen() {
       }
       setStalled(true);
     } catch (err) {
-      setError((err as Error).message);
+      reportEngineError(err, setError);
     } finally {
       setSyncing(false);
     }

@@ -13,7 +13,7 @@ import { Check, Copy, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { engineApi } from "@/lib/engine-client";
+import { engineApi, reportEngineError } from "@/lib/engine-client";
 
 interface InstallData {
   domains: string[];
@@ -76,7 +76,7 @@ export function InstallScreen() {
     } catch (err) {
       // Проглоченный отказ здесь означает мёртвый виджет при «сохранённых»
       // доменах — тихую поломку на сайте клиента.
-      setNotice({ kind: "error", text: (err as Error).message });
+      reportEngineError(err, (text) => setNotice({ kind: "error", text }));
     } finally {
       setSaving(false);
     }
@@ -89,7 +89,7 @@ export function InstallScreen() {
     try {
       setVerify(await engineApi.send<VerifyResult>("install/verify", "POST", { url: checkUrl }));
     } catch (err) {
-      setVerifyError((err as Error).message);
+      reportEngineError(err, setVerifyError);
     } finally {
       setChecking(false);
     }

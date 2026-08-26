@@ -24,6 +24,31 @@ export class EngineRefused extends Error {
   }
 }
 
+/**
+ * Как экрану поступить с отказом движка.
+ *
+ * Протухшая сессия — это не сообщение, а действие: перезагрузка возвращает
+ * человека на вход. Три экрана — «Аналитика», «Внешний вид», «Установка» —
+ * вместо этого показывали `err.message`, а у EngineUnauthorized это наша
+ * служебная строка «engine session expired». То есть румынскому директору
+ * показывали английскую фразу из нашего кода и оставляли на экране, который
+ * больше ничего не покажет: перезагрузки нет, данные не придут.
+ *
+ * Вынесено сюда, потому что вариантов ровно два и выбирать между ними
+ * в каждом `catch` заново — это двенадцать мест, где можно ошибиться, и одно
+ * место, где ошибку видно.
+ *
+ * @param err   Что поймал `catch`.
+ * @param show  Как экран показывает текст: строкой, плашкой, чем угодно.
+ */
+export function reportEngineError(err: unknown, show: (message: string) => void): void {
+  if (err instanceof EngineUnauthorized) {
+    location.reload();
+    return;
+  }
+  show(err instanceof Error ? err.message : String(err));
+}
+
 async function call<T>(path: string, init: RequestInit): Promise<T> {
   const response = await fetch(`/portal/engine/${path}`, init);
 

@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { engineApi } from "@/lib/engine-client";
+import { engineApi, reportEngineError } from "@/lib/engine-client";
 
 interface Lead {
   id: string;
@@ -74,7 +74,9 @@ export function AnalyticsScreen() {
   );
 
   useEffect(() => {
-    engineApi.get<AnalyticsData>("insights").then(setData, (err: Error) => setError(err.message));
+    engineApi
+      .get<AnalyticsData>("insights")
+      .then(setData, (err: unknown) => reportEngineError(err, setError));
     void loadApproved();
     // Конфигуратора нет — воронки тоже. Пустая воронка у чат-бота выглядела бы
     // поломкой, а не отсутствием продукта.
@@ -389,7 +391,7 @@ function NotifyEmail({ initial }: { initial: string }) {
           : { kind: "ok", text: t("saved") },
       );
     } catch (err) {
-      setNotice({ kind: "error", text: (err as Error).message });
+      reportEngineError(err, (text) => setNotice({ kind: "error", text }));
     }
   };
 

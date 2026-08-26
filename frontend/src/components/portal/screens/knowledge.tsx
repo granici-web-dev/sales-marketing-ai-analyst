@@ -13,7 +13,7 @@ import { Loader2, RotateCw, Trash2, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { engineApi, EngineUnauthorized } from "@/lib/engine-client";
+import { engineApi, reportEngineError } from "@/lib/engine-client";
 
 interface Doc {
   id: string;
@@ -41,11 +41,7 @@ export function KnowledgeScreen() {
     try {
       setDocs(await engineApi.get<Doc[]>("documents"));
     } catch (err) {
-      if (err instanceof EngineUnauthorized) {
-        location.reload();
-        return;
-      }
-      setError((err as Error).message);
+      reportEngineError(err, setError);
       setDocs([]);
     }
   }, []);
@@ -69,7 +65,7 @@ export function KnowledgeScreen() {
       await fn();
       await load();
     } catch (err) {
-      setError((err as Error).message);
+      reportEngineError(err, setError);
     } finally {
       setBusy(false);
     }
