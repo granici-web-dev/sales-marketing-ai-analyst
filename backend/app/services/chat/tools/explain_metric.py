@@ -46,9 +46,7 @@ GLOSSARY: dict[str, dict] = {
     },
     "ROAS": {
         "name": "ROAS",
-        "definition_ro": (
-            "Return on Ad Spend — venitul generat per leu cheltuit pe reclame."
-        ),
+        "definition_ro": ("Return on Ad Spend — venitul generat per leu cheltuit pe reclame."),
         "formula": "venitul atribuit reclamelor / cheltuieli reclame",
         "relevant_for_sofa_belle": False,
         "note_ro": "Necesită integrare cu Meta/Google/TikTok (Iterația 2).",
@@ -56,8 +54,7 @@ GLOSSARY: dict[str, dict] = {
     "CPL": {
         "name": "CPL",
         "definition_ro": (
-            "Cost per Lead — cât costă, în medie, să obții un lead "
-            "(înainte de calificare)."
+            "Cost per Lead — cât costă, în medie, să obții un lead (înainte de calificare)."
         ),
         "formula": "cheltuieli reclame / lead-uri generate de campanii",
         "relevant_for_sofa_belle": False,

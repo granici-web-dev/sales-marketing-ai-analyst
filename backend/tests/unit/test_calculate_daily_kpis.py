@@ -100,9 +100,7 @@ class TestSignatureAndDate:
         params = list(sig.parameters.keys())
 
         # Must accept tenant_id and calculation_date
-        assert "tenant_id" in params, (
-            f"Task must accept 'tenant_id' parameter, got: {params}"
-        )
+        assert "tenant_id" in params, f"Task must accept 'tenant_id' parameter, got: {params}"
         assert "calculation_date" in params, (
             f"Task must accept 'calculation_date' parameter (D-12 backfill support), got: {params}"
         )
@@ -191,8 +189,9 @@ class TestPipelineChain:
         # coroutine is created and never awaited. Python reports that whenever
         # the collector next runs, which lands the warning on some unrelated
         # test — it was showing up under test_celery_app.
-        with patch("app.tasks.etl.calculate_daily_kpis.asyncio") as mock_asyncio, patch(
-            "app.tasks.etl.calculate_daily_kpis._calc_async", MagicMock()
+        with (
+            patch("app.tasks.etl.calculate_daily_kpis.asyncio") as mock_asyncio,
+            patch("app.tasks.etl.calculate_daily_kpis._calc_async", MagicMock()),
         ):
             mock_asyncio.run = MagicMock(side_effect=RuntimeError("DB connection failed"))
             with pytest.raises(RuntimeError, match="DB connection failed"):

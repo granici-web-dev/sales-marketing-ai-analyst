@@ -92,7 +92,9 @@ class MetricsRepository:
 
         from app.models.metrics.salesperson_kpi import SalespersonDailyKpi  # deferred — fork-safe
 
-        update_cols = [c for c in row if c not in {"id", "tenant_id", "salesperson_external_id", "date"}]
+        update_cols = [
+            c for c in row if c not in {"id", "tenant_id", "salesperson_external_id", "date"}
+        ]
         stmt = pg_insert(SalespersonDailyKpi).values([row])
         stmt = stmt.on_conflict_do_update(
             index_elements=["tenant_id", "salesperson_external_id", "date"],
@@ -130,7 +132,9 @@ class MetricsRepository:
         from app.models.metrics.salesperson_kpi import SalespersonDailyKpi  # deferred — fork-safe
 
         # Use first row to determine update columns (all rows share the same schema)
-        update_cols = [c for c in rows[0] if c not in {"id", "tenant_id", "salesperson_external_id", "date"}]
+        update_cols = [
+            c for c in rows[0] if c not in {"id", "tenant_id", "salesperson_external_id", "date"}
+        ]
 
         total = 0
         for row in rows:

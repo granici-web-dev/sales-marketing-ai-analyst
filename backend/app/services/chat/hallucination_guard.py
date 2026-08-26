@@ -92,15 +92,64 @@ _LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 # token of every entity candidate is checked here and skipped before the
 # whitelist lookup, so normal Romanian phrasing doesn't burn the regen budget.
 _ROMANIAN_SENTENCE_STARTERS: set[str] = {
-    "Conform", "Comparativ", "Astfel", "Practic", "Probabil", "Datorită",
-    "Astăzi", "Ieri", "Acum", "Apoi", "Deci", "Totuși", "Însă",
-    "În", "Pentru", "Cu", "De", "La", "Pe", "Prin", "Sub", "Spre", "Din", "După",
-    "Săptămâna", "Luna", "Anul", "Ziua", "Trimestrul", "Perioada",
-    "Vânzările", "Vânzătorul", "Datele", "Showroom", "Showroom-ul", "Lead",
-    "Lead-uri", "Oferta", "Ofertele", "Contractul", "Contractele", "Rata",
-    "Conversia", "Echipa",
-    "Cel", "Cea", "Cei", "Cele", "Această", "Acest", "Aceste", "Acești",
-    "Toate", "Toți", "Totul", "Câteva", "Câțiva", "Fiecare",
+    "Conform",
+    "Comparativ",
+    "Astfel",
+    "Practic",
+    "Probabil",
+    "Datorită",
+    "Astăzi",
+    "Ieri",
+    "Acum",
+    "Apoi",
+    "Deci",
+    "Totuși",
+    "Însă",
+    "În",
+    "Pentru",
+    "Cu",
+    "De",
+    "La",
+    "Pe",
+    "Prin",
+    "Sub",
+    "Spre",
+    "Din",
+    "După",
+    "Săptămâna",
+    "Luna",
+    "Anul",
+    "Ziua",
+    "Trimestrul",
+    "Perioada",
+    "Vânzările",
+    "Vânzătorul",
+    "Datele",
+    "Showroom",
+    "Showroom-ul",
+    "Lead",
+    "Lead-uri",
+    "Oferta",
+    "Ofertele",
+    "Contractul",
+    "Contractele",
+    "Rata",
+    "Conversia",
+    "Echipa",
+    "Cel",
+    "Cea",
+    "Cei",
+    "Cele",
+    "Această",
+    "Acest",
+    "Aceste",
+    "Acești",
+    "Toate",
+    "Toți",
+    "Totul",
+    "Câteva",
+    "Câțiva",
+    "Fiecare",
 }
 
 # Out-of-scope platform/source names the system prompt explicitly enumerates as
@@ -114,8 +163,16 @@ _ROMANIAN_SENTENCE_STARTERS: set[str] = {
 # (salesperson/showroom/source) legitimately starts with these words, so this
 # cannot mask a real fabrication.
 _PLATFORM_FIRST_TOKENS: set[str] = {
-    "Google", "Meta", "Facebook", "Instagram", "TikTok", "GA4",
-    "Search", "Analytics", "Ads", "Console",
+    "Google",
+    "Meta",
+    "Facebook",
+    "Instagram",
+    "TikTok",
+    "GA4",
+    "Search",
+    "Analytics",
+    "Ads",
+    "Console",
 }
 
 
@@ -180,7 +237,7 @@ def _compute_derived(base: set[Decimal]) -> set[Decimal]:
         # the grounded percentage matches directly (independent of pair math).
         _q(a * Decimal("100"))
     for i, a in enumerate(items):
-        for b in items[i + 1:]:
+        for b in items[i + 1 :]:
             if b != 0:
                 _q((a / b) * Decimal("100"))
             if a != 0:

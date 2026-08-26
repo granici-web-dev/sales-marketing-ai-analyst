@@ -210,10 +210,7 @@ def make_seven_source_rows(kpi_date: date = TODAY) -> list[dict]:
     Used in tests asserting that all 7 categories are always emitted,
     even when some have 0 leads.
     """
-    return [
-        SourceKpiRowFactory.build(source=cat, date=kpi_date)
-        for cat in SOURCE_CATEGORIES
-    ]
+    return [SourceKpiRowFactory.build(source=cat, date=kpi_date) for cat in SOURCE_CATEGORIES]
 
 
 def make_daily_kpi_with_deltas(

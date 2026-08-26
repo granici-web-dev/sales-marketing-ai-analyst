@@ -276,7 +276,9 @@ class TestToolDispatch:
             stop_reason="tool_use",
             content=[
                 _build_tool_use_block(
-                    id="toolu_1", name="get_funnel_data", input={"date_from": "2026-05-01", "date_to": "2026-05-29"}
+                    id="toolu_1",
+                    name="get_funnel_data",
+                    input={"date_from": "2026-05-01", "date_to": "2026-05-29"},
                 ),
                 _build_tool_use_block(
                     id="toolu_2",
@@ -295,7 +297,9 @@ class TestToolDispatch:
             ],
             usage={"input_tokens": 2400, "output_tokens": 320, "cache_read_input_tokens": 1800},
         )
-        round1_events = [{"type": "content_block_delta", "delta": {"type": "text_delta", "text": "Caut..."}}]
+        round1_events = [
+            {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "Caut..."}}
+        ]
 
         # Round 2: returns final text, stop_reason=end_turn
         round2_final = _build_final_message(
@@ -303,7 +307,9 @@ class TestToolDispatch:
             content=[_build_text_block("Finalizat.")],
             usage={"input_tokens": 100, "output_tokens": 5},
         )
-        round2_events = [{"type": "content_block_delta", "delta": {"type": "text_delta", "text": "Finalizat."}}]
+        round2_events = [
+            {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "Finalizat."}}
+        ]
 
         # The stream mock returns different contexts on each call
         client = MagicMock()
@@ -326,15 +332,19 @@ class TestToolDispatch:
         tool_mock_3.input_schema.model_validate = MagicMock(return_value=MagicMock())
         tool_mock_3.handler = AsyncMock(return_value={"compare": 3})
 
-        with patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)), patch.object(
-            orch,
-            "TOOLS_REGISTRY",
-            {
-                "get_funnel_data": tool_mock_1,
-                "get_salesperson_performance": tool_mock_2,
-                "compare_periods": tool_mock_3,
-            },
-        ), patch.object(orch, "get_all_tools", MagicMock(return_value=[])):
+        with (
+            patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)),
+            patch.object(
+                orch,
+                "TOOLS_REGISTRY",
+                {
+                    "get_funnel_data": tool_mock_1,
+                    "get_salesperson_performance": tool_mock_2,
+                    "compare_periods": tool_mock_3,
+                },
+            ),
+            patch.object(orch, "get_all_tools", MagicMock(return_value=[])),
+        ):
             for p in patches:
                 p.start()
             try:
@@ -370,7 +380,9 @@ class TestToolDispatch:
                 stop_reason="tool_use",
                 content=[
                     _build_tool_use_block(
-                        id=f"toolu_{round_n}", name="get_kpi", input={"date_from": "x", "date_to": "y"}
+                        id=f"toolu_{round_n}",
+                        name="get_kpi",
+                        input={"date_from": "x", "date_to": "y"},
                     )
                 ],
                 usage={"input_tokens": 100, "output_tokens": 10},
@@ -387,9 +399,11 @@ class TestToolDispatch:
         tool_mock.input_schema.model_validate = MagicMock(return_value=MagicMock())
         tool_mock.handler = AsyncMock(return_value={"kpi": 1})
 
-        with patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)), patch.object(
-            orch, "TOOLS_REGISTRY", {"get_kpi": tool_mock}
-        ), patch.object(orch, "get_all_tools", MagicMock(return_value=[])):
+        with (
+            patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)),
+            patch.object(orch, "TOOLS_REGISTRY", {"get_kpi": tool_mock}),
+            patch.object(orch, "get_all_tools", MagicMock(return_value=[])),
+        ):
             for p in patches:
                 p.start()
             try:
@@ -423,7 +437,9 @@ class TestHallucinationGuardPaths:
         patches, (_, _, _, _, _) = _orchestrator_patches(guard_results=[[]])
 
         final = _build_final_message(
-            stop_reason="end_turn", content=[_build_text_block("Ok")], usage={"input_tokens": 100, "output_tokens": 5}
+            stop_reason="end_turn",
+            content=[_build_text_block("Ok")],
+            usage={"input_tokens": 100, "output_tokens": 5},
         )
         client = MagicMock()
         client.messages = MagicMock()
@@ -554,7 +570,9 @@ class TestDisconnectMidStream:
             return True
 
         f = _build_final_message(
-            stop_reason="end_turn", content=[_build_text_block("partial")], usage={"input_tokens": 100, "output_tokens": 5}
+            stop_reason="end_turn",
+            content=[_build_text_block("partial")],
+            usage={"input_tokens": 100, "output_tokens": 5},
         )
         client = MagicMock()
         client.messages = MagicMock()
@@ -600,15 +618,18 @@ class TestTitleScheduling:
         patches, _ = _orchestrator_patches(history=[])
 
         f = _build_final_message(
-            stop_reason="end_turn", content=[_build_text_block("Salut")], usage={"input_tokens": 100, "output_tokens": 5}
+            stop_reason="end_turn",
+            content=[_build_text_block("Salut")],
+            usage={"input_tokens": 100, "output_tokens": 5},
         )
         client = MagicMock()
         client.messages = MagicMock()
         client.messages.stream = MagicMock(return_value=_build_stream_ctx([], f))
 
-        with patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)), patch.object(
-            orch, "schedule_title_generation", MagicMock()
-        ) as schedule_mock:
+        with (
+            patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)),
+            patch.object(orch, "schedule_title_generation", MagicMock()) as schedule_mock,
+        ):
             for p in patches:
                 p.start()
             try:
@@ -633,15 +654,18 @@ class TestTitleScheduling:
         patches, _ = _orchestrator_patches(history=prior)
 
         f = _build_final_message(
-            stop_reason="end_turn", content=[_build_text_block("Continuare")], usage={"input_tokens": 100, "output_tokens": 5}
+            stop_reason="end_turn",
+            content=[_build_text_block("Continuare")],
+            usage={"input_tokens": 100, "output_tokens": 5},
         )
         client = MagicMock()
         client.messages = MagicMock()
         client.messages.stream = MagicMock(return_value=_build_stream_ctx([], f))
 
-        with patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)), patch.object(
-            orch, "schedule_title_generation", MagicMock()
-        ) as schedule_mock:
+        with (
+            patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)),
+            patch.object(orch, "schedule_title_generation", MagicMock()) as schedule_mock,
+        ):
             for p in patches:
                 p.start()
             try:
@@ -671,7 +695,11 @@ class TestTokenAccumulation:
         # Round 1: tool_use stop; Round 2: end_turn
         r1 = _build_final_message(
             stop_reason="tool_use",
-            content=[_build_tool_use_block(id="toolu_a", name="get_kpi", input={"date_from": "x", "date_to": "y"})],
+            content=[
+                _build_tool_use_block(
+                    id="toolu_a", name="get_kpi", input={"date_from": "x", "date_to": "y"}
+                )
+            ],
             usage={"input_tokens": 1000, "output_tokens": 100, "cache_read_input_tokens": 500},
         )
         r2 = _build_final_message(
@@ -689,9 +717,11 @@ class TestTokenAccumulation:
         tool_mock.input_schema.model_validate = MagicMock(return_value=MagicMock())
         tool_mock.handler = AsyncMock(return_value={"ok": True})
 
-        with patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)), patch.object(
-            orch, "TOOLS_REGISTRY", {"get_kpi": tool_mock}
-        ), patch.object(orch, "get_all_tools", MagicMock(return_value=[])):
+        with (
+            patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)),
+            patch.object(orch, "TOOLS_REGISTRY", {"get_kpi": tool_mock}),
+            patch.object(orch, "get_all_tools", MagicMock(return_value=[])),
+        ):
             for p in patches:
                 p.start()
             try:
@@ -723,7 +753,11 @@ class TestToolHandlerException:
 
         r1 = _build_final_message(
             stop_reason="tool_use",
-            content=[_build_tool_use_block(id="toolu_X", name="get_kpi", input={"date_from": "x", "date_to": "y"})],
+            content=[
+                _build_tool_use_block(
+                    id="toolu_X", name="get_kpi", input={"date_from": "x", "date_to": "y"}
+                )
+            ],
             usage={"input_tokens": 100, "output_tokens": 10},
         )
         r2 = _build_final_message(
@@ -742,9 +776,11 @@ class TestToolHandlerException:
         tool_mock.input_schema.model_validate = MagicMock(return_value=MagicMock())
         tool_mock.handler = AsyncMock(side_effect=RuntimeError("DB connection lost"))
 
-        with patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)), patch.object(
-            orch, "TOOLS_REGISTRY", {"get_kpi": tool_mock}
-        ), patch.object(orch, "get_all_tools", MagicMock(return_value=[])):
+        with (
+            patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)),
+            patch.object(orch, "TOOLS_REGISTRY", {"get_kpi": tool_mock}),
+            patch.object(orch, "get_all_tools", MagicMock(return_value=[])),
+        ):
             for p in patches:
                 p.start()
             try:
@@ -819,9 +855,11 @@ class TestCommitBoundaries:
         tool_mock.input_schema.model_validate = MagicMock(return_value=MagicMock())
         tool_mock.handler = AsyncMock(return_value={"funnel": 1})
 
-        with patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)), patch.object(
-            orch, "TOOLS_REGISTRY", {"get_funnel_data": tool_mock}
-        ), patch.object(orch, "get_all_tools", MagicMock(return_value=[])):
+        with (
+            patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)),
+            patch.object(orch, "TOOLS_REGISTRY", {"get_funnel_data": tool_mock}),
+            patch.object(orch, "get_all_tools", MagicMock(return_value=[])),
+        ):
             for p in patches:
                 p.start()
             try:
@@ -919,9 +957,10 @@ class TestDetachedTitleSession:
         client.messages = MagicMock()
         client.messages.stream = MagicMock(return_value=_build_stream_ctx([], final))
 
-        with patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)), patch.object(
-            orch, "schedule_title_generation", MagicMock()
-        ) as schedule_mock:
+        with (
+            patch.object(orch, "AsyncAnthropic", MagicMock(return_value=client)),
+            patch.object(orch, "schedule_title_generation", MagicMock()) as schedule_mock,
+        ):
             for p in patches:
                 p.start()
             try:
@@ -947,8 +986,9 @@ class TestDetachedTitleSession:
 
         repo_ctor = MagicMock(return_value=MagicMock(update_title=AsyncMock()))
 
-        with patch.object(session_mod, "AsyncSessionLocal", factory), patch.object(
-            orch, "ConversationRepository", repo_ctor
+        with (
+            patch.object(session_mod, "AsyncSessionLocal", factory),
+            patch.object(orch, "ConversationRepository", repo_ctor),
         ):
             await callback(CONV_ID, "Titlu generat")
 

@@ -67,9 +67,7 @@ class TestInsightReadServiceGetToday:
 
         # Patch Bucharest timezone today to make yesterday deterministic
         fixed_now = datetime(2026, 5, 28, 9, 0, 0)
-        with patch(
-            "app.services.insights.insight_read_service.datetime"
-        ) as mock_dt:
+        with patch("app.services.insights.insight_read_service.datetime") as mock_dt:
             mock_dt.now.return_value = fixed_now
             result = await svc.get_today()
 

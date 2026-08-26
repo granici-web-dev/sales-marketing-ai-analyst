@@ -110,7 +110,11 @@ class TestBulkUpsertLeads:
         # Get the compiled statement from execute call
         call_args = session.execute.call_args[0][0]
         stmt_str = str(call_args.compile(compile_kwargs={"literal_binds": False}))
-        assert "ON CONFLICT" in stmt_str.upper() or "on_conflict_do_update" in type(call_args).__name__.lower() or True
+        assert (
+            "ON CONFLICT" in stmt_str.upper()
+            or "on_conflict_do_update" in type(call_args).__name__.lower()
+            or True
+        )
         # Primary assertion: the function doesn't raise and calls execute+commit
         session.execute.assert_called_once()
 

@@ -99,9 +99,7 @@ class TestTitleGenerator:
         cb = AsyncMock()
         client = MagicMock()
         client.messages = MagicMock()
-        client.messages.create = AsyncMock(
-            return_value=_build_message_response("Vânzări mai 2026")
-        )
+        client.messages.create = AsyncMock(return_value=_build_message_response("Vânzări mai 2026"))
 
         with patch.object(tg, "AsyncAnthropic", MagicMock(return_value=client)):
             await tg._generate(CONV_ID, "Cum stăm?", "Bine.", cb)

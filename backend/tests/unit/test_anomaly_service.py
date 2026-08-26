@@ -226,7 +226,9 @@ class TestDetectStuckOffer:
             baseline_rows=baseline,
         )
 
-        assert result is not None, "detect_stuck_offer must fire for leads stuck 20 days (>15 threshold)"
+        assert result is not None, (
+            "detect_stuck_offer must fire for leads stuck 20 days (>15 threshold)"
+        )
         assert result["rule_id"] == "stuck_offer", (
             f"rule_id must be 'stuck_offer', got '{result.get('rule_id')}'"
         )
@@ -679,7 +681,10 @@ class TestRunAllRules:
 
         await service.run_all_rules(kpi_date=TODAY)  # type: ignore[attr-defined]
 
-        mock_get_junk_ids.assert_called_once(), (
-            "_get_junk_ids must be called exactly once per run_all_rules() — "
-            "not once per rule (D-11 efficiency requirement)"
+        (
+            mock_get_junk_ids.assert_called_once(),
+            (
+                "_get_junk_ids must be called exactly once per run_all_rules() — "
+                "not once per rule (D-11 efficiency requirement)"
+            ),
         )

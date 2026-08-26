@@ -49,18 +49,14 @@ class GetLeadsInput(BaseModel):
     salesperson_external_id: int | None = Field(
         None, description="Optional MEFI salesperson external_id."
     )
-    source_id: int | None = Field(
-        None, description="Optional MEFI source_id (1-13)."
-    )
+    source_id: int | None = Field(None, description="Optional MEFI source_id (1-13).")
     date_from: date | None = Field(
         None, description="Optional inclusive lower bound on created date."
     )
     date_to: date | None = Field(
         None, description="Optional inclusive upper bound on created date."
     )
-    limit: int = Field(
-        50, ge=1, le=50, description="Max number of leads (capped at 50)."
-    )
+    limit: int = Field(50, ge=1, le=50, description="Max number of leads (capped at 50).")
 
 
 def _serialize_lead(row: object) -> dict:
@@ -72,9 +68,7 @@ def _serialize_lead(row: object) -> dict:
         "lifecycle": getattr(row, "lifecycle", None),
         "source_id": getattr(row, "source_id", None),
         "salesperson_external_id": getattr(row, "assigned_to_id", None),
-        "created_at_source": (
-            created.isoformat() if isinstance(created, datetime) else created
-        ),
+        "created_at_source": (created.isoformat() if isinstance(created, datetime) else created),
         "estimated_value": str(est) if isinstance(est, Decimal) else est,
     }
 

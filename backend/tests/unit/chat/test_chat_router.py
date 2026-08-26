@@ -35,6 +35,7 @@ MOCK_USER_ID = UUID("00000000-0000-0000-0000-000000000010")
 
 # ── R1 — router import + prefix ──────────────────────────────────────────────
 
+
 def test_r1_router_imports_with_chat_prefix() -> None:
     """R1: `from app.api.v1.chat import router` works; prefix='/chat'."""
     from app.api.v1.chat import router
@@ -43,6 +44,7 @@ def test_r1_router_imports_with_chat_prefix() -> None:
 
 
 # ── R2 — D-25 module docstring substrings ────────────────────────────────────
+
 
 def test_r2_module_docstring_cites_d25_documented_exception() -> None:
     """R2: module-level docstring contains D-25, documented exception, CHAT-08, AsyncAnthropic, CLAUDE.md."""
@@ -54,6 +56,7 @@ def test_r2_module_docstring_cites_d25_documented_exception() -> None:
 
 
 # ── R3 — AsyncAnthropic import + per-request instantiation (D-29 / LM-1) ─────
+
 
 def test_r3_chat_module_imports_async_anthropic_and_instantiates_inside_handler() -> None:
     """R3: chat.py imports AsyncAnthropic (LM-1 module-level for patchability)
@@ -72,6 +75,7 @@ def test_r3_chat_module_imports_async_anthropic_and_instantiates_inside_handler(
 
 
 # ── R4 — CHAT-08 grep gate STRICT mode now active ────────────────────────────
+
 
 def test_r4_chat08_grep_gate_strict_inclusion_active() -> None:
     """R4: with chat.py landed, the inverse CHAT-08 gate now ENFORCES
@@ -108,6 +112,7 @@ def test_r4_chat08_grep_gate_strict_inclusion_active() -> None:
 
 # ── helpers for endpoint unit tests ──────────────────────────────────────────
 
+
 def _make_user() -> object:
     """Build a minimal current_user object exposing `.id`."""
     from app.schemas.auth import UserOut
@@ -124,7 +129,9 @@ def _set_tenant_context():
     return
 
 
-def _make_redis_mock(*, incr_return=1, set_nx_return=True, ttl_return=3600) -> tuple[AsyncMock, AsyncMock]:
+def _make_redis_mock(
+    *, incr_return=1, set_nx_return=True, ttl_return=3600
+) -> tuple[AsyncMock, AsyncMock]:
     """Build (redis_ctx, redis_client) mocks that emulate the
     `async with aioredis.from_url(...) as r:` pattern."""
     r = AsyncMock()
@@ -140,6 +147,7 @@ def _make_redis_mock(*, incr_return=1, set_nx_return=True, ttl_return=3600) -> t
 
 
 # ── R5 — rate-limit 429 with Retry-After + Romanian (D-24) ───────────────────
+
 
 @pytest.mark.asyncio
 async def test_r5_post_messages_returns_429_when_rate_limit_exceeded() -> None:
@@ -186,6 +194,7 @@ async def test_r5_post_messages_returns_429_when_rate_limit_exceeded() -> None:
 
 # ── R6 — stream-lock 409 with Romanian (D-11) ────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_r6_post_messages_returns_409_when_stream_lock_held() -> None:
     """R6: when Redis SET NX returns False (lock already held), the endpoint
@@ -228,6 +237,7 @@ async def test_r6_post_messages_returns_409_when_stream_lock_held() -> None:
 
 # ── R7 — auth 401 ────────────────────────────────────────────────────────────
 
+
 def test_r7_endpoints_require_authentication_via_get_current_user_dependency() -> None:
     """R7: every router operation must include the get_current_user dependency
     in its dependencies graph (FastAPI then raises 401 on missing/invalid token)."""
@@ -254,6 +264,7 @@ def test_r7_endpoints_require_authentication_via_get_current_user_dependency() -
 
 # ── R8 — POST /conversations creates row + initial_message ───────────────────
 
+
 @pytest.mark.asyncio
 async def test_r8_post_conversations_creates_row_with_optional_initial_message() -> None:
     """R8: POST /conversations with `{initial_message: 'Salut'}` persists a new
@@ -268,10 +279,15 @@ async def test_r8_post_conversations_creates_row_with_optional_initial_message()
 
     conv_repo = AsyncMock()
     conv_repo.insert_conversation = AsyncMock(return_value=fake_conv_id)
-    conv_repo.get_by_id = AsyncMock(return_value=MagicMock(
-        id=fake_conv_id, title=None,
-        created_at=MagicMock(), last_message_at=MagicMock(), archived=False
-    ))
+    conv_repo.get_by_id = AsyncMock(
+        return_value=MagicMock(
+            id=fake_conv_id,
+            title=None,
+            created_at=MagicMock(),
+            last_message_at=MagicMock(),
+            archived=False,
+        )
+    )
 
     msg_repo = AsyncMock()
     msg_repo.insert_user_message = AsyncMock(return_value=fake_msg_id)
@@ -296,6 +312,7 @@ async def test_r8_post_conversations_creates_row_with_optional_initial_message()
 
 # ── R9 — GET /conversations defaults to archived=False ───────────────────────
 
+
 @pytest.mark.asyncio
 async def test_r9_list_conversations_defaults_archived_false() -> None:
     """R9: GET /conversations without ?archived only returns active rows."""
@@ -318,6 +335,7 @@ async def test_r9_list_conversations_defaults_archived_false() -> None:
 
 
 # ── R10 — DELETE /conversations/{id} → archived=True (D-15) ──────────────────
+
 
 @pytest.mark.asyncio
 async def test_r10_delete_conversation_soft_archives_returns_204() -> None:
@@ -352,6 +370,7 @@ async def test_r10_delete_conversation_soft_archives_returns_204() -> None:
 
 # ── R11 — GET /suggested-questions hybrid 5+(0..2) ───────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_r11a_suggested_questions_static_only_when_no_insight() -> None:
     """R11a: with no daily_insight available, returns exactly the 5 static
@@ -381,20 +400,28 @@ async def test_r11b_suggested_questions_hybrid_with_dynamic_problems() -> None:
     from app.api.v1.chat import get_suggested_questions
 
     insight_svc = MagicMock()
-    insight_svc.get_today = AsyncMock(return_value={
-        "date": "2026-05-29",
-        "status": "success",
-        "generation_failed": False,
-        "generated_at": None,
-        "payload": {
-            "problems": [
-                {"id": "p1", "title": "Lead-uri blocate la ofertă",
-                 "estimated_loss_ron": "5000.00"},
-                {"id": "p2", "title": "Răspuns lent la lead noi",
-                 "estimated_loss_ron": "3000.00"},
-            ],
-        },
-    })
+    insight_svc.get_today = AsyncMock(
+        return_value={
+            "date": "2026-05-29",
+            "status": "success",
+            "generation_failed": False,
+            "generated_at": None,
+            "payload": {
+                "problems": [
+                    {
+                        "id": "p1",
+                        "title": "Lead-uri blocate la ofertă",
+                        "estimated_loss_ron": "5000.00",
+                    },
+                    {
+                        "id": "p2",
+                        "title": "Răspuns lent la lead noi",
+                        "estimated_loss_ron": "3000.00",
+                    },
+                ],
+            },
+        }
+    )
 
     with patch("app.api.v1.chat.InsightReadService", return_value=insight_svc):
         result = await get_suggested_questions(
@@ -431,6 +458,7 @@ async def test_r11c_suggested_questions_fault_tolerant_on_insight_failure() -> N
 
 
 # ── R12 — SSE endpoint headers (LM-5) ────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_r12_sse_endpoint_sets_text_event_stream_and_x_accel_buffering() -> None:

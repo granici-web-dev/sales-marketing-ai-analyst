@@ -73,9 +73,7 @@ class RawMefiLead(Base, TenantScopedMixin):
 
     # Revenue amount — NUMERIC(12,2) to avoid float precision loss (DATA-04)
     # Python type hint uses Decimal to match the NUMERIC precision guarantee
-    estimated_value: Mapped[Decimal | None] = mapped_column(
-        Numeric(12, 2), nullable=True
-    )
+    estimated_value: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
 
     # Lead priority: 'low' | 'medium' | 'high' (from enums.md)
     priority: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -85,13 +83,9 @@ class RawMefiLead(Base, TenantScopedMixin):
 
     # ── Timestamps from MEFI (stored as-is, UTC) ──────────────────────────────
     # Views add AT TIME ZONE 'Europe/Bucharest' variants (DATA-03)
-    created_at_source: Mapped[datetime | None] = mapped_column(
-        TIMESTAMPTZ, nullable=True
-    )
+    created_at_source: Mapped[datetime | None] = mapped_column(TIMESTAMPTZ, nullable=True)
     last_contact_at: Mapped[datetime | None] = mapped_column(TIMESTAMPTZ, nullable=True)
-    status_changed_at: Mapped[datetime | None] = mapped_column(
-        TIMESTAMPTZ, nullable=True
-    )
+    status_changed_at: Mapped[datetime | None] = mapped_column(TIMESTAMPTZ, nullable=True)
 
     # ── Extracted custom fields (DATA-02) ─────────────────────────────────────
     # Promoted from custom_fields[] array for indexing and query performance.
@@ -105,10 +99,10 @@ class RawMefiLead(Base, TenantScopedMixin):
     offer_sent_flag: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     # form-cf-38..41: UTM marketing attribution parameters
-    utm_source: Mapped[str | None] = mapped_column(Text, nullable=True)    # form-cf-38
+    utm_source: Mapped[str | None] = mapped_column(Text, nullable=True)  # form-cf-38
     utm_campaign: Mapped[str | None] = mapped_column(Text, nullable=True)  # form-cf-39
-    utm_content: Mapped[str | None] = mapped_column(Text, nullable=True)   # form-cf-40
-    utm_medium: Mapped[str | None] = mapped_column(Text, nullable=True)    # form-cf-41
+    utm_content: Mapped[str | None] = mapped_column(Text, nullable=True)  # form-cf-40
+    utm_medium: Mapped[str | None] = mapped_column(Text, nullable=True)  # form-cf-41
 
     # ── Raw preservation ──────────────────────────────────────────────────────
     # Full custom_fields array stored for schema evolution (new fields added in MEFI

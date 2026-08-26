@@ -77,18 +77,25 @@ depends_on: str | Sequence[str] | None = None
 
 FUNNEL_CONFIG = {
     "funnel_stages": {
-        "visit": [17],      # status_id 17 = SHOWROOM
-        "offer": [3],       # status_id 3 = Ofertat
-        "contract": [1],    # status_id 1 = Clienți (WON)
+        "visit": [17],  # status_id 17 = SHOWROOM
+        "offer": [3],  # status_id 3 = Ofertat
+        "contract": [1],  # status_id 1 = Clienți (WON)
     },
     "offer_sent_flag_field": "form-cf-20",
     "source_categories": {
-        "mail_fb_ig": [2, 11],          # 2=Meta ADS, 11=Mail
-        "telefon": [10],                 # 10=Telefon
-        "whatsapp": [9],                 # 9=WhatsApp
-        "site": [6],                     # 6=Site
-        "designer": [],                  # DESIGNER is a status (24), not a source
-        "alte": [3, 4, 5, 7, 12, 13],   # Recomandare, Teren, Showroom, Arhitect, Colaborare, Client Fidel
+        "mail_fb_ig": [2, 11],  # 2=Meta ADS, 11=Mail
+        "telefon": [10],  # 10=Telefon
+        "whatsapp": [9],  # 9=WhatsApp
+        "site": [6],  # 6=Site
+        "designer": [],  # DESIGNER is a status (24), not a source
+        "alte": [
+            3,
+            4,
+            5,
+            7,
+            12,
+            13,
+        ],  # Recomandare, Teren, Showroom, Arhitect, Colaborare, Client Fidel
     },
     "lifecycle_filter": ["active", "lost", "junk"],
     "showroom_field": "form-cf-14",
@@ -229,26 +236,20 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-
         # MEFI identifier — NOT NULL (UPSERT conflict target)
         sa.Column("external_id", sa.Text, nullable=False),
-
         # MEFI standard fields
         sa.Column("status_id", sa.Integer, nullable=True),
         sa.Column("status_name", sa.Text, nullable=True),
         sa.Column("source_id", sa.Integer, nullable=True),
         sa.Column("source_name", sa.Text, nullable=True),
-
         # Lifecycle bucket — NOT NULL (active/lost/junk)
         sa.Column("lifecycle", sa.Text, nullable=False),
-
         # Salesperson assignment
         sa.Column("assigned_to_id", sa.Integer, nullable=True),
         sa.Column("assigned_to_name", sa.Text, nullable=True),
-
         # Revenue — NUMERIC(12,2), never float (DATA-04, T-02-03)
         sa.Column("estimated_value", sa.Numeric(12, 2), nullable=True),
-
         sa.Column("priority", sa.Text, nullable=True),
         sa.Column(
             "is_duplicate",
@@ -256,25 +257,21 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.text("false"),
         ),
-
         # MEFI source timestamps (UTC)
         sa.Column("created_at_source", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column("last_contact_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column("status_changed_at", sa.TIMESTAMP(timezone=True), nullable=True),
-
         # Extracted custom fields (DATA-02)
-        sa.Column("showroom", sa.Text, nullable=True),            # form-cf-14
+        sa.Column("showroom", sa.Text, nullable=True),  # form-cf-14
         sa.Column("offer_sent_flag", sa.Boolean, nullable=True),  # form-cf-20
-        sa.Column("utm_source", sa.Text, nullable=True),          # form-cf-38
-        sa.Column("utm_campaign", sa.Text, nullable=True),        # form-cf-39
-        sa.Column("utm_content", sa.Text, nullable=True),         # form-cf-40
-        sa.Column("utm_medium", sa.Text, nullable=True),          # form-cf-41
-
+        sa.Column("utm_source", sa.Text, nullable=True),  # form-cf-38
+        sa.Column("utm_campaign", sa.Text, nullable=True),  # form-cf-39
+        sa.Column("utm_content", sa.Text, nullable=True),  # form-cf-40
+        sa.Column("utm_medium", sa.Text, nullable=True),  # form-cf-41
         # Raw preservation
         sa.Column("custom_fields_raw", JSONB, nullable=True),
         sa.Column("raw_payload", JSONB, nullable=True),
         sa.Column("synced_at", sa.TIMESTAMP(timezone=True), nullable=True),
-
         # FK to tenants
         sa.ForeignKeyConstraint(
             ["tenant_id"],
@@ -301,21 +298,16 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-
         # Lead reference — TEXT to match raw_mefi_leads.external_id type
         sa.Column("lead_external_id", sa.Text, nullable=False),
-
         # Previous status (NULL for new leads with no prior recorded status)
         sa.Column("from_status_id", sa.Integer, nullable=True),
         sa.Column("from_status_name", sa.Text, nullable=True),
-
         # New status after detected change — NOT NULL (we always know the destination)
         sa.Column("to_status_id", sa.Integer, nullable=False),
         sa.Column("to_status_name", sa.Text, nullable=True),
-
         # When change was detected (our sync time, not MEFI event time)
         sa.Column("changed_at", sa.TIMESTAMP(timezone=True), nullable=False),
-
         # FK to tenants
         sa.ForeignKeyConstraint(
             ["tenant_id"],
@@ -342,16 +334,12 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-
         # MEFI user ID — INTEGER (enums.md: user IDs are integers, not UUIDs)
         sa.Column("external_id", sa.Integer, nullable=False),
-
         sa.Column("name", sa.Text, nullable=False),
-
         # Manually set by admin after first sync — NULL = not yet determined (D-06)
         sa.Column("is_active", sa.Boolean, nullable=True),
         sa.Column("showroom", sa.Text, nullable=True),
-
         # FK to tenants
         sa.ForeignKeyConstraint(
             ["tenant_id"],

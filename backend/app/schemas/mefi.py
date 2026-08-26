@@ -15,6 +15,7 @@ Note on estimated_value:
   numeric JSON values and numeric strings to Decimal when the field type
   is Decimal.
 """
+
 from __future__ import annotations
 
 from datetime import datetime

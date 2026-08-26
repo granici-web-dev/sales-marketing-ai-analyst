@@ -72,10 +72,12 @@ class TestRedisLock:
         # so the test doesn't need a real DB URL to exercise lock behavior.
         mock_engine = AsyncMock()
         mock_engine.dispose = AsyncMock()
-        with patch("app.tasks.etl.sync_mefi_leads.aioredis") as mock_aioredis, \
-             patch("app.core.tenancy.set_tenant_id"), \
-             patch("app.core.config.settings") as mock_settings, \
-             patch("sqlalchemy.ext.asyncio.create_async_engine", return_value=mock_engine):
+        with (
+            patch("app.tasks.etl.sync_mefi_leads.aioredis") as mock_aioredis,
+            patch("app.core.tenancy.set_tenant_id"),
+            patch("app.core.config.settings") as mock_settings,
+            patch("sqlalchemy.ext.asyncio.create_async_engine", return_value=mock_engine),
+        ):
             mock_settings.redis_url = "redis://localhost:6379/0"
             mock_settings.database_url = "postgresql+asyncpg://test:test@localhost/test"
             mock_settings.mefi_api_key = "lrd_test"
@@ -102,10 +104,12 @@ class TestRedisLock:
 
         mock_engine = AsyncMock()
         mock_engine.dispose = AsyncMock()
-        with patch("app.tasks.etl.sync_mefi_leads.aioredis") as mock_aioredis, \
-             patch("app.core.tenancy.set_tenant_id"), \
-             patch("app.core.config.settings") as mock_settings, \
-             patch("sqlalchemy.ext.asyncio.create_async_engine", return_value=mock_engine):
+        with (
+            patch("app.tasks.etl.sync_mefi_leads.aioredis") as mock_aioredis,
+            patch("app.core.tenancy.set_tenant_id"),
+            patch("app.core.config.settings") as mock_settings,
+            patch("sqlalchemy.ext.asyncio.create_async_engine", return_value=mock_engine),
+        ):
             mock_settings.redis_url = "redis://localhost"
             mock_settings.database_url = "postgresql+asyncpg://test:test@localhost/test"
             mock_settings.mefi_api_key = "lrd_test"
@@ -197,8 +201,9 @@ class TestTaskChainHalt:
         # it as a RuntimeWarning whenever the garbage collector happens to run,
         # so the noise surfaced in an unrelated test and moved around as tests
         # were added.
-        with patch("app.tasks.etl.sync_mefi_leads.asyncio") as mock_asyncio, patch(
-            "app.tasks.etl.sync_mefi_leads._sync_async", MagicMock()
+        with (
+            patch("app.tasks.etl.sync_mefi_leads.asyncio") as mock_asyncio,
+            patch("app.tasks.etl.sync_mefi_leads._sync_async", MagicMock()),
         ):
             mock_asyncio.run = MagicMock(side_effect=RuntimeError("No data for today"))
             with pytest.raises(RuntimeError, match="No data for today"):
@@ -261,9 +266,7 @@ class TestDailyPipeline:
         chain_obj = daily_pipeline(TENANT_ID)
 
         for task in chain_obj.tasks:
-            assert task.immutable, (
-                f"{task.name} must be added with .si(), not .s() (D-12)"
-            )
+            assert task.immutable, f"{task.name} must be added with .si(), not .s() (D-12)"
             assert task.args == (TENANT_ID,), (
                 f"{task.name} must receive exactly the tenant_id, got {task.args}"
             )

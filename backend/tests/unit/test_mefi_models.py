@@ -139,9 +139,7 @@ def test_raw_mefi_lead_estimated_value_is_numeric_12_2() -> None:
     assert col.type.precision == 12, (
         f"estimated_value precision must be 12, got {col.type.precision}"
     )
-    assert col.type.scale == 2, (
-        f"estimated_value scale must be 2, got {col.type.scale}"
-    )
+    assert col.type.scale == 2, f"estimated_value scale must be 2, got {col.type.scale}"
     assert col.nullable is True, "estimated_value should be nullable (not all leads have value)"
 
 

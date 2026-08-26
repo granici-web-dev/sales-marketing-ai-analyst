@@ -110,11 +110,11 @@ class TestGetSalesDashboard:
 
         # session.execute side effects for sequential calls
         exec_results = [
-            _mock_execute_result(first=agg_row),        # aggregate query
-            _mock_execute_result(first=rates_row),       # last-day rates
-            _mock_execute_result(rows=[src_row]),        # source breakdown
-            _mock_execute_result(rows=[ts_row]),         # revenue time series
-            _mock_execute_result(rows=stuck_rows),       # stuck offers
+            _mock_execute_result(first=agg_row),  # aggregate query
+            _mock_execute_result(first=rates_row),  # last-day rates
+            _mock_execute_result(rows=[src_row]),  # source breakdown
+            _mock_execute_result(rows=[ts_row]),  # revenue time series
+            _mock_execute_result(rows=stuck_rows),  # stuck offers
         ]
         session.execute = AsyncMock(side_effect=exec_results)
 
@@ -175,16 +175,14 @@ class TestGetSalesDashboard:
         exec_results = [
             _mock_execute_result(first=agg_row),
             _mock_execute_result(first=rates_row),
-            _mock_execute_result(rows=[]),   # source breakdown empty
+            _mock_execute_result(rows=[]),  # source breakdown empty
             _mock_execute_result(rows=ts_rows),
-            _mock_execute_result(rows=[]),   # stuck offers empty
+            _mock_execute_result(rows=[]),  # stuck offers empty
         ]
         session.execute = AsyncMock(side_effect=exec_results)
 
         svc, _ = _make_service(session)
-        result = await svc.get_sales_dashboard(
-            date(2026, 5, 1), date(2026, 5, 3)
-        )
+        result = await svc.get_sales_dashboard(date(2026, 5, 1), date(2026, 5, 3))
 
         # Assert daily granularity — 3 entries for 3-day range
         assert len(result["revenue_series"]) == 3
@@ -210,10 +208,10 @@ class TestGetSalesDashboard:
 
         exec_results = [
             _mock_execute_result(first=agg_row),
-            _mock_execute_result(first=None),   # no rates row
-            _mock_execute_result(rows=[]),       # no source rows
-            _mock_execute_result(rows=[]),       # no ts rows
-            _mock_execute_result(rows=[]),       # no stuck offers
+            _mock_execute_result(first=None),  # no rates row
+            _mock_execute_result(rows=[]),  # no source rows
+            _mock_execute_result(rows=[]),  # no ts rows
+            _mock_execute_result(rows=[]),  # no stuck offers
         ]
         session.execute = AsyncMock(side_effect=exec_results)
 
@@ -251,9 +249,7 @@ class TestGetSalespeopleDashboard:
         sp_row.conversion_o_to_c = Decimal("0.4000")
         sp_row.conversion_l_to_c = Decimal("0.1778")
 
-        session.execute = AsyncMock(
-            return_value=_mock_execute_result(rows=[sp_row])
-        )
+        session.execute = AsyncMock(return_value=_mock_execute_result(rows=[sp_row]))
 
         svc, _ = _make_service(session)
         result = await svc.get_salespeople_dashboard(FROM_DATE, TO_DATE)
@@ -286,9 +282,7 @@ class TestGetSalespeopleDashboard:
         sp_row.conversion_o_to_c = Decimal("0.4000")
         sp_row.conversion_l_to_c = Decimal("0.1778")
 
-        session.execute = AsyncMock(
-            return_value=_mock_execute_result(rows=[sp_row])
-        )
+        session.execute = AsyncMock(return_value=_mock_execute_result(rows=[sp_row]))
 
         svc, _ = _make_service(session)
         result = await svc.get_salespeople_dashboard(FROM_DATE, TO_DATE)
@@ -310,10 +304,10 @@ class TestGetMarketingDashboard:
         # Marketing dashboard calls: lead_volume_by_source, site_conversion, junk_by_source
         # site_conversion_rate now reads .first() → row with deals_won/leads (hotfix 2026-05-30)
         exec_results = [
-            _mock_execute_result(rows=[]),    # lead_volume_by_source time series
+            _mock_execute_result(rows=[]),  # lead_volume_by_source time series
             _mock_execute_result(first=None),  # site_conversion_rate (no site rows)
-            _mock_execute_result(rows=[]),    # junk query
-            _mock_execute_result(rows=[]),    # total query
+            _mock_execute_result(rows=[]),  # junk query
+            _mock_execute_result(rows=[]),  # total query
         ]
         session.execute = AsyncMock(side_effect=exec_results)
 
@@ -339,10 +333,10 @@ class TestGetMarketingDashboard:
         site_row.leads = 31
 
         exec_results = [
-            _mock_execute_result(rows=[]),                      # lead_volume_by_source
-            _mock_execute_result(first=site_row),               # site_conversion_rate counts
-            _mock_execute_result(rows=[]),                      # junk query
-            _mock_execute_result(rows=[]),                      # total query
+            _mock_execute_result(rows=[]),  # lead_volume_by_source
+            _mock_execute_result(first=site_row),  # site_conversion_rate counts
+            _mock_execute_result(rows=[]),  # junk query
+            _mock_execute_result(rows=[]),  # total query
         ]
         session.execute = AsyncMock(side_effect=exec_results)
 
@@ -366,9 +360,7 @@ class TestGetStuckOffers:
         stuck_row.salesperson_name = "Roibu Valeria"
         stuck_row.days_stuck = 18.5
 
-        session.execute = AsyncMock(
-            return_value=_mock_execute_result(rows=[stuck_row])
-        )
+        session.execute = AsyncMock(return_value=_mock_execute_result(rows=[stuck_row]))
 
         svc, _ = _make_service(session)
         result = await svc.get_stuck_offers(FROM_DATE, TO_DATE)

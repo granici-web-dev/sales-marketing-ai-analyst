@@ -20,6 +20,7 @@ PII note (CLAUDE.md no-PII rule):
 Source: docs/api-references/mefi/leads-read.md (rate limit headers, request shape)
         .planning/phases/02-mefi-etl/02-RESEARCH.md (Q8 MefiClient pattern)
 """
+
 from __future__ import annotations
 
 import asyncio

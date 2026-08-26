@@ -6,4 +6,3 @@ Phase 3 Plan 03 — service layer over v_mefi_leads_active (D-14).
 """
 
 from __future__ import annotations
-

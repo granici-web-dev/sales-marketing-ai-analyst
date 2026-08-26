@@ -60,9 +60,7 @@ class TestExtractNumbersFromText:
         )
 
         result = extract_numbers_from_text("351 lead-uri înregistrate în total")
-        assert 351.0 in result, (
-            f"'351' must extract as 351.0, got {result} (AI-06)"
-        )
+        assert 351.0 in result, f"'351' must extract as 351.0, got {result} (AI-06)"
 
 
 class TestCrossCheck:
@@ -108,9 +106,7 @@ class TestCrossCheck:
         parsed.problems = []
 
         kpi = {"leads_total": 12}
-        problems_input = [
-            {"rule_id": "slow_first_touch", "estimated_loss_ron": Decimal("5000.00")}
-        ]
+        problems_input = [{"rule_id": "slow_first_touch", "estimated_loss_ron": Decimal("5000.00")}]
 
         result = cross_check(parsed, kpi, problems_input)
         assert result is False, (
@@ -133,9 +129,7 @@ class TestCrossCheck:
         parsed.problems = []
 
         kpi = {"leads_total": 12}
-        problems_input = [
-            {"rule_id": "slow_first_touch", "estimated_loss_ron": Decimal("5000.00")}
-        ]
+        problems_input = [{"rule_id": "slow_first_touch", "estimated_loss_ron": Decimal("5000.00")}]
 
         result = cross_check(parsed, kpi, problems_input)
         assert result is True, (

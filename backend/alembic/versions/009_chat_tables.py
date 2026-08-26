@@ -268,7 +268,5 @@ def downgrade() -> None:
     op.drop_index("ix_chat_messages_conv_created", table_name="chat_messages")
     op.drop_table("chat_messages")
 
-    op.drop_index(
-        "ix_chat_conversations_tenant_user_last", table_name="chat_conversations"
-    )
+    op.drop_index("ix_chat_conversations_tenant_user_last", table_name="chat_conversations")
     op.drop_table("chat_conversations")

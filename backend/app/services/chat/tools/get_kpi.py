@@ -47,12 +47,15 @@ class GetKpiInput(BaseModel):
 
     date_from: date = Field(..., description="Start date (inclusive). Format: YYYY-MM-DD.")
     date_to: date = Field(..., description="End date (inclusive). Format: YYYY-MM-DD.")
-    metrics: list[str] = Field(..., description=(
-        "Metric names to aggregate. Supported: revenue, contracts, leads, "
-        "visits, offers, avg_deal_size, conversion_rate, conversion_l_to_v, "
-        "conversion_v_to_o, conversion_l_to_o, conversion_o_to_c, "
-        "conversion_l_to_c."
-    ))
+    metrics: list[str] = Field(
+        ...,
+        description=(
+            "Metric names to aggregate. Supported: revenue, contracts, leads, "
+            "visits, offers, avg_deal_size, conversion_rate, conversion_l_to_v, "
+            "conversion_v_to_o, conversion_l_to_o, conversion_o_to_c, "
+            "conversion_l_to_c."
+        ),
+    )
 
 
 def _to_jsonable(value: object) -> object:

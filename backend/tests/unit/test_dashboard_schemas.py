@@ -90,9 +90,7 @@ def _sales_response() -> SalesDashboardResponse:
                 conversion_rate=Decimal("0.1290"),
             )
         ],
-        revenue_series=[
-            RevenueSeries(date=date(2026, 5, 1), revenue=Decimal("85000.00"))
-        ],
+        revenue_series=[RevenueSeries(date=date(2026, 5, 1), revenue=Decimal("85000.00"))],
         stuck_offers=[],
     )
 
@@ -161,9 +159,7 @@ def test_marketing_ad_spend_is_null() -> None:
 
     model = MarketingDashboardResponse(
         period=_period(),
-        lead_volume_by_source=[
-            LeadVolumeBySource(source="mail_fb_ig", total_leads=55, series=[])
-        ],
+        lead_volume_by_source=[LeadVolumeBySource(source="mail_fb_ig", total_leads=55, series=[])],
         site_conversion_rate=Decimal("0.0645"),
         junk_by_source=[],
     )
@@ -267,9 +263,7 @@ def test_site_conversion_rate_decimal_as_string() -> None:
 
     model = MarketingDashboardResponse(
         period=_period(),
-        lead_volume_by_source=[
-            LeadVolumeBySource(source="site", total_leads=30, series=[])
-        ],
+        lead_volume_by_source=[LeadVolumeBySource(source="site", total_leads=30, series=[])],
         site_conversion_rate=Decimal("0.0645"),
         junk_by_source=[],
     )

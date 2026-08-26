@@ -21,6 +21,7 @@ ContextVar. So the check lives next to the code instead of in someone's memory.
 Same shape as the PII check in `test_logging.py`: a property of the source is
 checked by walking the AST, not by running anything.
 """
+
 from __future__ import annotations
 
 import ast

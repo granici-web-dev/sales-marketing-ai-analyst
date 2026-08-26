@@ -27,6 +27,7 @@ So the checks below sweep the registry instead of naming tables. A new model is
 covered the moment it is imported in `app/models/__init__.py` — which it must
 be anyway, or Alembic's autogenerate will not see it either.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import DateTime

@@ -65,8 +65,9 @@ def _make_usage_mock(input_tokens: int = 3000, output_tokens: int = 2000) -> Mag
     return usage
 
 
-def _make_anthropic_response_mock(payload_dict: dict, input_tokens: int = 3000,
-                                   output_tokens: int = 2000) -> MagicMock:
+def _make_anthropic_response_mock(
+    payload_dict: dict, input_tokens: int = 3000, output_tokens: int = 2000
+) -> MagicMock:
     """Build a mock Anthropic Message response with a tool_use block."""
     response = MagicMock()
     response.content = [_make_tool_block_mock(payload_dict)]
@@ -117,8 +118,11 @@ class TestInsightServiceRun:
             ],
             "warnings": [],
             "weekly_action_plan": [
-                "Acțiune 1", "Acțiune 2", "Acțiune 3",
-                "Acțiune 4", "Acțiune 5",
+                "Acțiune 1",
+                "Acțiune 2",
+                "Acțiune 3",
+                "Acțiune 4",
+                "Acțiune 5",
             ],
             "generated_at": "2026-05-28T06:00:00+00:00",
         }
@@ -129,9 +133,7 @@ class TestInsightServiceRun:
         service, _ = _make_service(mock_session)
 
         # Patch out DB fetches and Anthropic client
-        service._fetch_detected_problems = AsyncMock(
-            return_value=[make_detected_problem_input()]
-        )
+        service._fetch_detected_problems = AsyncMock(return_value=[make_detected_problem_input()])
         service._fetch_kpi_snapshot = AsyncMock(return_value=make_kpi_snapshot())
 
         with patch("app.services.insights.insight_service.AsyncAnthropic") as mock_cls:
@@ -168,9 +170,7 @@ class TestInsightServiceRun:
         mock_session = AsyncMock()
 
         service, _ = _make_service(mock_session)
-        service._fetch_detected_problems = AsyncMock(
-            return_value=[make_detected_problem_input()]
-        )
+        service._fetch_detected_problems = AsyncMock(return_value=[make_detected_problem_input()])
         service._fetch_kpi_snapshot = AsyncMock(return_value=make_kpi_snapshot())
 
         with patch("app.services.insights.insight_service.AsyncAnthropic") as mock_cls:
@@ -210,9 +210,7 @@ class TestInsightServiceRun:
         mock_session = AsyncMock()
 
         service, _ = _make_service(mock_session)
-        service._fetch_detected_problems = AsyncMock(
-            return_value=[make_detected_problem_input()]
-        )
+        service._fetch_detected_problems = AsyncMock(return_value=[make_detected_problem_input()])
         service._fetch_kpi_snapshot = AsyncMock(return_value=make_kpi_snapshot())
 
         with patch("app.services.insights.insight_service.AsyncAnthropic") as mock_cls:
@@ -327,9 +325,7 @@ class TestInsightServiceRun:
         mock_session = AsyncMock()
 
         service, _ = _make_service(mock_session)
-        service._fetch_detected_problems = AsyncMock(
-            return_value=[make_detected_problem_input()]
-        )
+        service._fetch_detected_problems = AsyncMock(return_value=[make_detected_problem_input()])
         service._fetch_kpi_snapshot = AsyncMock(return_value=make_kpi_snapshot())
 
         with patch("app.services.insights.insight_service.AsyncAnthropic") as mock_cls:
@@ -388,8 +384,9 @@ class TestInsightServiceRun:
             result_dict, status = await service.run(date.today())
 
         # Must not raise; Claude must have been called
-        mock_client.messages.create.assert_called_once(), (
-            "Claude must be called even on zero-anomaly day (D-13)"
+        (
+            mock_client.messages.create.assert_called_once(),
+            ("Claude must be called even on zero-anomaly day (D-13)"),
         )
         assert status in ("success", "fallback"), (
             f"Zero-anomaly day must complete without raising; got status='{status}' (D-13)"

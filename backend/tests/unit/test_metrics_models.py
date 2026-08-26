@@ -108,8 +108,7 @@ def test_daily_kpi_unique_constraint_two_cols() -> None:
     assert "tenant_id" in col_names, "uq_daily_kpi_tenant_date must include 'tenant_id'"
     assert "date" in col_names, "uq_daily_kpi_tenant_date must include 'date'"
     assert len(col_names) == 2, (
-        f"uq_daily_kpi_tenant_date must have exactly 2 columns (tenant_id, date), "
-        f"got {col_names}"
+        f"uq_daily_kpi_tenant_date must have exactly 2 columns (tenant_id, date), got {col_names}"
     )
 
 
@@ -148,7 +147,9 @@ def test_salesperson_kpi_unique_constraint_three_cols() -> None:
         "UniqueConstraint(name='uq_salesperson_daily_kpi_tenant_sp_date') in __table_args__"
     )
     col_names = {col.key for col in uc.columns}
-    assert "tenant_id" in col_names, "uq_salesperson_daily_kpi_tenant_sp_date must include 'tenant_id'"
+    assert "tenant_id" in col_names, (
+        "uq_salesperson_daily_kpi_tenant_sp_date must include 'tenant_id'"
+    )
     assert "salesperson_external_id" in col_names, (
         "uq_salesperson_daily_kpi_tenant_sp_date must include 'salesperson_external_id'"
     )
@@ -207,7 +208,9 @@ def test_source_kpi_unique_constraint_three_cols() -> None:
         "Pitfall 5: 3-col key (tenant_id, source, date) required to handle 7 source categories."
     )
     col_names = {col.key for col in uc.columns}
-    assert "tenant_id" in col_names, "uq_source_daily_kpi_tenant_source_date must include 'tenant_id'"
+    assert "tenant_id" in col_names, (
+        "uq_source_daily_kpi_tenant_source_date must include 'tenant_id'"
+    )
     assert "source" in col_names, "uq_source_daily_kpi_tenant_source_date must include 'source'"
     assert "date" in col_names, "uq_source_daily_kpi_tenant_source_date must include 'date'"
     assert len(col_names) == 3, (

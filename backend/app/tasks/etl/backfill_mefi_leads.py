@@ -113,94 +113,104 @@ async def _backfill_async(tenant_id: UUID) -> dict:
     task_engine = create_async_engine(settings.database_url, poolclass=NullPool)
     TaskSession = async_sessionmaker(task_engine, expire_on_commit=False, class_=AsyncSession)
     try:
-      async with TaskSession() as session:
-        repo = MefiRepository(session, tenant_id)
+        async with TaskSession() as session:
+            repo = MefiRepository(session, tenant_id)
 
-        async with MefiClient(api_key=settings.mefi_api_key) as client:
-            for month_start, month_end in windows:
-                month_count = 0
-                page = 1
+            async with MefiClient(api_key=settings.mefi_api_key) as client:
+                for month_start, month_end in windows:
+                    month_count = 0
+                    page = 1
 
-                while True:
-                    response = await client.search_leads(
-                        filters={
-                            "lifecycle": ["active", "lost", "junk"],
-                            "date_from": month_start.isoformat(),
-                            "date_to": month_end.isoformat(),
-                            "date_field": "created_at",
-                        },
-                        page=page,
-                        per_page=100,
-                        sort="created_at",
-                        order="asc",
-                    )
+                    while True:
+                        response = await client.search_leads(
+                            filters={
+                                "lifecycle": ["active", "lost", "junk"],
+                                "date_from": month_start.isoformat(),
+                                "date_to": month_end.isoformat(),
+                                "date_field": "created_at",
+                            },
+                            page=page,
+                            per_page=100,
+                            sort="created_at",
+                            order="asc",
+                        )
 
-                    if not response.data:
-                        break
+                        if not response.data:
+                            break
 
-                    rows = []
-                    salesperson_pairs: list[tuple[int, str]] = []
-                    now = datetime.now(UTC)
+                        rows = []
+                        salesperson_pairs: list[tuple[int, str]] = []
+                        now = datetime.now(UTC)
 
-                    for lead in response.data:
-                        cf = lead.custom_fields if lead.custom_fields else []
-                        offer_raw = get_cf(cf, 20)
-                        offer_flag: bool | None = None
-                        if offer_raw == "✅DA":
-                            offer_flag = True
-                        elif offer_raw == "❌NU":
-                            offer_flag = False
+                        for lead in response.data:
+                            cf = lead.custom_fields if lead.custom_fields else []
+                            offer_raw = get_cf(cf, 20)
+                            offer_flag: bool | None = None
+                            if offer_raw == "✅DA":
+                                offer_flag = True
+                            elif offer_raw == "❌NU":
+                                offer_flag = False
 
-                        rows.append({
-                            "tenant_id": tenant_id,
-                            "external_id": str(lead.id),
-                            "status_id": lead.status.id if lead.status else None,
-                            "status_name": lead.status.name if lead.status else None,
-                            "source_id": lead.source.id if lead.source else None,
-                            "source_name": lead.source.name if lead.source else None,
-                            "lifecycle": lead.lifecycle or "active",
-                            "assigned_to_id": lead.assigned_to.id if lead.assigned_to else None,
-                            "assigned_to_name": lead.assigned_to.name if lead.assigned_to else None,
-                            "estimated_value": lead.estimated_value,
-                            "priority": lead.priority.get("name") if isinstance(lead.priority, dict) else lead.priority,
-                            "is_duplicate": lead.is_duplicate or False,
-                            "created_at_source": lead.created_at,
-                            "last_contact_at": lead.last_contact_at,
-                            "status_changed_at": lead.status_changed_at,
-                            "showroom": get_cf(cf, 14),
-                            "offer_sent_flag": offer_flag,
-                            "utm_source": get_cf(cf, 38),
-                            "utm_campaign": get_cf(cf, 39),
-                            "utm_content": get_cf(cf, 40),
-                            "utm_medium": get_cf(cf, 41),
-                            "custom_fields_raw": [f.model_dump(mode="json") for f in cf] if cf else None,
-                            "raw_payload": lead.model_dump(mode="json"),
-                            "synced_at": now,
-                            "updated_at": now,
-                        })
-
-                        if lead.assigned_to and lead.assigned_to.id:
-                            salesperson_pairs.append(
-                                (lead.assigned_to.id, lead.assigned_to.name or "")
+                            rows.append(
+                                {
+                                    "tenant_id": tenant_id,
+                                    "external_id": str(lead.id),
+                                    "status_id": lead.status.id if lead.status else None,
+                                    "status_name": lead.status.name if lead.status else None,
+                                    "source_id": lead.source.id if lead.source else None,
+                                    "source_name": lead.source.name if lead.source else None,
+                                    "lifecycle": lead.lifecycle or "active",
+                                    "assigned_to_id": lead.assigned_to.id
+                                    if lead.assigned_to
+                                    else None,
+                                    "assigned_to_name": lead.assigned_to.name
+                                    if lead.assigned_to
+                                    else None,
+                                    "estimated_value": lead.estimated_value,
+                                    "priority": lead.priority.get("name")
+                                    if isinstance(lead.priority, dict)
+                                    else lead.priority,
+                                    "is_duplicate": lead.is_duplicate or False,
+                                    "created_at_source": lead.created_at,
+                                    "last_contact_at": lead.last_contact_at,
+                                    "status_changed_at": lead.status_changed_at,
+                                    "showroom": get_cf(cf, 14),
+                                    "offer_sent_flag": offer_flag,
+                                    "utm_source": get_cf(cf, 38),
+                                    "utm_campaign": get_cf(cf, 39),
+                                    "utm_content": get_cf(cf, 40),
+                                    "utm_medium": get_cf(cf, 41),
+                                    "custom_fields_raw": [f.model_dump(mode="json") for f in cf]
+                                    if cf
+                                    else None,
+                                    "raw_payload": lead.model_dump(mode="json"),
+                                    "synced_at": now,
+                                    "updated_at": now,
+                                }
                             )
 
-                    await repo.bulk_upsert_leads(rows)
-                    await repo.upsert_salespeople(salesperson_pairs)
-                    month_count += len(rows)
+                            if lead.assigned_to and lead.assigned_to.id:
+                                salesperson_pairs.append(
+                                    (lead.assigned_to.id, lead.assigned_to.name or "")
+                                )
 
-                    if len(response.data) < 100:
-                        break
-                    page += 1
+                        await repo.bulk_upsert_leads(rows)
+                        await repo.upsert_salespeople(salesperson_pairs)
+                        month_count += len(rows)
 
-                total_synced += month_count
-                log.info(
-                    "backfill.month_complete",
-                    month=str(month_start),
-                    leads_synced=month_count,
-                    total_so_far=total_synced,
-                )
+                        if len(response.data) < 100:
+                            break
+                        page += 1
 
-        log.info("backfill.complete", total_synced=total_synced)
-        return {"status": "success", "total_synced": total_synced}
+                    total_synced += month_count
+                    log.info(
+                        "backfill.month_complete",
+                        month=str(month_start),
+                        leads_synced=month_count,
+                        total_so_far=total_synced,
+                    )
+
+            log.info("backfill.complete", total_synced=total_synced)
+            return {"status": "success", "total_synced": total_synced}
     finally:
         await task_engine.dispose()

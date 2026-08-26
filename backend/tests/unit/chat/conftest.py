@@ -198,9 +198,7 @@ def mock_anthropic_stream():
             if usage:
                 final_msg.usage.input_tokens = usage.get("input_tokens", 0)
                 final_msg.usage.output_tokens = usage.get("output_tokens", 0)
-                final_msg.usage.cache_read_input_tokens = usage.get(
-                    "cache_read_input_tokens", 0
-                )
+                final_msg.usage.cache_read_input_tokens = usage.get("cache_read_input_tokens", 0)
         stream_obj.get_final_message = AsyncMock(return_value=final_msg)
 
         # Async-context-manager wrapper for `with client.messages.stream(...) as stream`.

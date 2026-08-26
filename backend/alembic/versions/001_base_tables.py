@@ -21,6 +21,7 @@ INFRA-03: tenant_id NOT NULL on every table except tenants (enforced here at DDL
           in addition to the ORM-level with_loader_criteria enforcement in session.py).
 PIPE-04: pipeline_runs table created in Phase 1 so Phase 3 can write to it immediately.
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -112,9 +113,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(
-            ["tenant_id"], ["tenants.id"], name="fk_sync_runs_tenant_id"
-        ),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], name="fk_sync_runs_tenant_id"),
     )
     op.create_index("ix_sync_runs_tenant_id", "sync_runs", ["tenant_id"])
 
@@ -145,9 +144,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(
-            ["tenant_id"], ["tenants.id"], name="fk_pipeline_runs_tenant_id"
-        ),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], name="fk_pipeline_runs_tenant_id"),
     )
     op.create_index("ix_pipeline_runs_tenant_id", "pipeline_runs", ["tenant_id"])
 

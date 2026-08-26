@@ -24,6 +24,7 @@ thing — and would keep passing if nothing ever called it. The `@connect`
 decorator in `celery_app.py` is the load-bearing part: without it every worker
 child would quietly inherit the parent's pool, and the tests would stay green.
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -97,9 +98,7 @@ class TestEngineReplacement:
         with (
             patch.object(db_session_module, "engine", old_engine),
             patch.object(db_session_module, "_create_engine", return_value=MagicMock()),
-            patch.object(
-                db_session_module, "_create_session_factory", return_value=new_factory
-            ),
+            patch.object(db_session_module, "_create_session_factory", return_value=new_factory),
         ):
             db_session_module.init_worker_process()
 

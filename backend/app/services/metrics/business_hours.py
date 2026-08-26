@@ -119,7 +119,10 @@ def business_minutes_between(
                 next_day_date.year,
                 next_day_date.month,
                 next_day_date.day,
-                0, 0, 0, 0,
+                0,
+                0,
+                0,
+                0,
                 tzinfo=tz,
             )
             current = _next_open(next_day_start, open_time, work_days, tz)
@@ -132,7 +135,8 @@ def business_minutes_between(
             current.day,
             open_time.hour,
             open_time.minute,
-            0, 0,
+            0,
+            0,
             tzinfo=tz,
         )
         close_dt = datetime(
@@ -141,7 +145,8 @@ def business_minutes_between(
             current.day,
             close_time.hour,
             close_time.minute,
-            0, 0,
+            0,
+            0,
             tzinfo=tz,
         )
 
@@ -157,7 +162,10 @@ def business_minutes_between(
                 next_day_date.year,
                 next_day_date.month,
                 next_day_date.day,
-                0, 0, 0, 0,
+                0,
+                0,
+                0,
+                0,
                 tzinfo=tz,
             )
             current = _next_open(next_day_start, open_time, work_days, tz)

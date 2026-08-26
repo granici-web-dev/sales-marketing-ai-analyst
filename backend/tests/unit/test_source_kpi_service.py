@@ -30,6 +30,7 @@ Designer coverage is not dropped, it moved. Designer is a MEFI *status*
 by a CTE over `mefi_lead_history` in `daily_kpi_service`. The test below pins
 the boundary so nobody reintroduces it here.
 """
+
 from __future__ import annotations
 
 from datetime import date

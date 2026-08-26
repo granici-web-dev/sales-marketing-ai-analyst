@@ -23,6 +23,7 @@ import pytest
 
 # ── Helper to build a valid DailyInsightResponse payload dict ─────────────────
 
+
 def _make_valid_payload(**overrides) -> dict:
     """Build a minimal valid payload dict for DailyInsightResponse.model_validate()."""
     payload = {

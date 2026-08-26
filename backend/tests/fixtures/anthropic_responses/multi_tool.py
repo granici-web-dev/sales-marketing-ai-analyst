@@ -176,6 +176,7 @@ MULTI_TOOL_EVENTS: list[dict[str, Any]] = [
 
 # Convenience extractors for tests.
 
+
 def get_tool_use_blocks() -> list[dict[str, Any]]:
     """Returns the 3 tool_use content_block_start events from this cassette."""
     return [

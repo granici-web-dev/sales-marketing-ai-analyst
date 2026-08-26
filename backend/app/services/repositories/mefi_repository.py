@@ -51,13 +51,27 @@ class MefiRepository:
         from app.models.mefi import RawMefiLead  # deferred — fork-safe
 
         update_cols = [
-            "status_id", "status_name", "source_id", "source_name",
-            "lifecycle", "assigned_to_id", "assigned_to_name",
-            "estimated_value", "priority", "is_duplicate",
-            "last_contact_at", "status_changed_at",
-            "showroom", "offer_sent_flag",
-            "utm_source", "utm_campaign", "utm_content", "utm_medium",
-            "custom_fields_raw", "raw_payload", "synced_at",
+            "status_id",
+            "status_name",
+            "source_id",
+            "source_name",
+            "lifecycle",
+            "assigned_to_id",
+            "assigned_to_name",
+            "estimated_value",
+            "priority",
+            "is_duplicate",
+            "last_contact_at",
+            "status_changed_at",
+            "showroom",
+            "offer_sent_flag",
+            "utm_source",
+            "utm_campaign",
+            "utm_content",
+            "utm_medium",
+            "custom_fields_raw",
+            "raw_payload",
+            "synced_at",
             "updated_at",  # keep updated_at current on every sync
         ]
 
@@ -114,26 +128,30 @@ class MefiRepository:
 
             if ext_id not in stored:
                 # New lead — record initial status as a history entry
-                history_rows.append({
-                    "tenant_id": self._tenant_id,
-                    "lead_external_id": ext_id,
-                    "changed_at": now,
-                    "from_status_id": None,
-                    "from_status_name": None,
-                    "to_status_id": new_status_id,
-                    "to_status_name": new_status_name,
-                })
+                history_rows.append(
+                    {
+                        "tenant_id": self._tenant_id,
+                        "lead_external_id": ext_id,
+                        "changed_at": now,
+                        "from_status_id": None,
+                        "from_status_name": None,
+                        "to_status_id": new_status_id,
+                        "to_status_name": new_status_name,
+                    }
+                )
             elif stored[ext_id].status_id != new_status_id:
                 # Status changed — record the transition
-                history_rows.append({
-                    "tenant_id": self._tenant_id,
-                    "lead_external_id": ext_id,
-                    "changed_at": now,
-                    "from_status_id": stored[ext_id].status_id,
-                    "from_status_name": stored[ext_id].status_name,
-                    "to_status_id": new_status_id,
-                    "to_status_name": new_status_name,
-                })
+                history_rows.append(
+                    {
+                        "tenant_id": self._tenant_id,
+                        "lead_external_id": ext_id,
+                        "changed_at": now,
+                        "from_status_id": stored[ext_id].status_id,
+                        "from_status_name": stored[ext_id].status_name,
+                        "to_status_id": new_status_id,
+                        "to_status_name": new_status_name,
+                    }
+                )
 
         return history_rows
 
@@ -194,8 +212,10 @@ class MefiRepository:
         """
         from app.models.mefi import RawMefiLead  # deferred — fork-safe
 
-        stmt = select(func.count()).select_from(RawMefiLead).where(
-            RawMefiLead.tenant_id == self._tenant_id
+        stmt = (
+            select(func.count())
+            .select_from(RawMefiLead)
+            .where(RawMefiLead.tenant_id == self._tenant_id)
         )
         result = await self._session.execute(stmt)
         return result.scalar_one()
@@ -207,13 +227,10 @@ class MefiRepository:
         """
         from app.models.pipeline import SyncRun  # deferred — fork-safe
 
-        stmt = (
-            select(func.max(SyncRun.completed_at))
-            .where(
-                SyncRun.tenant_id == self._tenant_id,
-                SyncRun.source == "mefi",
-                SyncRun.status == "success",
-            )
+        stmt = select(func.max(SyncRun.completed_at)).where(
+            SyncRun.tenant_id == self._tenant_id,
+            SyncRun.source == "mefi",
+            SyncRun.status == "success",
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()

@@ -82,8 +82,7 @@ class TestRegistryShape:
             )
             params = list(inspect.signature(tool.handler).parameters)
             assert params[:3] == ["tenant_id", "session", "inp"], (
-                f"Tool {name}: LM-3 contract requires (tenant_id, session, inp); "
-                f"got {params[:3]}"
+                f"Tool {name}: LM-3 contract requires (tenant_id, session, inp); got {params[:3]}"
             )
 
     def test_every_definition_has_required_keys(self) -> None:
@@ -99,7 +98,9 @@ class TestRegistryShape:
                 f"Tool {name}: definition.name mismatch ({tool.definition['name']!r})"
             )
             schema = tool.definition["input_schema"]
-            assert isinstance(schema, dict), f"Tool {name}: input_schema must be dict, not BaseModel"
+            assert isinstance(schema, dict), (
+                f"Tool {name}: input_schema must be dict, not BaseModel"
+            )
             assert schema.get("type") == "object", (
                 f"Tool {name}: JSON schema root must be type=object"
             )
@@ -171,9 +172,7 @@ class TestGetKpiHandler:
             }
         )
         fake_ctor = MagicMock(return_value=fake_svc)
-        monkeypatch.setattr(
-            "app.services.chat.tools.get_kpi.DailyKpiService", fake_ctor
-        )
+        monkeypatch.setattr("app.services.chat.tools.get_kpi.DailyKpiService", fake_ctor)
 
         session = AsyncMock()
         inp = GetKpiInput(
@@ -264,9 +263,7 @@ class TestGetSalespersonPerformanceHandler:
         assert len(result["salespeople"]) == 2
 
     @pytest.mark.asyncio
-    async def test_get_salesperson_performance_filters_by_external_id(
-        self, monkeypatch
-    ) -> None:
+    async def test_get_salesperson_performance_filters_by_external_id(self, monkeypatch) -> None:
         """When salesperson_external_id provided, filter the response."""
         from unittest.mock import AsyncMock, MagicMock
 

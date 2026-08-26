@@ -2,6 +2,7 @@
 
 Imports expose top-level names for convenient usage across the application.
 """
+
 from __future__ import annotations
 
 from app.schemas.auth import UserOut

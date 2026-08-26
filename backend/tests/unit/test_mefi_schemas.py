@@ -7,6 +7,7 @@ Tests cover:
 - MefiLeadResponse optional fields (all None-safe)
 - MefiMeta pagination fields
 """
+
 from __future__ import annotations
 
 from decimal import Decimal
@@ -126,9 +127,7 @@ class TestMefiLeadResponse:
 
 class TestMefiMeta:
     def test_parse_meta(self) -> None:
-        meta = MefiMeta.model_validate(
-            {"page": 1, "per_page": 100, "total": 543, "total_pages": 6}
-        )
+        meta = MefiMeta.model_validate({"page": 1, "per_page": 100, "total": 543, "total_pages": 6})
         assert meta.page == 1
         assert meta.per_page == 100
         assert meta.total == 543

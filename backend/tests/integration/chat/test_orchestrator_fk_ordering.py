@@ -50,7 +50,9 @@ _integration_skip = pytest.mark.skipif(
 
 # Sofa Belle seed identifiers — must match conftest + Alembic data migration.
 SOFA_BELLE_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
-SOFA_BELLE_USER_ID = UUID("00000000-0000-0000-0000-000000000002")  # admin@sofabelle.ro per migration seed
+SOFA_BELLE_USER_ID = UUID(
+    "00000000-0000-0000-0000-000000000002"
+)  # admin@sofabelle.ro per migration seed
 
 
 @pytest.fixture
@@ -90,7 +92,9 @@ async def seeded_conversation_id(real_session) -> UUID:
     yield conv_id
     # Cleanup: cascade-delete via tool_calls → messages → conversation.
     await real_session.execute(
-        text("DELETE FROM chat_tool_calls WHERE message_id IN (SELECT id FROM chat_messages WHERE conversation_id = :c)"),
+        text(
+            "DELETE FROM chat_tool_calls WHERE message_id IN (SELECT id FROM chat_messages WHERE conversation_id = :c)"
+        ),
         {"c": str(conv_id)},
     )
     await real_session.execute(

@@ -424,10 +424,15 @@ async def send_message(
                     conversation_id=str(conversation_id),
                     tenant_id=str(tenant_id),
                 )
-                await queue.put((
-                    "error",
-                    {"code": "internal", "message_ro": "A apărut o problemă. Te rog încearcă din nou."},
-                ))
+                await queue.put(
+                    (
+                        "error",
+                        {
+                            "code": "internal",
+                            "message_ro": "A apărut o problemă. Te rog încearcă din nou.",
+                        },
+                    )
+                )
             finally:
                 # Sentinel — tells the consumer the producer is done.
                 await queue.put(None)
@@ -437,9 +442,7 @@ async def send_message(
         try:
             while True:
                 try:
-                    item = await asyncio.wait_for(
-                        queue.get(), timeout=HEARTBEAT_INTERVAL_S
-                    )
+                    item = await asyncio.wait_for(queue.get(), timeout=HEARTBEAT_INTERVAL_S)
                 except TimeoutError:
                     # No event for HEARTBEAT_INTERVAL_S — emit SSE comment so
                     # Caddy/nginx (and intermediaries) keep the connection open.
@@ -459,9 +462,7 @@ async def send_message(
             # Release the stream-lock in Redis. Best-effort: failures here are
             # logged but do not propagate (the lock TTL acts as a safety net).
             try:
-                async with aioredis.from_url(
-                    settings.redis_url, decode_responses=True
-                ) as r:
+                async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:
                     await r.delete(lock_key)
             except Exception:
                 logger.exception(
@@ -504,9 +505,7 @@ async def get_suggested_questions(
     endpoint never returns fewer than 5 chips.
     """
     tenant_id = require_tenant_id()
-    questions: list[str] = [
-        STATIC_QUESTIONS_RO[key] for key in STATIC_SUGGESTED_QUESTIONS_KEYS
-    ]
+    questions: list[str] = [STATIC_QUESTIONS_RO[key] for key in STATIC_SUGGESTED_QUESTIONS_KEYS]
 
     # Dynamic injection — at most 2 problems by estimated_loss_ron.
     try:

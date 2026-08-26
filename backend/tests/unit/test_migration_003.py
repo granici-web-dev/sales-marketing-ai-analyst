@@ -230,21 +230,13 @@ def test_migration_003_funnel_config_source_categories() -> None:
         f"mail_fb_ig must be [2, 11], got {cats.get('mail_fb_ig')}"
     )
     # telefon: source ID 10
-    assert cats.get("telefon") == [10], (
-        f"telefon must be [10], got {cats.get('telefon')}"
-    )
+    assert cats.get("telefon") == [10], f"telefon must be [10], got {cats.get('telefon')}"
     # whatsapp: source ID 9
-    assert cats.get("whatsapp") == [9], (
-        f"whatsapp must be [9], got {cats.get('whatsapp')}"
-    )
+    assert cats.get("whatsapp") == [9], f"whatsapp must be [9], got {cats.get('whatsapp')}"
     # site: source ID 6
-    assert cats.get("site") == [6], (
-        f"site must be [6], got {cats.get('site')}"
-    )
+    assert cats.get("site") == [6], f"site must be [6], got {cats.get('site')}"
     # designer: empty list (DESIGNER is a status, not source — D-08 note)
-    assert cats.get("designer") == [], (
-        f"designer must be [], got {cats.get('designer')}"
-    )
+    assert cats.get("designer") == [], f"designer must be [], got {cats.get('designer')}"
     # alte: source IDs 3, 4, 5, 7, 12, 13
     assert set(cats.get("alte", [])) == {3, 4, 5, 7, 12, 13}, (
         f"alte must be [3, 4, 5, 7, 12, 13], got {cats.get('alte')}"
@@ -274,8 +266,8 @@ def test_migration_003_upgrade_adds_funnel_config_column() -> None:
     """
     _require_migration()
     source = MIGRATION_PATH.read_text()
-    assert 'add_column' in source, "migration 003 must call op.add_column()"
-    assert 'funnel_config' in source, "migration 003 must reference funnel_config column"
+    assert "add_column" in source, "migration 003 must call op.add_column()"
+    assert "funnel_config" in source, "migration 003 must reference funnel_config column"
     assert '"tenants"' in source or "'tenants'" in source, (
         "migration 003 must add funnel_config to the 'tenants' table"
     )
@@ -285,45 +277,31 @@ def test_migration_003_upgrade_creates_raw_mefi_leads() -> None:
     """upgrade() must create the raw_mefi_leads table."""
     _require_migration()
     source = MIGRATION_PATH.read_text()
-    assert 'raw_mefi_leads' in source, (
-        "migration 003 must create 'raw_mefi_leads' table"
-    )
-    assert 'create_table' in source, (
-        "migration 003 must call op.create_table()"
-    )
+    assert "raw_mefi_leads" in source, "migration 003 must create 'raw_mefi_leads' table"
+    assert "create_table" in source, "migration 003 must call op.create_table()"
 
 
 def test_migration_003_upgrade_creates_mefi_lead_history() -> None:
     """upgrade() must create the mefi_lead_history table."""
     _require_migration()
     source = MIGRATION_PATH.read_text()
-    assert 'mefi_lead_history' in source, (
-        "migration 003 must create 'mefi_lead_history' table"
-    )
+    assert "mefi_lead_history" in source, "migration 003 must create 'mefi_lead_history' table"
 
 
 def test_migration_003_upgrade_creates_mefi_salespeople() -> None:
     """upgrade() must create the mefi_salespeople table."""
     _require_migration()
     source = MIGRATION_PATH.read_text()
-    assert 'mefi_salespeople' in source, (
-        "migration 003 must create 'mefi_salespeople' table"
-    )
+    assert "mefi_salespeople" in source, "migration 003 must create 'mefi_salespeople' table"
 
 
 def test_migration_003_upgrade_creates_views() -> None:
     """upgrade() must CREATE OR REPLACE VIEW both conformed views (DATA-01)."""
     _require_migration()
     source = MIGRATION_PATH.read_text()
-    assert 'v_mefi_leads_active' in source, (
-        "migration 003 must create v_mefi_leads_active view"
-    )
-    assert 'v_mefi_leads_junk' in source, (
-        "migration 003 must create v_mefi_leads_junk view"
-    )
-    assert 'CREATE OR REPLACE VIEW' in source, (
-        "migration 003 must use CREATE OR REPLACE VIEW"
-    )
+    assert "v_mefi_leads_active" in source, "migration 003 must create v_mefi_leads_active view"
+    assert "v_mefi_leads_junk" in source, "migration 003 must create v_mefi_leads_junk view"
+    assert "CREATE OR REPLACE VIEW" in source, "migration 003 must use CREATE OR REPLACE VIEW"
 
 
 def test_migration_003_views_contain_at_time_zone_bucharest() -> None:
@@ -340,18 +318,14 @@ def test_migration_003_views_contain_reached_columns() -> None:
     _require_migration()
     source = MIGRATION_PATH.read_text()
     for col in ("reached_visit", "reached_offer", "reached_contract"):
-        assert col in source, (
-            f"v_mefi_leads_active must define '{col}' boolean computed column"
-        )
+        assert col in source, f"v_mefi_leads_active must define '{col}' boolean computed column"
 
 
 def test_migration_003_views_contain_local_timestamp_columns() -> None:
     """v_mefi_leads_active must define created_at_local and status_changed_at_local."""
     _require_migration()
     source = MIGRATION_PATH.read_text()
-    assert "created_at_local" in source, (
-        "v_mefi_leads_active must define 'created_at_local' column"
-    )
+    assert "created_at_local" in source, "v_mefi_leads_active must define 'created_at_local' column"
     assert "status_changed_at_local" in source, (
         "v_mefi_leads_active must define 'status_changed_at_local' column"
     )
@@ -385,9 +359,7 @@ def test_migration_003_downgrade_drops_tables() -> None:
     """downgrade() must drop all three MEFI tables."""
     _require_migration()
     source = MIGRATION_PATH.read_text()
-    assert "drop_table" in source, (
-        "migration 003 downgrade() must call op.drop_table()"
-    )
+    assert "drop_table" in source, "migration 003 downgrade() must call op.drop_table()"
 
 
 def test_migration_003_downgrade_drops_funnel_config_column() -> None:
@@ -403,9 +375,7 @@ def test_migration_003_uses_jsonb_for_funnel_config() -> None:
     """funnel_config column must use JSONB type."""
     _require_migration()
     source = MIGRATION_PATH.read_text()
-    assert "JSONB" in source, (
-        "migration 003 must use JSONB type for funnel_config column"
-    )
+    assert "JSONB" in source, "migration 003 must use JSONB type for funnel_config column"
 
 
 def test_migration_003_has_unique_constraints() -> None:

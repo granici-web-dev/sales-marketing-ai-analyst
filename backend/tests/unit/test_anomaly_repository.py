@@ -129,9 +129,12 @@ class TestUpsertDetectedProblem:
         row = _detected_problem_row()
         await repo.upsert_detected_problem(row)  # type: ignore[attr-defined]
 
-        session.commit.assert_not_called(), (
-            "upsert_detected_problem must NOT call session.commit() — "
-            "caller (detect_anomalies task) is responsible for commit (WR-04)"
+        (
+            session.commit.assert_not_called(),
+            (
+                "upsert_detected_problem must NOT call session.commit() — "
+                "caller (detect_anomalies task) is responsible for commit (WR-04)"
+            ),
         )
 
     @pytest.mark.asyncio

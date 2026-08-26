@@ -145,9 +145,9 @@ class TestHallucinationGuard:
         import app.services.chat.hallucination_guard as guard
 
         source = pathlib.Path(guard.__file__).read_text()
-        assert (
-            "from app.services.insights.number_validator import" in source
-        ), "Hallucination guard must reuse Phase 5 NUMBER_PATTERN — no fork"
+        assert "from app.services.insights.number_validator import" in source, (
+            "Hallucination guard must reuse Phase 5 NUMBER_PATTERN — no fork"
+        )
         assert "extract_numbers_from_text" in source
         assert "NUMBER_PATTERN" in source
 

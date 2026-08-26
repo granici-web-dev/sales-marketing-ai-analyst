@@ -127,7 +127,8 @@ async def _detect_async(tenant_id: UUID) -> dict:
                     SyncRun.status == "running",
                     # WR-04: age threshold prevents marking a legitimately concurrent
                     # run as failed — only rows older than 30 minutes are truly stale.
-                    SyncRun.started_at < datetime.now(UTC) - timedelta(minutes=_STALE_SYNCRUN_THRESHOLD_MINUTES),
+                    SyncRun.started_at
+                    < datetime.now(UTC) - timedelta(minutes=_STALE_SYNCRUN_THRESHOLD_MINUTES),
                 )
                 .values(status="failed", completed_at=datetime.now(UTC))
             )
@@ -192,11 +193,14 @@ async def _detect_async(tenant_id: UUID) -> dict:
             _set(tenant_id)
             async with TaskSession() as err_session:
                 result = await err_session.execute(
-                    _select(_SyncRun).where(
+                    _select(_SyncRun)
+                    .where(
                         _SyncRun.tenant_id == tenant_id,
                         _SyncRun.source == "anomaly",
                         _SyncRun.status == "running",
-                    ).order_by(_SyncRun.started_at.desc()).limit(1)
+                    )
+                    .order_by(_SyncRun.started_at.desc())
+                    .limit(1)
                 )
                 run = result.scalar_one_or_none()
                 if run:

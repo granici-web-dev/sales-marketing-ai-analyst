@@ -49,7 +49,9 @@ AVG_DEAL_SIZE_FALLBACK = Decimal("20000.00")  # Known Sofa Belle value for MVP1
 SLOW_FIRST_TOUCH_THRESHOLD_MINUTES = 300  # 5 business hours (D-20)
 STUCK_OFFER_DAYS = 15  # (D-20)
 SHOWROOM_DROP_THRESHOLD = Decimal("0.65")  # 1 - 0.35 = fires when current < baseline × 0.65 (D-20)
-UNDERPERFORMING_THRESHOLD = Decimal("0.70")  # 1 - 0.30 = fires when sp_rate < team_avg × 0.70 (D-20)
+UNDERPERFORMING_THRESHOLD = Decimal(
+    "0.70"
+)  # 1 - 0.30 = fires when sp_rate < team_avg × 0.70 (D-20)
 JUNK_RATE_THRESHOLD = Decimal("0.25")  # 25% (D-20, ROADMAP SC#6; overrides REQUIREMENTS.md 20%)
 SLOW_TOUCH_DROP_FACTOR = Decimal("0.25")  # 25% reduced close probability (D-06)
 MIN_BASELINE_DAYS = 7  # Minimum baseline rows for trend-based rules (D-13)
@@ -123,14 +125,18 @@ class AnomalyService:
         """
         from sqlalchemy import bindparam, text  # deferred — fork-safe
 
-        stmt = text(
-            "SELECT external_id FROM v_mefi_leads_junk"
-            " WHERE tenant_id = :tenant_id"
-            " AND DATE(created_at_source AT TIME ZONE 'Europe/Bucharest') = :kpi_date"
-        ).bindparams(
-            bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
-            kpi_date=kpi_date,
-        ).bindparams(tenant_id=self._tenant_id)
+        stmt = (
+            text(
+                "SELECT external_id FROM v_mefi_leads_junk"
+                " WHERE tenant_id = :tenant_id"
+                " AND DATE(created_at_source AT TIME ZONE 'Europe/Bucharest') = :kpi_date"
+            )
+            .bindparams(
+                bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
+                kpi_date=kpi_date,
+            )
+            .bindparams(tenant_id=self._tenant_id)
+        )
         result = await self._session.execute(stmt)
         rows = result.fetchall()
         return {row[0] for row in rows}
@@ -203,7 +209,8 @@ class AnomalyService:
         """
         from sqlalchemy import bindparam, text  # deferred — fork-safe
 
-        stmt = text("""
+        stmt = (
+            text("""
             SELECT
                 r.external_id,
                 EXTRACT(EPOCH FROM (MIN(h.changed_at) - r.created_at_source)) / 60.0
@@ -215,10 +222,13 @@ class AnomalyService:
               AND DATE(r.created_at_local) = :kpi_date
               AND r.lifecycle = 'active'
             GROUP BY r.external_id, r.created_at_source
-        """).bindparams(
-            bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
-            kpi_date=kpi_date,
-        ).bindparams(tenant_id=self._tenant_id)
+        """)
+            .bindparams(
+                bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
+                kpi_date=kpi_date,
+            )
+            .bindparams(tenant_id=self._tenant_id)
+        )
         result = await self._session.execute(stmt)
         rows = result.fetchall()
         return [
@@ -240,7 +250,8 @@ class AnomalyService:
         from sqlalchemy import bindparam, text  # deferred — fork-safe
 
         cutoff = kpi_date - timedelta(days=STUCK_OFFER_DAYS)
-        stmt = text("""
+        stmt = (
+            text("""
             SELECT external_id, status_changed_at, estimated_value
             FROM v_mefi_leads_active
             WHERE tenant_id = :tenant_id
@@ -248,10 +259,13 @@ class AnomalyService:
               AND NOT reached_contract
               AND lifecycle = 'active'
               AND status_changed_at < :cutoff
-        """).bindparams(
-            bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
-            cutoff=cutoff,
-        ).bindparams(tenant_id=self._tenant_id)
+        """)
+            .bindparams(
+                bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
+                cutoff=cutoff,
+            )
+            .bindparams(tenant_id=self._tenant_id)
+        )
         result = await self._session.execute(stmt)
         rows = result.fetchall()
         return [
@@ -293,27 +307,35 @@ class AnomalyService:
         """Fetch (junk_count, total_leads) for kpi_date from DB."""
         from sqlalchemy import bindparam, text  # deferred — fork-safe
 
-        junk_stmt = text("""
+        junk_stmt = (
+            text("""
             SELECT COUNT(*)
             FROM v_mefi_leads_junk
             WHERE tenant_id = :tenant_id
               AND DATE(created_at_source AT TIME ZONE 'Europe/Bucharest') = :kpi_date
-        """).bindparams(
-            bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
-            kpi_date=kpi_date,
-        ).bindparams(tenant_id=self._tenant_id)
+        """)
+            .bindparams(
+                bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
+                kpi_date=kpi_date,
+            )
+            .bindparams(tenant_id=self._tenant_id)
+        )
         junk_result = await self._session.execute(junk_stmt)
         junk_count = int(junk_result.scalar() or 0)
 
-        active_stmt = text("""
+        active_stmt = (
+            text("""
             SELECT COUNT(*)
             FROM v_mefi_leads_active
             WHERE tenant_id = :tenant_id
               AND DATE(created_at_local) = :kpi_date
-        """).bindparams(
-            bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
-            kpi_date=kpi_date,
-        ).bindparams(tenant_id=self._tenant_id)
+        """)
+            .bindparams(
+                bindparam("tenant_id", type_=PG_UUID(as_uuid=True)),
+                kpi_date=kpi_date,
+            )
+            .bindparams(tenant_id=self._tenant_id)
+        )
         active_result = await self._session.execute(active_stmt)
         active_count = int(active_result.scalar() or 0)
 
@@ -511,8 +533,7 @@ class AnomalyService:
 
         # D-13: minimum 7-day baseline required
         non_null_baseline = [
-            row for row in baseline_rows
-            if row.get("conversion_l_to_v") is not None
+            row for row in baseline_rows if row.get("conversion_l_to_v") is not None
         ]
         if len(non_null_baseline) < MIN_BASELINE_DAYS:
             self._log.info(
@@ -592,7 +613,8 @@ class AnomalyService:
             return None
 
         win_rates = [
-            Decimal(str(sp["conversion_o_to_c"])) if not isinstance(sp["conversion_o_to_c"], Decimal)
+            Decimal(str(sp["conversion_o_to_c"]))
+            if not isinstance(sp["conversion_o_to_c"], Decimal)
             else sp["conversion_o_to_c"]
             for sp in salesperson_kpis
         ]

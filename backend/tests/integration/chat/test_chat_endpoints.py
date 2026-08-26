@@ -248,9 +248,7 @@ async def test_list_conversations_archived_filter() -> None:
 
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 r_active = await c.get("/api/v1/chat/conversations")
                 r_archived = await c.get("/api/v1/chat/conversations?archived=true")
         assert r_active.status_code == 200
@@ -292,9 +290,7 @@ async def test_get_conversation_with_messages() -> None:
 
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 r_found = await c.get(f"/api/v1/chat/conversations/{conv_id}")
                 r_404 = await c.get(f"/api/v1/chat/conversations/{uuid4()}")
         assert r_found.status_code == 200
@@ -325,9 +321,7 @@ async def test_archive_conversation_soft_delete() -> None:
 
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 r = await c.delete(f"/api/v1/chat/conversations/{conv_id}")
         assert r.status_code == 204
         conv_repo.soft_archive.assert_awaited_once_with(conv_id)
@@ -555,9 +549,7 @@ async def test_suggested_questions_static_only() -> None:
 
     try:
         with patch("app.api.v1.chat.InsightReadService", return_value=insight_svc):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 r = await c.get("/api/v1/chat/suggested-questions")
         assert r.status_code == 200
         body = r.json()
@@ -588,8 +580,16 @@ async def test_suggested_questions_with_dynamic() -> None:
             "generated_at": None,
             "payload": {
                 "problems": [
-                    {"id": "p1", "title": "Lead-uri blocate la ofertă", "estimated_loss_ron": "9000.00"},
-                    {"id": "p2", "title": "Răspuns lent la lead noi", "estimated_loss_ron": "5500.00"},
+                    {
+                        "id": "p1",
+                        "title": "Lead-uri blocate la ofertă",
+                        "estimated_loss_ron": "9000.00",
+                    },
+                    {
+                        "id": "p2",
+                        "title": "Răspuns lent la lead noi",
+                        "estimated_loss_ron": "5500.00",
+                    },
                 ],
             },
         }
@@ -597,9 +597,7 @@ async def test_suggested_questions_with_dynamic() -> None:
 
     try:
         with patch("app.api.v1.chat.InsightReadService", return_value=insight_svc):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 r = await c.get("/api/v1/chat/suggested-questions")
         assert r.status_code == 200
         body = r.json()

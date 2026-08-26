@@ -32,10 +32,13 @@ class GetSalespersonPerformanceInput(BaseModel):
 
     date_from: date = Field(..., description="Start date (inclusive). Format: YYYY-MM-DD.")
     date_to: date = Field(..., description="End date (inclusive). Format: YYYY-MM-DD.")
-    salesperson_external_id: int | None = Field(None, description=(
-        "Optional MEFI salesperson external_id. When provided, the "
-        "response is filtered to that one rep. Omit to return all reps."
-    ))
+    salesperson_external_id: int | None = Field(
+        None,
+        description=(
+            "Optional MEFI salesperson external_id. When provided, the "
+            "response is filtered to that one rep. Omit to return all reps."
+        ),
+    )
 
 
 def _jsonable(value: object) -> object:
@@ -64,11 +67,7 @@ async def _handler(
         # Compare against string external_ids — the service returns them as
         # either int or str depending on the column type; normalize both.
         target = str(inp.salesperson_external_id)
-        salespeople = [
-            sp
-            for sp in salespeople
-            if str(sp.get("external_id")) == target
-        ]
+        salespeople = [sp for sp in salespeople if str(sp.get("external_id")) == target]
         raw = {**raw, "salespeople": salespeople}
 
     return _jsonable(raw)  # type: ignore[return-value]

@@ -55,6 +55,7 @@ def resolve_kpi_date(calculation_date: str | None) -> date:
         return date.fromisoformat(calculation_date)
     return datetime.now(BUCHAREST).date() - timedelta(days=1)
 
+
 logger = structlog.get_logger(__name__)
 
 
@@ -228,11 +229,14 @@ async def _calc_async(tenant_id: UUID, calculation_date: str | None) -> dict:
             _set(tenant_id)
             async with TaskSession() as err_session:
                 result = await err_session.execute(
-                    _select(_SyncRun).where(
+                    _select(_SyncRun)
+                    .where(
                         _SyncRun.tenant_id == tenant_id,
                         _SyncRun.source == "metrics",
                         _SyncRun.status == "running",
-                    ).order_by(_SyncRun.started_at.desc()).limit(1)
+                    )
+                    .order_by(_SyncRun.started_at.desc())
+                    .limit(1)
                 )
                 run = result.scalar_one_or_none()
                 if run:

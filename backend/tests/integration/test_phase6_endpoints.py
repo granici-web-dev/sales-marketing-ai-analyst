@@ -116,7 +116,9 @@ async def test_sc1_revenue_as_string(override_deps) -> None:
     body = r.json()
     revenue = body["kpi_cards"]["revenue"]
     if revenue is not None:
-        assert isinstance(revenue, str), f"revenue must be a JSON string, got {type(revenue)}: {revenue}"
+        assert isinstance(revenue, str), (
+            f"revenue must be a JSON string, got {type(revenue)}: {revenue}"
+        )
 
 
 # ──────────────────────────────────────────────
@@ -198,7 +200,13 @@ async def test_sc4_insights_today_200(override_deps) -> None:
         "status": "success",
         "generation_failed": False,
         "generated_at": datetime(2026, 5, 28, 6, 1, 0, tzinfo=UTC),
-        "payload": {"summary": "Buna dimineata Sofa Belle", "problems": [], "positives": [], "warnings": [], "weekly_action_plan": []},
+        "payload": {
+            "summary": "Buna dimineata Sofa Belle",
+            "problems": [],
+            "positives": [],
+            "warnings": [],
+            "weekly_action_plan": [],
+        },
     }
 
     with patch("app.services.insights.insight_read_service.InsightReadService") as MockSvc:
@@ -310,9 +318,12 @@ async def test_sc5_refresh_first_call_202(override_deps) -> None:
     mock_redis_ctx.__aenter__ = AsyncMock(return_value=mock_r)
     mock_redis_ctx.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx), patch(
-        "app.tasks.insights.generate_daily_insights.generate_daily_insights",
-        mock_generate,
+    with (
+        patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx),
+        patch(
+            "app.tasks.insights.generate_daily_insights.generate_daily_insights",
+            mock_generate,
+        ),
     ):
         async with AsyncClient(
             transport=ASGITransport(app=app),

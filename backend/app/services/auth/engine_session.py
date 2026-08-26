@@ -27,6 +27,7 @@ HttpOnly и SameSite=Strict, scrypt и сравнение постоянного
 
 В кеше лежат идентификаторы, а не токен: утечка дампа Redis не даёт войти.
 """
+
 from __future__ import annotations
 
 import hashlib

@@ -10,6 +10,7 @@ Tests:
 Note: Integration tests (actual DB calls, MefiClient interaction) require Docker
 and live in tests/integration/. This file covers pure unit behaviour only.
 """
+
 from __future__ import annotations
 
 import ast
@@ -25,8 +26,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 
 BACKFILL_MODULE_PATH = (
-    Path(__file__).parent.parent.parent
-    / "app" / "tasks" / "etl" / "backfill_mefi_leads.py"
+    Path(__file__).parent.parent.parent / "app" / "tasks" / "etl" / "backfill_mefi_leads.py"
 )
 
 
@@ -83,10 +83,7 @@ class TestForkSafety:
     def _get_module_level_imports(self) -> list[ast.ImportFrom]:
         """Return only top-level ImportFrom nodes (direct children of Module)."""
         tree = _parse_ast()
-        return [
-            node for node in tree.body
-            if isinstance(node, ast.ImportFrom)
-        ]
+        return [node for node in tree.body if isinstance(node, ast.ImportFrom)]
 
     def test_only_stdlib_and_celery_at_module_level(self) -> None:
         """Only stdlib + celery_app imports allowed at module level."""
@@ -98,7 +95,9 @@ class TestForkSafety:
             # Only `app.` imports can create a DB pool before Celery forks; stdlib
             # at module level is fine and is not enumerated here.
             if mod.startswith("app."):
-                assert any(mod == prefix or mod.startswith(prefix + ".") for prefix in allowed_prefixes), (
+                assert any(
+                    mod == prefix or mod.startswith(prefix + ".") for prefix in allowed_prefixes
+                ), (
                     f"Unexpected module-level import 'from {mod}' — only "
                     f"app.tasks.celery_app is allowed at module level"
                 )
@@ -115,8 +114,10 @@ class TestTaskName:
     def test_task_name_in_source(self) -> None:
         """backfill_mefi_leads must declare name='tasks.etl.backfill_mefi_leads'."""
         source = _read_source()
-        assert 'name="tasks.etl.backfill_mefi_leads"' in source or \
-               "name='tasks.etl.backfill_mefi_leads'" in source, (
+        assert (
+            'name="tasks.etl.backfill_mefi_leads"' in source
+            or "name='tasks.etl.backfill_mefi_leads'" in source
+        ), (
             "Task decorator must include name='tasks.etl.backfill_mefi_leads' "
             "to match task_routes configured in celery_app.py (Plan 02-03)"
         )
@@ -153,14 +154,13 @@ def _exec_helpers() -> dict:
     helper_funcs = []
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef) and node.name in (
-            "month_window", "get_12_month_windows"
+            "month_window",
+            "get_12_month_windows",
         ):
             helper_funcs.append(node)
 
     if not helper_funcs:
-        raise AssertionError(
-            "month_window and get_12_month_windows functions not found in source"
-        )
+        raise AssertionError("month_window and get_12_month_windows functions not found in source")
 
     # Reconstruct source for helpers only
     func_sources = []
@@ -256,9 +256,7 @@ class TestGet12MonthWindows:
         assert last_start == date(2026, 4, 1), (
             f"Last window start expected 2026-04-01, got {last_start}"
         )
-        assert last_end == date(2026, 4, 30), (
-            f"Last window end expected 2026-04-30, got {last_end}"
-        )
+        assert last_end == date(2026, 4, 30), f"Last window end expected 2026-04-30, got {last_end}"
 
     def test_windows_are_consecutive(self) -> None:
         ns = _exec_helpers()
@@ -269,8 +267,9 @@ class TestGet12MonthWindows:
             next_start = windows[i + 1][0]
             # next month starts on 1st, one day after current month end
             from datetime import timedelta
+
             assert next_start == curr_end + timedelta(days=1), (
-                f"Gap between window {i} and {i+1}: {curr_end} vs {next_start}"
+                f"Gap between window {i} and {i + 1}: {curr_end} vs {next_start}"
             )
 
     def test_current_month_excluded(self) -> None:
@@ -334,8 +333,7 @@ class TestNoChain:
         source = _read_source()
         # Allow 'chain' in comments but not in actual code
         non_comment_lines = [
-            line for line in source.splitlines()
-            if not line.strip().startswith("#")
+            line for line in source.splitlines() if not line.strip().startswith("#")
         ]
         non_comment_source = "\n".join(non_comment_lines)
         assert "chain(" not in non_comment_source, (

@@ -16,6 +16,7 @@
 
     UPDATE tenants SET engine_tenant_id = '<uuid из движка>' WHERE slug = '...';
 """
+
 from __future__ import annotations
 
 import structlog
@@ -98,8 +99,7 @@ async def resolve_local_user(session: AsyncSession, identity: EngineIdentity) ->
     # этого арендатора.
     orphan = (
         await session.execute(
-            select(User)
-            .where(User.email == identity.email, User.engine_user_id.is_(None))
+            select(User).where(User.email == identity.email, User.engine_user_id.is_(None))
         )
     ).scalar_one_or_none()
 

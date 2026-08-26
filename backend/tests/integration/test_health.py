@@ -46,14 +46,11 @@ async def test_healthz_returns_200() -> None:
         response = await client.get("/healthz")
 
     assert response.status_code == 200, (
-        f"GET /healthz must return 200, got {response.status_code}. "
-        f"Body: {response.text}"
+        f"GET /healthz must return 200, got {response.status_code}. Body: {response.text}"
     )
 
     body = response.json()
-    assert body == {"status": "ok"}, (
-        f"GET /healthz body must be {{\"status\": \"ok\"}}, got: {body}"
-    )
+    assert body == {"status": "ok"}, f'GET /healthz body must be {{"status": "ok"}}, got: {body}'
 
 
 async def test_healthz_response_structure() -> None:
@@ -80,9 +77,5 @@ async def test_healthz_response_structure() -> None:
     body = response.json()
 
     # Verify "status" key exists and has value "ok"
-    assert "status" in body, (
-        f"GET /healthz response must have 'status' key. Got: {body}"
-    )
-    assert body["status"] == "ok", (
-        f"GET /healthz 'status' must be 'ok', got '{body['status']}'"
-    )
+    assert "status" in body, f"GET /healthz response must have 'status' key. Got: {body}"
+    assert body["status"] == "ok", f"GET /healthz 'status' must be 'ok', got '{body['status']}'"

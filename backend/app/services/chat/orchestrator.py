@@ -87,8 +87,7 @@ GUARD_RETRY_BUDGET = 1  # D-07: max 1 regenerate on guard failure
 
 # Romanian fallback message streamed when guard fails twice (D-07).
 GUARD_FALLBACK_TEXT = (
-    "Nu pot da un răspuns precis pe baza datelor disponibile. "
-    "Te rog reformulează întrebarea."
+    "Nu pot da un răspuns precis pe baza datelor disponibile. Te rog reformulează întrebarea."
 )
 
 
@@ -271,7 +270,10 @@ class ChatOrchestrator:
                             etype = getattr(event, "type", None)
                             if etype == "content_block_delta":
                                 delta = getattr(event, "delta", None)
-                                if delta is not None and getattr(delta, "type", None) == "text_delta":
+                                if (
+                                    delta is not None
+                                    and getattr(delta, "type", None) == "text_delta"
+                                ):
                                     text = getattr(delta, "text", "")
                                     accumulated_text += text
                                     yield ("assistant_chunk", {"text": text})
@@ -301,9 +303,7 @@ class ChatOrchestrator:
 
                     # Extract tool_use blocks for this round.
                     content = list(getattr(final_msg, "content", []) or [])
-                    tool_use_blocks = [
-                        b for b in content if getattr(b, "type", None) == "tool_use"
-                    ]
+                    tool_use_blocks = [b for b in content if getattr(b, "type", None) == "tool_use"]
                     if not tool_use_blocks:
                         break
 

@@ -41,8 +41,9 @@ _integration_skip = pytest.mark.skipif(
 )
 
 
-def _make_mock_anthropic_response(payload_dict: dict, input_tokens: int = 3000,
-                                   output_tokens: int = 2000) -> MagicMock:
+def _make_mock_anthropic_response(
+    payload_dict: dict, input_tokens: int = 3000, output_tokens: int = 2000
+) -> MagicMock:
     """Build a mock Anthropic Message response with a tool_use block."""
     tool_block = MagicMock()
     tool_block.type = "tool_use"

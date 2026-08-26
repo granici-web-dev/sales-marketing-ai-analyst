@@ -61,18 +61,14 @@ class ConversationRepository:
             Does NOT commit — caller commits atomically (WR-04).
         """
         if "tenant_id" not in row or row["tenant_id"] is None:
-            raise ValueError(
-                "ConversationRepository.insert_conversation: row missing tenant_id"
-            )
+            raise ValueError("ConversationRepository.insert_conversation: row missing tenant_id")
         if row["tenant_id"] != self._tenant_id:
             raise ValueError(
                 "ConversationRepository.insert_conversation: cross-tenant write blocked "
                 f"(row.tenant_id={row['tenant_id']!r} != repo.tenant_id={self._tenant_id!r})"
             )
         if "user_id" not in row or row["user_id"] is None:
-            raise ValueError(
-                "ConversationRepository.insert_conversation: row missing user_id"
-            )
+            raise ValueError("ConversationRepository.insert_conversation: row missing user_id")
         if row["user_id"] != self._user_id:
             raise ValueError(
                 "ConversationRepository.insert_conversation: cross-user write blocked "

@@ -92,9 +92,7 @@ class ChatMessage(Base, TenantScopedMixin):
     # ── D-20 extensions (beyond SPEC.md) ─────────────────────────────────────
     # Set by the hallucination guard (plan 08-04) when post-stream verification
     # finds unsupported numeric claims. Surfaces a UI warning badge.
-    hallucination_flag: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
+    hallucination_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Incremented each time the user clicks "Regenerate" on this assistant turn.
     # Used by the UI to dedupe re-rolls and by analytics to track satisfaction.

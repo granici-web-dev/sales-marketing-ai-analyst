@@ -181,8 +181,7 @@ def test_chat_message_has_all_d20_columns() -> None:
     cols = _column_names(ChatMessage)
     missing = required - cols
     assert not missing, (
-        f"ChatMessage missing D-20 columns: {sorted(missing)}. "
-        f"Present: {sorted(cols)}"
+        f"ChatMessage missing D-20 columns: {sorted(missing)}. Present: {sorted(cols)}"
     )
 
 
@@ -212,8 +211,7 @@ def test_chat_tool_call_has_all_d20_columns() -> None:
     cols = _column_names(ChatToolCall)
     missing = required - cols
     assert not missing, (
-        f"ChatToolCall missing D-20 columns: {sorted(missing)}. "
-        f"Present: {sorted(cols)}"
+        f"ChatToolCall missing D-20 columns: {sorted(missing)}. Present: {sorted(cols)}"
     )
 
 
@@ -239,8 +237,7 @@ def test_chat_conversation_has_all_d20_columns() -> None:
     cols = _column_names(ChatConversation)
     missing = required - cols
     assert not missing, (
-        f"ChatConversation missing D-20 columns: {sorted(missing)}. "
-        f"Present: {sorted(cols)}"
+        f"ChatConversation missing D-20 columns: {sorted(missing)}. Present: {sorted(cols)}"
     )
 
 
@@ -281,12 +278,10 @@ def test_migration_009_exists_with_correct_revision_chain() -> None:
 
     source = migration_path.read_text(encoding="utf-8")
     assert 'revision = "009"' in source, (
-        f"Migration 009 must declare `revision = \"009\"` — got header:\n"
-        f"{source[:300]}"
+        f'Migration 009 must declare `revision = "009"` — got header:\n{source[:300]}'
     )
     assert 'down_revision = "008"' in source, (
-        "Migration 009 must chain from `down_revision = \"008\"` "
-        "(008 = daily_insights from Phase 5)."
+        'Migration 009 must chain from `down_revision = "008"` (008 = daily_insights from Phase 5).'
     )
 
     # Three create_table calls (chat_conversations, chat_messages, chat_tool_calls)
@@ -298,7 +293,7 @@ def test_migration_009_exists_with_correct_revision_chain() -> None:
     # CASCADE on chat_messages.conversation_id AND chat_tool_calls.message_id
     cascade_hits = source.count('ondelete="CASCADE"')
     assert cascade_hits >= 2, (
-        f"Migration 009 must declare ondelete=\"CASCADE\" at least twice "
+        f'Migration 009 must declare ondelete="CASCADE" at least twice '
         f"(chat_messages.conversation_id + chat_tool_calls.message_id); found {cascade_hits}."
     )
 

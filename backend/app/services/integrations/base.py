@@ -5,6 +5,7 @@ must inherit from BaseIntegration and implement the three abstract methods.
 
 Source: docs/INTEGRATIONS.md — Common patterns / Base integration class
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

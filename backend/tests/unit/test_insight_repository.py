@@ -62,8 +62,9 @@ class TestUpsertDailyInsight:
         row = make_insight_row()
         await repo.upsert_daily_insight(row)
 
-        session.execute.assert_called_once(), (
-            "upsert_daily_insight() must call session.execute() exactly once (D-16)"
+        (
+            session.execute.assert_called_once(),
+            ("upsert_daily_insight() must call session.execute() exactly once (D-16)"),
         )
 
     @pytest.mark.asyncio
@@ -123,7 +124,10 @@ class TestUpsertDailyInsight:
         row = make_insight_row()
         await repo.upsert_daily_insight(row)
 
-        session.commit.assert_not_called(), (
-            "upsert_daily_insight() must NOT call session.commit() — "
-            "caller (generate_daily_insights task) commits atomically (WR-04)"
+        (
+            session.commit.assert_not_called(),
+            (
+                "upsert_daily_insight() must NOT call session.commit() — "
+                "caller (generate_daily_insights task) commits atomically (WR-04)"
+            ),
         )

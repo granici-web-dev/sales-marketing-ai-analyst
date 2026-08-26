@@ -109,9 +109,7 @@ async def test_cross_user_get_returns_404() -> None:
 
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 r = await c.get(f"/api/v1/chat/conversations/{user_b_conv_id}")
         assert r.status_code == 404, (
             f"expected 404 on cross-user GET, got {r.status_code}: {r.text}"
@@ -149,9 +147,7 @@ async def test_cross_user_delete_returns_404() -> None:
 
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 r = await c.delete(f"/api/v1/chat/conversations/{user_b_conv_id}")
         assert r.status_code == 404, (
             f"expected 404 on cross-user DELETE, got {r.status_code}: {r.text}"
@@ -279,9 +275,7 @@ async def test_cross_user_list_excludes_b_conversations() -> None:
 
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 r = await c.get("/api/v1/chat/conversations")
         assert r.status_code == 200, f"expected 200, got {r.status_code}: {r.text}"
         body = r.json()

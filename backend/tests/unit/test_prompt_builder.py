@@ -56,7 +56,7 @@ class TestBuildSystemPrompt:
             "Last system block must have 'cache_control' key (D-07 — caches entire system prompt)"
         )
         assert last["cache_control"] == {"type": "ephemeral"}, (
-            f"cache_control must be {{\"type\": \"ephemeral\"}}, got {last['cache_control']} (D-07)"
+            f'cache_control must be {{"type": "ephemeral"}}, got {last["cache_control"]} (D-07)'
         )
 
     def test_system_prompt_contains_salesperson_roster(self) -> None:
@@ -107,10 +107,7 @@ class TestBuildSystemPrompt:
         result = build_system_prompt()
         full_text = " ".join(b.get("text", "") for b in result)
 
-        has_instruction = (
-            "Maximum 3 probleme" in full_text
-            or "maximum 3" in full_text.lower()
-        )
+        has_instruction = "Maximum 3 probleme" in full_text or "maximum 3" in full_text.lower()
         assert has_instruction, (
             "System prompt must instruct Claude 'Maximum 3 probleme' (D-02, D-08). "
             f"Got text snippet: ...{full_text[:200]}..."
@@ -142,9 +139,7 @@ class TestBuildUserMessage:
         result = build_user_message(make_kpi_snapshot(), make_three_anomaly_day())
         data = json.loads(result)  # must not raise
 
-        assert "kpi_snapshot" in data, (
-            "User message JSON must have 'kpi_snapshot' key (D-06)"
-        )
+        assert "kpi_snapshot" in data, "User message JSON must have 'kpi_snapshot' key (D-06)"
         assert "detected_problems" in data, (
             "User message JSON must have 'detected_problems' key (D-06)"
         )
@@ -158,10 +153,14 @@ class TestBuildUserMessage:
         from app.services.insights.prompt_builder import build_user_message  # deferred (INFRA-05)
 
         four_problems = make_three_anomaly_day() + [
-            {"rule_id": "extra_rule", "severity": "low",
-             "estimated_loss_ron": Decimal("1.00"),
-             "current_value": Decimal("0.00"), "expected_value": Decimal("0.00"),
-             "context_json": {}}
+            {
+                "rule_id": "extra_rule",
+                "severity": "low",
+                "estimated_loss_ron": Decimal("1.00"),
+                "current_value": Decimal("0.00"),
+                "expected_value": Decimal("0.00"),
+                "context_json": {},
+            }
         ]
 
         result = build_user_message(make_kpi_snapshot(), four_problems)

@@ -85,9 +85,7 @@ class TestGetLeads:
         row_b.estimated_value = Decimal("20000.00")
 
         session = AsyncMock()
-        session.execute = AsyncMock(
-            return_value=_mock_execute_result(rows=[row_a, row_b])
-        )
+        session.execute = AsyncMock(return_value=_mock_execute_result(rows=[row_a, row_b]))
 
         inp = GetLeadsInput(lifecycle="all", limit=10)
         result = await _handler(TENANT_ID, session, inp)
@@ -164,9 +162,7 @@ class TestComparePeriods:
         }
 
         fake_svc = MagicMock()
-        fake_svc.get_sales_dashboard = AsyncMock(
-            side_effect=[period_a_response, period_b_response]
-        )
+        fake_svc.get_sales_dashboard = AsyncMock(side_effect=[period_a_response, period_b_response])
         fake_ctor = MagicMock(return_value=fake_svc)
         monkeypatch.setattr(
             "app.services.chat.tools.compare_periods.DashboardReadService", fake_ctor
@@ -174,12 +170,8 @@ class TestComparePeriods:
 
         session = AsyncMock()
         inp = ComparePeriodsInput(
-            period_a=PeriodInput(
-                date_from=date(2026, 5, 1), date_to=date(2026, 5, 19)
-            ),
-            period_b=PeriodInput(
-                date_from=date(2026, 4, 1), date_to=date(2026, 4, 30)
-            ),
+            period_a=PeriodInput(date_from=date(2026, 5, 1), date_to=date(2026, 5, 19)),
+            period_b=PeriodInput(date_from=date(2026, 4, 1), date_to=date(2026, 4, 30)),
         )
         result = await _handler(TENANT_ID, session, inp)
 
@@ -221,13 +213,9 @@ class TestGetLossReasons:
         row_b.lost_count = 20
 
         session = AsyncMock()
-        session.execute = AsyncMock(
-            return_value=_mock_execute_result(rows=[row_a, row_b])
-        )
+        session.execute = AsyncMock(return_value=_mock_execute_result(rows=[row_a, row_b]))
 
-        inp = GetLossReasonsInput(
-            date_from=FROM_DATE, date_to=TO_DATE, group_by="source"
-        )
+        inp = GetLossReasonsInput(date_from=FROM_DATE, date_to=TO_DATE, group_by="source")
         result = await _handler(TENANT_ID, session, inp)
 
         assert "groups" in result
@@ -305,9 +293,7 @@ class TestGetShowroomPerformance:
         session = AsyncMock()
         session.execute = AsyncMock(return_value=_mock_execute_result(rows=rows))
 
-        inp = GetShowroomPerformanceInput(
-            date_from=FROM_DATE, date_to=TO_DATE, showroom="Brașov"
-        )
+        inp = GetShowroomPerformanceInput(date_from=FROM_DATE, date_to=TO_DATE, showroom="Brașov")
         result = await _handler(TENANT_ID, session, inp)
 
         assert len(result["showrooms"]) == 1
@@ -327,9 +313,7 @@ class TestGetRecentInsight:
         _lm3_signature_assertion(_handler)
 
     @pytest.mark.asyncio
-    async def test_get_recent_insight_today_when_date_null(
-        self, monkeypatch
-    ) -> None:
+    async def test_get_recent_insight_today_when_date_null(self, monkeypatch) -> None:
         from app.services.chat.tools.get_recent_insight import (
             GetRecentInsightInput,
             _handler,
@@ -355,9 +339,7 @@ class TestGetRecentInsight:
         assert result["insight"]["status"] == "success"
 
     @pytest.mark.asyncio
-    async def test_get_recent_insight_by_date_when_date_provided(
-        self, monkeypatch
-    ) -> None:
+    async def test_get_recent_insight_by_date_when_date_provided(self, monkeypatch) -> None:
         from app.services.chat.tools.get_recent_insight import (
             GetRecentInsightInput,
             _handler,
@@ -383,9 +365,7 @@ class TestGetRecentInsight:
         assert result["insight"]["status"] == "success"
 
     @pytest.mark.asyncio
-    async def test_get_recent_insight_returns_null_when_missing(
-        self, monkeypatch
-    ) -> None:
+    async def test_get_recent_insight_returns_null_when_missing(self, monkeypatch) -> None:
         from app.services.chat.tools.get_recent_insight import (
             GetRecentInsightInput,
             _handler,
@@ -422,9 +402,7 @@ class TestExplainMetric:
         )
 
         session = AsyncMock()  # MUST NOT be touched
-        result = await _handler(
-            TENANT_ID, session, ExplainMetricInput(metric_name="CAC")
-        )
+        result = await _handler(TENANT_ID, session, ExplainMetricInput(metric_name="CAC"))
 
         # session.execute must NOT have been called — pure dict lookup.
         session.execute.assert_not_called()
@@ -442,9 +420,7 @@ class TestExplainMetric:
 
         session = AsyncMock()
         # lowercase should still hit CAC
-        result = await _handler(
-            TENANT_ID, session, ExplainMetricInput(metric_name="cac")
-        )
+        result = await _handler(TENANT_ID, session, ExplainMetricInput(metric_name="cac"))
         assert result["name"].upper() == "CAC"
 
     @pytest.mark.asyncio
@@ -456,9 +432,7 @@ class TestExplainMetric:
         )
 
         session = AsyncMock()
-        result = await _handler(
-            TENANT_ID, session, ExplainMetricInput(metric_name="ZZZ_unknown")
-        )
+        result = await _handler(TENANT_ID, session, ExplainMetricInput(metric_name="ZZZ_unknown"))
 
         assert "definition_ro" in result
         assert "glosar" in result["definition_ro"].lower()
@@ -535,9 +509,7 @@ class TestGetTrend:
         fake_svc = MagicMock()
         fake_svc.compute_for_date = AsyncMock(side_effect=rows)
         fake_ctor = MagicMock(return_value=fake_svc)
-        monkeypatch.setattr(
-            "app.services.chat.tools.get_trend.DailyKpiService", fake_ctor
-        )
+        monkeypatch.setattr("app.services.chat.tools.get_trend.DailyKpiService", fake_ctor)
 
         session = AsyncMock()
         inp = GetTrendInput(metric_name="leads", period_days=7, granularity="day")

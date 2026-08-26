@@ -137,9 +137,7 @@ class DailyInsightResponseDictFactory(factory.Factory):
             "Acțiune 5",
         ]
     )
-    generated_at = factory.LazyFunction(
-        lambda: datetime(2026, 5, 28, 6, 0, 0, tzinfo=UTC)
-    )
+    generated_at = factory.LazyFunction(lambda: datetime(2026, 5, 28, 6, 0, 0, tzinfo=UTC))
 
 
 # ── DailyInsightRow factory (DB rows) ────────────────────────────────────────
@@ -160,9 +158,7 @@ class DailyInsightRowFactory(factory.Factory):
     date = factory.LazyFunction(lambda: TODAY)
     status = "success"
     payload_json = factory.LazyFunction(lambda: DailyInsightResponseDictFactory.build())
-    generated_at = factory.LazyFunction(
-        lambda: datetime(2026, 5, 28, 6, 5, 0, tzinfo=UTC)
-    )
+    generated_at = factory.LazyFunction(lambda: datetime(2026, 5, 28, 6, 5, 0, tzinfo=UTC))
     input_tokens = 3000
     output_tokens = 2000
     cost_usd = Decimal("0.039000")
@@ -218,9 +214,7 @@ class DetectedProblemInputFactory(factory.Factory):
     estimated_loss_ron = Decimal("5000.00")
     current_value = Decimal("360.00")
     expected_value = Decimal("300.00")
-    context_json = factory.LazyFunction(
-        lambda: {"count": 2, "worst_hours_elapsed": 6.0}
-    )
+    context_json = factory.LazyFunction(lambda: {"count": 2, "worst_hours_elapsed": 6.0})
 
 
 # ── Builder helpers ────────────────────────────────────────────────────────────

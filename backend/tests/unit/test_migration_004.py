@@ -110,9 +110,7 @@ def test_creates_three_metric_tables() -> None:
     _require_migration()
     source_text = MIGRATION_PATH.read_text()
 
-    assert "daily_kpi" in source_text, (
-        "migration 004 must create 'daily_kpi' table (METR-01)"
-    )
+    assert "daily_kpi" in source_text, "migration 004 must create 'daily_kpi' table (METR-01)"
     assert "salesperson_daily_kpi" in source_text, (
         "migration 004 must create 'salesperson_daily_kpi' table (METR-04)"
     )
@@ -199,12 +197,8 @@ def test_business_hours_patch_dict(self=None) -> None:
     assert '"business_hours"' in source_text or "'business_hours'" in source_text, (
         "BUSINESS_HOURS_PATCH must contain 'business_hours' key (D-07)"
     )
-    assert "09:00" in source_text, (
-        "BUSINESS_HOURS_PATCH must specify open time '09:00' (D-07)"
-    )
-    assert "19:00" in source_text, (
-        "BUSINESS_HOURS_PATCH must specify close time '19:00' (D-07)"
-    )
+    assert "09:00" in source_text, "BUSINESS_HOURS_PATCH must specify open time '09:00' (D-07)"
+    assert "19:00" in source_text, "BUSINESS_HOURS_PATCH must specify close time '19:00' (D-07)"
     assert "Europe/Bucharest" in source_text, (
         "BUSINESS_HOURS_PATCH must specify timezone 'Europe/Bucharest' (D-07)"
     )
@@ -300,12 +294,8 @@ def test_downgrade_drops_metric_tables() -> None:
         "migration 004 downgrade() must call op.drop_table() for metric tables"
     )
     # All three table names must appear in downgrade context
-    assert "source_daily_kpi" in source_text, (
-        "downgrade() must drop 'source_daily_kpi'"
-    )
-    assert "salesperson_daily_kpi" in source_text, (
-        "downgrade() must drop 'salesperson_daily_kpi'"
-    )
+    assert "source_daily_kpi" in source_text, "downgrade() must drop 'source_daily_kpi'"
+    assert "salesperson_daily_kpi" in source_text, "downgrade() must drop 'salesperson_daily_kpi'"
 
 
 def test_downgrade_restores_view() -> None:

@@ -24,9 +24,7 @@ import re
 # Order matters: for "5050" the first alternative would only match "505" (3 digits),
 # so we use a different approach — match ALL contiguous digits+separators greedily,
 # then normalize in the extraction function.
-NUMBER_PATTERN = re.compile(
-    r"\b(\d[\d.,]*\d|\d)\b"
-)
+NUMBER_PATTERN = re.compile(r"\b(\d[\d.,]*\d|\d)\b")
 
 
 def extract_numbers_from_text(text: str) -> list[float]:
@@ -118,8 +116,12 @@ def cross_check(parsed: object, kpi_snapshot: dict, problems_input: list[dict]) 
     # Add the percentage-form value alongside the raw decimal so cross_check passes
     # for both representations.
     PERCENT_FIELDS = {
-        "conversion_l_to_v", "conversion_v_to_o", "conversion_o_to_c",
-        "conversion_l_to_c", "wow_delta_pct", "mom_delta_pct",
+        "conversion_l_to_v",
+        "conversion_v_to_o",
+        "conversion_o_to_c",
+        "conversion_l_to_c",
+        "wow_delta_pct",
+        "mom_delta_pct",
     }
 
     for key, val in kpi_snapshot.items():

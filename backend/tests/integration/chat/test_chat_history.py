@@ -88,14 +88,10 @@ async def test_history_persists_across_sessions() -> None:
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
             # First client — simulates initial browser session.
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c1:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c1:
                 r1 = await c1.get(f"/api/v1/chat/conversations/{conv_id}")
             # Second client — simulates browser refresh / new session.
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c2:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c2:
                 r2 = await c2.get(f"/api/v1/chat/conversations/{conv_id}")
         assert r1.status_code == 200
         assert r2.status_code == 200
@@ -169,9 +165,7 @@ async def test_tenant_isolation() -> None:
 
     try:
         with patch("app.api.v1.chat.ConversationRepository", return_value=conv_repo):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 r = await c.get(f"/api/v1/chat/conversations/{conv_id}")
         # Cross-tenant access → 404 with Romanian copy (never leaks existence).
         assert r.status_code == 404

@@ -112,12 +112,8 @@ async def _handler(
     inp: ComparePeriodsInput,
 ) -> dict:
     svc = DashboardReadService(session, tenant_id)
-    dashboard_a = await svc.get_sales_dashboard(
-        inp.period_a.date_from, inp.period_a.date_to
-    )
-    dashboard_b = await svc.get_sales_dashboard(
-        inp.period_b.date_from, inp.period_b.date_to
-    )
+    dashboard_a = await svc.get_sales_dashboard(inp.period_a.date_from, inp.period_a.date_to)
+    dashboard_b = await svc.get_sales_dashboard(inp.period_b.date_from, inp.period_b.date_to)
 
     deltas: dict[str, str | None] = {}
     for metric in inp.metrics:

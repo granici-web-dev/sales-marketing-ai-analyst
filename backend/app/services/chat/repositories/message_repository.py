@@ -134,17 +134,18 @@ class MessageRepository:
         conv_bump = (
             update(ChatConversation)
             .where(ChatConversation.tenant_id == self._tenant_id)
-            .where(ChatConversation.id == select(ChatMessage.conversation_id)
-                   .where(ChatMessage.id == message_id)
-                   .where(ChatMessage.tenant_id == self._tenant_id)
-                   .scalar_subquery())
+            .where(
+                ChatConversation.id
+                == select(ChatMessage.conversation_id)
+                .where(ChatMessage.id == message_id)
+                .where(ChatMessage.tenant_id == self._tenant_id)
+                .scalar_subquery()
+            )
             .values(last_message_at=datetime.now(UTC))
         )
         await self._session.execute(conv_bump)
 
-    async def load_history(
-        self, conversation_id: UUID, limit: int = 20
-    ) -> list[dict[str, str]]:
+    async def load_history(self, conversation_id: UUID, limit: int = 20) -> list[dict[str, str]]:
         """Load conversation history scoped to user+assistant messages (D-16).
 
         ANCHOR + RECENT strategy (D-16):
@@ -176,13 +177,10 @@ class MessageRepository:
         else:
             # D-16: first user message + most recent (limit - 1) messages.
             first_user = next((r for r in rows if r.role == "user"), None)
-            recent = rows[-(limit - 1):]
+            recent = rows[-(limit - 1) :]
             if first_user is not None and first_user not in recent:
                 keep = [first_user, *recent]
             else:
                 keep = recent
 
-        return [
-            {"role": r.role, "content": r.content or ""}
-            for r in keep
-        ]
+        return [{"role": r.role, "content": r.content or ""} for r in keep]

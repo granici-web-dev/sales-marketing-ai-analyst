@@ -35,6 +35,7 @@ That splits the promise in two, and each half needs a different kind of test:
 CLAUDE.md: "Never log: phone numbers, email addresses, customer names,
 transcript content."
 """
+
 from __future__ import annotations
 
 import ast
@@ -194,7 +195,9 @@ class TestNoPiiAtCallSites:
             len(list(self._log_calls(ast.parse(p.read_text(encoding="utf-8")))))
             for p in APP_DIR.rglob("*.py")
         )
-        assert found >= 50, f"only {found} log calls found across app/ — is the matcher still right?"
+        assert found >= 50, (
+            f"only {found} log calls found across app/ — is the matcher still right?"
+        )
 
     def test_no_log_call_passes_pii_as_a_keyword(self) -> None:
         """CLAUDE.md: never log names, phone numbers, e-mail addresses, transcripts.
@@ -214,8 +217,7 @@ class TestNoPiiAtCallSites:
 
         assert not offenders, (
             "log calls passing customer PII (CLAUDE.md, INFRA-06). Log an opaque "
-            "id instead, and look the value up when investigating:\n  "
-            + "\n  ".join(offenders)
+            "id instead, and look the value up when investigating:\n  " + "\n  ".join(offenders)
         )
 
     def test_the_pii_check_catches_a_violation(self) -> None:

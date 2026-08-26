@@ -40,9 +40,9 @@ def get_cf(fields: object, field_id: int) -> object:
     bind=True,
     autoretry_for=(httpx.TimeoutException, httpx.NetworkError),
     max_retries=20,
-    retry_backoff=True,       # exponential: 2s, 4s, 8s, … capped at retry_backoff_max
-    retry_backoff_max=60,     # cap at 60s so we never wait longer than a minute
-    retry_jitter=True,        # ±random spread to avoid thundering-herd on shared token
+    retry_backoff=True,  # exponential: 2s, 4s, 8s, … capped at retry_backoff_max
+    retry_backoff_max=60,  # cap at 60s so we never wait longer than a minute
+    retry_jitter=True,  # ±random spread to avoid thundering-herd on shared token
     name="tasks.etl.sync_mefi_leads",
 )
 def sync_mefi_leads(self, tenant_id: str) -> dict:  # type: ignore[no-untyped-def]
@@ -149,9 +149,7 @@ async def _sync_async(tenant_id: UUID) -> dict:
                 if lead_count == 0:
                     from app.tasks.etl.backfill_mefi_leads import backfill_mefi_leads
 
-                    backfill_mefi_leads.apply_async(
-                        args=[str(tenant_id)], queue="backfill"
-                    )
+                    backfill_mefi_leads.apply_async(args=[str(tenant_id)], queue="backfill")
                     log.info("sync.backfill_enqueued", tenant_id=str(tenant_id))
 
                 # ── Step 5: Compute date window ──────────────────────────────
@@ -210,7 +208,9 @@ async def _sync_async(tenant_id: UUID) -> dict:
                             "assigned_to_id": lead.assigned_to.id if lead.assigned_to else None,
                             "assigned_to_name": lead.assigned_to.name if lead.assigned_to else None,
                             "estimated_value": lead.estimated_value,
-                            "priority": lead.priority.get("name") if isinstance(lead.priority, dict) else lead.priority,
+                            "priority": lead.priority.get("name")
+                            if isinstance(lead.priority, dict)
+                            else lead.priority,
                             "is_duplicate": lead.is_duplicate or False,
                             "created_at_source": lead.created_at,
                             "last_contact_at": lead.last_contact_at,
@@ -223,7 +223,9 @@ async def _sync_async(tenant_id: UUID) -> dict:
                             "utm_medium": get_cf(cf, 41),
                             # mode="json": Pydantic v2 serializes datetime→ISO str,
                             # Decimal→float, UUID→str — required for JSONB columns
-                            "custom_fields_raw": [f.model_dump(mode="json") for f in cf] if cf else None,
+                            "custom_fields_raw": [f.model_dump(mode="json") for f in cf]
+                            if cf
+                            else None,
                             "raw_payload": lead.model_dump(mode="json"),
                             "synced_at": now,
                             "updated_at": now,  # must be in VALUES so EXCLUDED has it
@@ -285,14 +287,18 @@ async def _sync_async(tenant_id: UUID) -> dict:
 
             from app.core.tenancy import set_tenant_id as _set
             from app.models.pipeline import SyncRun as _SyncRun
+
             _set(tenant_id)
             async with TaskSession() as err_session:
                 result = await err_session.execute(
-                    _select(_SyncRun).where(
+                    _select(_SyncRun)
+                    .where(
                         _SyncRun.tenant_id == tenant_id,
                         _SyncRun.source == "mefi",
                         _SyncRun.status == "running",
-                    ).order_by(_SyncRun.started_at.desc()).limit(1)
+                    )
+                    .order_by(_SyncRun.started_at.desc())
+                    .limit(1)
                 )
                 run = result.scalar_one_or_none()
                 if run:

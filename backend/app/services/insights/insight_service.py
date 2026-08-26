@@ -109,16 +109,16 @@ class InsightService:
 
             last_usage = response.usage
 
-            tool_block = next(
-                (b for b in response.content if b.type == "tool_use"), None
-            )
+            tool_block = next((b for b in response.content if b.type == "tool_use"), None)
 
             if tool_block is None:
                 # WR-02: Capture whatever Claude returned for debugging (not just "")
-                last_raw = json.dumps([
-                    {"type": b.type, "text": getattr(b, "text", "")[:500]}
-                    for b in response.content
-                ])
+                last_raw = json.dumps(
+                    [
+                        {"type": b.type, "text": getattr(b, "text", "")[:500]}
+                        for b in response.content
+                    ]
+                )
                 self._log.warning("insight.no_tool_block", attempt=attempt)
                 continue
 
@@ -214,6 +214,7 @@ class InsightService:
         Delegates to number_validator.cross_check().
         """
         from app.services.insights.number_validator import cross_check  # deferred (INFRA-05)
+
         return cross_check(parsed, kpi_snapshot, problems_input)
 
     def _build_fallback(self, problems_rows: list) -> object:
@@ -253,7 +254,9 @@ class InsightService:
                     category="sales",
                     title=rule_id.replace("_", " ").title(),
                     description=f"Anomalie detectată: {rule_id}",
-                    estimated_loss_ron=Decimal(str(loss)) if not isinstance(loss, Decimal) else loss,
+                    estimated_loss_ron=Decimal(str(loss))
+                    if not isinstance(loss, Decimal)
+                    else loss,
                     actions=[],
                 )
             )
@@ -263,7 +266,9 @@ class InsightService:
             problems=problems,
             positives=[],
             warnings=[],
-            weekly_action_plan=["Revizuiți anomaliile detectate automat și contactați echipa de vânzări."],
+            weekly_action_plan=[
+                "Revizuiți anomaliile detectate automat și contactați echipa de vânzări."
+            ],
             generated_at=datetime.now(UTC),
         )
 

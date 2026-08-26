@@ -88,6 +88,11 @@ ignore = [
     # Function-local constants are spelled as constants here (`_GROUP_COLUMNS`,
     # `PERCENT_FIELDS`). 31 of them, deliberate and readable.
     "N806",
+    # `ruff format` owns line length for code and is checked in CI. What E501
+    # still catches after formatting is literal content: 28 lines of Romanian
+    # prompt text, SQL, docstrings, seed data. Reflowing a prompt to fit a column
+    # limit risks changing the prompt, which is a worse trade than a long line.
+    "E501",
 ]
 
 [tool.ruff.lint.per-file-ignores]

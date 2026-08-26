@@ -49,15 +49,25 @@ class HealthReadService:
             Dict with {last_sync_at: datetime | None, last_pipeline_status: str | None, stale: bool}.
         """
         # Most recent mefi sync run
-        stmt_sync = select(SyncRun.completed_at, SyncRun.status).where(
-            SyncRun.tenant_id == self._tenant_id,
-            SyncRun.source == "mefi",
-        ).order_by(SyncRun.started_at.desc()).limit(1)
+        stmt_sync = (
+            select(SyncRun.completed_at, SyncRun.status)
+            .where(
+                SyncRun.tenant_id == self._tenant_id,
+                SyncRun.source == "mefi",
+            )
+            .order_by(SyncRun.started_at.desc())
+            .limit(1)
+        )
 
         # Most recent pipeline run
-        stmt_pipeline = select(PipelineRun.status).where(
-            PipelineRun.tenant_id == self._tenant_id,
-        ).order_by(PipelineRun.started_at.desc()).limit(1)
+        stmt_pipeline = (
+            select(PipelineRun.status)
+            .where(
+                PipelineRun.tenant_id == self._tenant_id,
+            )
+            .order_by(PipelineRun.started_at.desc())
+            .limit(1)
+        )
 
         sync_result = await self._session.execute(stmt_sync)
         sync_row = sync_result.first()

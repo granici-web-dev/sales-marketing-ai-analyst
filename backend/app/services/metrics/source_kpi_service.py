@@ -50,8 +50,17 @@ logger = structlog.get_logger(__name__)
 # Canonical category order — emitted for every date even when leads=0.
 # Verified against Sofa Belle source IDs 2026-05-28.
 CANONICAL_CATEGORIES = [
-    "showroom", "mail", "telefon", "whatsapp", "site",
-    "meta", "recomandare", "colaborare", "arhitect", "client_fidel", "other",
+    "showroom",
+    "mail",
+    "telefon",
+    "whatsapp",
+    "site",
+    "meta",
+    "recomandare",
+    "colaborare",
+    "arhitect",
+    "client_fidel",
+    "other",
 ]
 
 
@@ -97,9 +106,9 @@ class SourceKpiService:
 
         Returns the source_categories dict. Falls back to Sofa Belle defaults.
         """
-        stmt = text(
-            "SELECT funnel_config FROM tenants WHERE id = :tenant_id"
-        ).bindparams(tenant_id=self._tenant_id)
+        stmt = text("SELECT funnel_config FROM tenants WHERE id = :tenant_id").bindparams(
+            tenant_id=self._tenant_id
+        )
         result = await self._session.execute(stmt)
         row = result.fetchone()
         if row and row[0] and "source_categories" in row[0]:
@@ -144,15 +153,15 @@ class SourceKpiService:
         # Source category → source_id list mapping from funnel_config or Sofa Belle defaults
         source_categories = await self._get_source_categories()
 
-        showroom_ids     = source_categories.get("showroom",     [5])
-        mail_ids         = source_categories.get("mail",         [11])
-        telefon_ids      = source_categories.get("telefon",      [10])
-        whatsapp_ids     = source_categories.get("whatsapp",     [9])
-        site_ids         = source_categories.get("site",         [6])
-        meta_ids         = source_categories.get("meta",         [2])
-        recomandare_ids  = source_categories.get("recomandare",  [3])
-        colaborare_ids   = source_categories.get("colaborare",   [12])
-        arhitect_ids     = source_categories.get("arhitect",     [7])
+        showroom_ids = source_categories.get("showroom", [5])
+        mail_ids = source_categories.get("mail", [11])
+        telefon_ids = source_categories.get("telefon", [10])
+        whatsapp_ids = source_categories.get("whatsapp", [9])
+        site_ids = source_categories.get("site", [6])
+        meta_ids = source_categories.get("meta", [2])
+        recomandare_ids = source_categories.get("recomandare", [3])
+        colaborare_ids = source_categories.get("colaborare", [12])
+        arhitect_ids = source_categories.get("arhitect", [7])
         client_fidel_ids = source_categories.get("client_fidel", [13])
 
         # Query 1 — leads + offers on the CREATION cohort (created_at_source).
@@ -283,18 +292,22 @@ class SourceKpiService:
             if leads > 0:
                 conversion_rate = Decimal(str(deals_won)) / Decimal(str(leads))
 
-            output.append({
-                "tenant_id": self._tenant_id,
-                "source": category,
-                "date": kpi_date,
-                "leads": leads,
-                "visits": leads if category == "showroom" else None,  # showroom leads ARE visits
-                "offers": offers,
-                "deals_won": deals_won,
-                "revenue": revenue,
-                "conversion_rate": conversion_rate,
-                # ad_spend, cpl, cac, roas left NULL (D-08 — Iteration 2)
-            })
+            output.append(
+                {
+                    "tenant_id": self._tenant_id,
+                    "source": category,
+                    "date": kpi_date,
+                    "leads": leads,
+                    "visits": leads
+                    if category == "showroom"
+                    else None,  # showroom leads ARE visits
+                    "offers": offers,
+                    "deals_won": deals_won,
+                    "revenue": revenue,
+                    "conversion_rate": conversion_rate,
+                    # ad_spend, cpl, cac, roas left NULL (D-08 — Iteration 2)
+                }
+            )
 
         log.info("source_kpi.compute_done", kpi_date=str(kpi_date), records=len(output))
         return output

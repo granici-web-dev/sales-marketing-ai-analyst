@@ -19,6 +19,7 @@ Security notes (T-04-02):
 This migration does NOT need a downgrade — seed data is not reversed.
 If re-running from scratch, drop and recreate the database.
 """
+
 from __future__ import annotations
 
 import uuid

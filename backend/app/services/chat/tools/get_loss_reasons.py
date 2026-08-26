@@ -97,7 +97,11 @@ async def _handler(
         raw_key = getattr(row, "group_key", None)
         count = int(getattr(row, "lost_count", 0) or 0)
         if inp.group_by == "source":
-            name = MEFI_SOURCE_ID_TO_NAME.get(int(raw_key), "other") if raw_key is not None else "other"
+            name = (
+                MEFI_SOURCE_ID_TO_NAME.get(int(raw_key), "other")
+                if raw_key is not None
+                else "other"
+            )
         else:
             name = raw_key if raw_key is not None else "unassigned"
         by_name[name] = by_name.get(name, 0) + count

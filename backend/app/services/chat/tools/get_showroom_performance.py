@@ -99,10 +99,11 @@ async def _handler(
         contracts_sql,
         {"tid": tenant_id, "df": inp.date_from, "dt": inp.date_to},
     )
-    contracts_rows = contracts_result.all() if hasattr(contracts_result, "all") else list(contracts_result)
+    contracts_rows = (
+        contracts_result.all() if hasattr(contracts_result, "all") else list(contracts_result)
+    )
     contracts_by_showroom: dict[str, int] = {
-        getattr(r, "showroom", None): int(getattr(r, "contracts", 0) or 0)
-        for r in contracts_rows
+        getattr(r, "showroom", None): int(getattr(r, "contracts", 0) or 0) for r in contracts_rows
     }
     leads_lookup = {getattr(r, "showroom", None): r for r in rows}
 
@@ -120,16 +121,18 @@ async def _handler(
         visits = int(getattr(row, "visits", 0) or 0) if row is not None else 0
         offers = int(getattr(row, "offers", 0) or 0) if row is not None else 0
         contracts = contracts_by_showroom.get(showroom_name, 0)
-        showrooms.append({
-            "showroom": showroom_name,
-            "leads": leads,
-            "visits": visits,
-            "offers": offers,
-            "contracts": contracts,
-            "conversion_l_to_v": _conv(visits, leads),
-            "conversion_l_to_c": _conv(contracts, leads),
-            "conversion_o_to_c": _conv(contracts, offers),
-        })
+        showrooms.append(
+            {
+                "showroom": showroom_name,
+                "leads": leads,
+                "visits": visits,
+                "offers": offers,
+                "contracts": contracts,
+                "conversion_l_to_v": _conv(visits, leads),
+                "conversion_l_to_c": _conv(contracts, leads),
+                "conversion_o_to_c": _conv(contracts, offers),
+            }
+        )
 
     if inp.showroom is not None:
         showrooms = [s for s in showrooms if s["showroom"] == inp.showroom]

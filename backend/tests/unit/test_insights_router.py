@@ -57,9 +57,12 @@ async def test_refresh_rate_limit_first_call_enqueues() -> None:
 
     mock_response = MagicMock()
 
-    with patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx), patch(
-        "app.tasks.insights.generate_daily_insights.generate_daily_insights",
-        mock_generate,
+    with (
+        patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx),
+        patch(
+            "app.tasks.insights.generate_daily_insights.generate_daily_insights",
+            mock_generate,
+        ),
     ):
         result = await refresh_insights(
             response=mock_response,

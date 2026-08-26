@@ -135,8 +135,18 @@ def _build_tenant_facts(tenant_name: str = "Sofa Belle") -> dict:
 
 
 _RO_MONTHS = (
-    "ianuarie", "februarie", "martie", "aprilie", "mai", "iunie",
-    "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie",
+    "ianuarie",
+    "februarie",
+    "martie",
+    "aprilie",
+    "mai",
+    "iunie",
+    "iulie",
+    "august",
+    "septembrie",
+    "octombrie",
+    "noiembrie",
+    "decembrie",
 )
 
 
@@ -158,7 +168,7 @@ def _build_today_block(today: date | None = None) -> dict:
             f"(luna curentă: {month_name} {today.year}, "
             f"săptămâna curentă începe luni {monday.isoformat()}). "
             f"Folosește această dată pentru a interpreta expresii relative "
-            f"precum „luna asta\", „săptămâna trecută\", „azi\", „ieri\"."
+            f'precum „luna asta", „săptămâna trecută", „azi", „ieri".'
         ),
     }
 

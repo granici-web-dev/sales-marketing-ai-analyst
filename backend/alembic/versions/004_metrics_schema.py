@@ -62,7 +62,7 @@ depends_on: str | Sequence[str] | None = None
 
 BUSINESS_HOURS_PATCH = {
     "business_hours": {
-        "days": [0, 1, 2, 3, 4, 5, 6],   # Mon=0 ... Sun=6 (D-07: 7 days/week)
+        "days": [0, 1, 2, 3, 4, 5, 6],  # Mon=0 ... Sun=6 (D-07: 7 days/week)
         "open": "09:00",
         "close": "19:00",
         "tz": "Europe/Bucharest",
@@ -204,20 +204,16 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-
         # Business date — NOT NULL; UPSERT conflict target with tenant_id
         sa.Column("date", sa.Date, nullable=False),
-
         # --- Ad spend (nullable — populated Iteration 2) ---
         sa.Column("spend_meta", sa.Numeric(10, 2), nullable=True),
         sa.Column("spend_google", sa.Numeric(10, 2), nullable=True),
         sa.Column("spend_tiktok", sa.Numeric(10, 2), nullable=True),
         sa.Column("spend_digital_total", sa.Numeric(10, 2), nullable=True),
-
         # --- GA4 (nullable — populated Iteration 3) ---
         sa.Column("web_sessions", sa.Integer, nullable=True),
         sa.Column("web_conversion_rate", sa.Numeric(5, 4), nullable=True),
-
         # --- Lead volume by source (nullable) ---
         sa.Column("leads_mail_fb_ig", sa.Integer, nullable=True),
         sa.Column("leads_telefon", sa.Integer, nullable=True),
@@ -226,11 +222,9 @@ def upgrade() -> None:
         sa.Column("leads_designer", sa.Integer, nullable=True),
         sa.Column("leads_alte", sa.Integer, nullable=True),
         sa.Column("leads_total", sa.Integer, nullable=True),
-
         # --- CPL (nullable — populated Iteration 2) ---
         sa.Column("cpl_overall", sa.Numeric(8, 2), nullable=True),
         sa.Column("cpl_by_channel", JSONB, nullable=True),
-
         # --- Funnel counts (NOT NULL — Phase 3 always computes these) ---
         sa.Column(
             "visits_count",
@@ -250,31 +244,26 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.text("0"),
         ),
-
         # --- Conversion rates — NUMERIC(5,4) per SPEC.md §7 ---
         sa.Column("conversion_l_to_v", sa.Numeric(5, 4), nullable=True),
         sa.Column("conversion_v_to_o", sa.Numeric(5, 4), nullable=True),
         sa.Column("conversion_l_to_o", sa.Numeric(5, 4), nullable=True),
         sa.Column("conversion_o_to_c", sa.Numeric(5, 4), nullable=True),
         sa.Column("conversion_l_to_c", sa.Numeric(5, 4), nullable=True),
-
         # --- Revenue — NUMERIC(12,2) per DATA-04 ---
         sa.Column("revenue", sa.Numeric(12, 2), nullable=True),
         sa.Column("avg_deal_size", sa.Numeric(10, 2), nullable=True),
         sa.Column("avg_deal_size_per_day", sa.Numeric(10, 2), nullable=True),
         sa.Column("cost_acquisition_contract", sa.Numeric(12, 2), nullable=True),
-
         # --- CAC/ROAS (nullable — Iteration 2) ---
         sa.Column("cac", sa.Numeric(10, 2), nullable=True),
         sa.Column("roas", sa.Numeric(8, 2), nullable=True),
-
         # --- Calls (nullable — future telephony) ---
         sa.Column("calls_total", sa.Integer, nullable=True),
         sa.Column("calls_answered", sa.Integer, nullable=True),
         sa.Column("calls_missed", sa.Integer, nullable=True),
         sa.Column("avg_call_duration_seconds", sa.Integer, nullable=True),
         sa.Column("avg_sentiment_score", sa.Numeric(3, 2), nullable=True),
-
         # --- WoW / MoM deltas (METR-05 — NOT in SPEC.md §7, added by this migration) ---
         # NUMERIC(8,4): range covers fractional change [-1, +infinity)
         # NULL when prior-period row absent (D-11 — never impute zero)
@@ -294,7 +283,6 @@ def upgrade() -> None:
         sa.Column("revenue_mom_delta", sa.Numeric(8, 4), nullable=True),
         sa.Column("avg_deal_size_wow_delta", sa.Numeric(8, 4), nullable=True),
         sa.Column("avg_deal_size_mom_delta", sa.Numeric(8, 4), nullable=True),
-
         # --- Calculation timestamp ---
         sa.Column(
             "calculated_at",
@@ -302,7 +290,6 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-
         # FK to tenants
         sa.ForeignKeyConstraint(
             ["tenant_id"],
@@ -330,48 +317,37 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-
         # Salesperson identifier — TEXT NOT NULL (UPSERT conflict target)
         sa.Column("salesperson_external_id", sa.Text, nullable=False),
-
         # Business date — NOT NULL; part of 3-column UPSERT conflict target
         sa.Column("date", sa.Date, nullable=False),
-
         # --- Lead funnel metrics ---
         sa.Column("leads_assigned", sa.Integer, nullable=True),
         sa.Column("leads_contacted", sa.Integer, nullable=True),
-
         # Business-hours-adjusted minutes (D-06). NULL = no mefi_lead_history rows (D-05).
         sa.Column("avg_time_to_first_touch_minutes", sa.Integer, nullable=True),
-
         # --- Funnel stage counts ---
         sa.Column("visits_conducted", sa.Integer, nullable=True),
         sa.Column("offers_sent", sa.Integer, nullable=True),
         sa.Column("deals_won", sa.Integer, nullable=True),
         sa.Column("deals_lost", sa.Integer, nullable=True),
-
         # --- Revenue ---
         sa.Column("revenue", sa.Numeric(12, 2), nullable=True),
-
         # --- Conversion rates ---
         sa.Column("conversion_l_to_v", sa.Numeric(5, 4), nullable=True),
         sa.Column("conversion_v_to_o", sa.Numeric(5, 4), nullable=True),
         sa.Column("conversion_o_to_c", sa.Numeric(5, 4), nullable=True),
         sa.Column("conversion_l_to_c", sa.Numeric(5, 4), nullable=True),
-
         # --- Revenue per deal ---
         sa.Column("avg_deal_size", sa.Numeric(10, 2), nullable=True),
-
         # --- Calls (nullable — future telephony) ---
         sa.Column("calls_made", sa.Integer, nullable=True),
         sa.Column("calls_answered", sa.Integer, nullable=True),
         sa.Column("avg_call_duration_seconds", sa.Integer, nullable=True),
         sa.Column("avg_sentiment_score", sa.Numeric(3, 2), nullable=True),
-
         # --- data_completeness_pct (Schema Gap 2 — METR-06, NOT in SPEC.md §7) ---
         # % of leads with estimated_value set. Range 0.00-100.00 (Assumption A3).
         sa.Column("data_completeness_pct", sa.Numeric(5, 2), nullable=True),
-
         # --- Calculation timestamp ---
         sa.Column(
             "calculated_at",
@@ -379,7 +355,6 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-
         # FK to tenants
         sa.ForeignKeyConstraint(
             ["tenant_id"],
@@ -408,36 +383,27 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-
         # Source category — TEXT NOT NULL (D-09: funnel_config category names, not enum)
         # One of: mail_fb_ig | telefon | whatsapp | site | designer | alte | google (D-04)
         sa.Column("source", sa.Text, nullable=False),
-
         # Business date — NOT NULL; part of 3-column UPSERT conflict target
         sa.Column("date", sa.Date, nullable=False),
-
         # --- Lead volume ---
         sa.Column("leads", sa.Integer, nullable=True),
-
         # --- Ad spend (nullable — populated Iteration 2) ---
         sa.Column("ad_spend", sa.Numeric(10, 2), nullable=True),
-
         # --- Efficiency metrics (nullable — populated Iteration 2) ---
         sa.Column("cpl", sa.Numeric(8, 2), nullable=True),
         sa.Column("cac", sa.Numeric(10, 2), nullable=True),
         sa.Column("roas", sa.Numeric(8, 2), nullable=True),
-
         # --- Funnel stage counts ---
         sa.Column("visits", sa.Integer, nullable=True),
         sa.Column("offers", sa.Integer, nullable=True),
         sa.Column("deals_won", sa.Integer, nullable=True),
-
         # --- Revenue ---
         sa.Column("revenue", sa.Numeric(12, 2), nullable=True),
-
         # --- Conversion rate ---
         sa.Column("conversion_rate", sa.Numeric(5, 4), nullable=True),
-
         # --- Calculation timestamp ---
         sa.Column(
             "calculated_at",
@@ -445,7 +411,6 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-
         # FK to tenants
         sa.ForeignKeyConstraint(
             ["tenant_id"],

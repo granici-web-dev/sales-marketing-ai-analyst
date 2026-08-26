@@ -70,9 +70,9 @@ class SalespersonKpiService:
         Returns default Sofa Belle schedule if not configured or malformed.
         T-03-03-04: Falls back to hardcoded D-07 default to prevent injection.
         """
-        stmt = text(
-            "SELECT funnel_config FROM tenants WHERE id = :tenant_id"
-        ).bindparams(tenant_id=self._tenant_id)
+        stmt = text("SELECT funnel_config FROM tenants WHERE id = :tenant_id").bindparams(
+            tenant_id=self._tenant_id
+        )
         result = await self._session.execute(stmt)
         row = result.fetchone()
         if row and row[0] and "business_hours" in row[0]:
@@ -233,7 +233,9 @@ class SalespersonKpiService:
             # deals_lost stays on the creation cohort (out of scope for the contract
             # hotfix; not a MEFI-comparison metric). Note the deliberate asymmetry with
             # deals_won (event model) documented in the module docstring.
-            deals_lost = sum(1 for lead in leads if not lead.reached_contract and not lead.reached_offer)
+            deals_lost = sum(
+                1 for lead in leads if not lead.reached_contract and not lead.reached_offer
+            )
 
             # deals_won + revenue use the EVENT model: deals this rep SIGNED on
             # kpi_date (status→Clienți, status_id=1), keyed on status_changed_at —
@@ -255,9 +257,7 @@ class SalespersonKpiService:
             # Revenue — sum estimated_value for deals signed on kpi_date (D-16 Decimal)
             revenue: Decimal | None = None
             won_values = [
-                Decimal(str(w.estimated_value))
-                for w in won_rows
-                if w.estimated_value is not None
+                Decimal(str(w.estimated_value)) for w in won_rows if w.estimated_value is not None
             ]
             if won_values:
                 revenue = sum(won_values, Decimal("0"))
@@ -266,7 +266,9 @@ class SalespersonKpiService:
             data_completeness_pct: Decimal | None = None
             if leads_assigned > 0:
                 non_null_count = sum(1 for lead in leads if lead.estimated_value is not None)
-                data_completeness_pct = Decimal(str(non_null_count)) / Decimal(str(leads_assigned)) * Decimal("100")
+                data_completeness_pct = (
+                    Decimal(str(non_null_count)) / Decimal(str(leads_assigned)) * Decimal("100")
+                )
 
             # WR-03 FIX: Initialize history_by_lead unconditionally to avoid implicit
             # scoping dependency between two separate `if leads_assigned > 0` blocks.
@@ -335,8 +337,7 @@ class SalespersonKpiService:
             # history_by_lead is always defined (initialized unconditionally above)
             if leads_assigned > 0:
                 leads_contacted = sum(
-                    1 for lead in leads
-                    if str(lead.lead_external_id) in history_by_lead
+                    1 for lead in leads if str(lead.lead_external_id) in history_by_lead
                 )
             else:
                 leads_contacted = 0

@@ -111,9 +111,9 @@ class DailyKpiService:
         Returns the funnel_config dict. Falls back to empty dict if missing.
         funnel_config column was added by migration 003 but is not on the ORM model.
         """
-        stmt = text(
-            "SELECT funnel_config FROM tenants WHERE id = :tenant_id"
-        ).bindparams(tenant_id=self._tenant_id)
+        stmt = text("SELECT funnel_config FROM tenants WHERE id = :tenant_id").bindparams(
+            tenant_id=self._tenant_id
+        )
         result = await self._session.execute(stmt)
         row = result.fetchone()
         if row and row[0]:
@@ -218,7 +218,9 @@ class DailyKpiService:
             if contracts_agg and contracts_agg.contracts_count is not None
             else 0
         )
-        leads_mail_fb_ig = int(agg.leads_mail_fb_ig) if agg and agg.leads_mail_fb_ig is not None else 0
+        leads_mail_fb_ig = (
+            int(agg.leads_mail_fb_ig) if agg and agg.leads_mail_fb_ig is not None else 0
+        )
         leads_telefon = int(agg.leads_telefon) if agg and agg.leads_telefon is not None else 0
         leads_whatsapp = int(agg.leads_whatsapp) if agg and agg.leads_whatsapp is not None else 0
         leads_site = int(agg.leads_site) if agg and agg.leads_site is not None else 0
@@ -257,7 +259,7 @@ class DailyKpiService:
 
         # WoW (D-7) and MoM (D-30) deltas (METR-05, D-11)
         # timedelta(days=7) for WoW; timedelta(days=30) for MoM
-        prior_7 = await self._fetch_prior_row(kpi_date, 7)   # D-7: timedelta(days=7)
+        prior_7 = await self._fetch_prior_row(kpi_date, 7)  # D-7: timedelta(days=7)
         prior_30 = await self._fetch_prior_row(kpi_date, 30)  # D-30: timedelta(days=30)
 
         def _prior_val(row: object | None, attr: str) -> Decimal | None:
@@ -299,20 +301,44 @@ class DailyKpiService:
                 Decimal(str(leads_total)) if leads_total else None,
                 _prior_val(prior_30, "leads_total"),
             ),
-            "conversion_l_to_v_wow_delta": self._compute_delta(conversion_l_to_v, _prior_val(prior_7, "conversion_l_to_v")),
-            "conversion_l_to_v_mom_delta": self._compute_delta(conversion_l_to_v, _prior_val(prior_30, "conversion_l_to_v")),
-            "conversion_v_to_o_wow_delta": self._compute_delta(conversion_v_to_o, _prior_val(prior_7, "conversion_v_to_o")),
-            "conversion_v_to_o_mom_delta": self._compute_delta(conversion_v_to_o, _prior_val(prior_30, "conversion_v_to_o")),
-            "conversion_l_to_o_wow_delta": self._compute_delta(conversion_l_to_o, _prior_val(prior_7, "conversion_l_to_o")),
-            "conversion_l_to_o_mom_delta": self._compute_delta(conversion_l_to_o, _prior_val(prior_30, "conversion_l_to_o")),
-            "conversion_o_to_c_wow_delta": self._compute_delta(conversion_o_to_c, _prior_val(prior_7, "conversion_o_to_c")),
-            "conversion_o_to_c_mom_delta": self._compute_delta(conversion_o_to_c, _prior_val(prior_30, "conversion_o_to_c")),
-            "conversion_l_to_c_wow_delta": self._compute_delta(conversion_l_to_c, _prior_val(prior_7, "conversion_l_to_c")),
-            "conversion_l_to_c_mom_delta": self._compute_delta(conversion_l_to_c, _prior_val(prior_30, "conversion_l_to_c")),
+            "conversion_l_to_v_wow_delta": self._compute_delta(
+                conversion_l_to_v, _prior_val(prior_7, "conversion_l_to_v")
+            ),
+            "conversion_l_to_v_mom_delta": self._compute_delta(
+                conversion_l_to_v, _prior_val(prior_30, "conversion_l_to_v")
+            ),
+            "conversion_v_to_o_wow_delta": self._compute_delta(
+                conversion_v_to_o, _prior_val(prior_7, "conversion_v_to_o")
+            ),
+            "conversion_v_to_o_mom_delta": self._compute_delta(
+                conversion_v_to_o, _prior_val(prior_30, "conversion_v_to_o")
+            ),
+            "conversion_l_to_o_wow_delta": self._compute_delta(
+                conversion_l_to_o, _prior_val(prior_7, "conversion_l_to_o")
+            ),
+            "conversion_l_to_o_mom_delta": self._compute_delta(
+                conversion_l_to_o, _prior_val(prior_30, "conversion_l_to_o")
+            ),
+            "conversion_o_to_c_wow_delta": self._compute_delta(
+                conversion_o_to_c, _prior_val(prior_7, "conversion_o_to_c")
+            ),
+            "conversion_o_to_c_mom_delta": self._compute_delta(
+                conversion_o_to_c, _prior_val(prior_30, "conversion_o_to_c")
+            ),
+            "conversion_l_to_c_wow_delta": self._compute_delta(
+                conversion_l_to_c, _prior_val(prior_7, "conversion_l_to_c")
+            ),
+            "conversion_l_to_c_mom_delta": self._compute_delta(
+                conversion_l_to_c, _prior_val(prior_30, "conversion_l_to_c")
+            ),
             "revenue_wow_delta": self._compute_delta(revenue, _prior_val(prior_7, "revenue")),
             "revenue_mom_delta": self._compute_delta(revenue, _prior_val(prior_30, "revenue")),
-            "avg_deal_size_wow_delta": self._compute_delta(avg_deal_size, _prior_val(prior_7, "avg_deal_size")),
-            "avg_deal_size_mom_delta": self._compute_delta(avg_deal_size, _prior_val(prior_30, "avg_deal_size")),
+            "avg_deal_size_wow_delta": self._compute_delta(
+                avg_deal_size, _prior_val(prior_7, "avg_deal_size")
+            ),
+            "avg_deal_size_mom_delta": self._compute_delta(
+                avg_deal_size, _prior_val(prior_30, "avg_deal_size")
+            ),
         }
 
         log.info("daily_kpi.compute_done", kpi_date=str(kpi_date), leads_total=leads_total)

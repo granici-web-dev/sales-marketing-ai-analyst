@@ -102,6 +102,7 @@ def build_user_message(kpi_row: dict | None, problems_rows: list[dict]) -> str:
     Returns:
         str: JSON string with keys "date", "kpi_snapshot", "detected_problems".
     """
+
     # D-02: top-3 by estimated_loss_ron descending
     def _sort_key(row: dict) -> Decimal:
         val = row.get("estimated_loss_ron", Decimal("0"))
@@ -118,9 +119,15 @@ def build_user_message(kpi_row: dict | None, problems_rows: list[dict]) -> str:
         cleaned = {
             "rule_id": row.get("rule_id"),
             "severity": row.get("severity"),
-            "estimated_loss_ron": str(row["estimated_loss_ron"]) if row.get("estimated_loss_ron") is not None else None,
-            "current_value": str(row["current_value"]) if row.get("current_value") is not None else None,
-            "expected_value": str(row["expected_value"]) if row.get("expected_value") is not None else None,
+            "estimated_loss_ron": str(row["estimated_loss_ron"])
+            if row.get("estimated_loss_ron") is not None
+            else None,
+            "current_value": str(row["current_value"])
+            if row.get("current_value") is not None
+            else None,
+            "expected_value": str(row["expected_value"])
+            if row.get("expected_value") is not None
+            else None,
         }
         cleaned_problems.append(cleaned)
 
@@ -128,9 +135,17 @@ def build_user_message(kpi_row: dict | None, problems_rows: list[dict]) -> str:
     kpi_snapshot: dict = {}
     if kpi_row is not None:
         kpi_fields = [
-            "leads_total", "visits_count", "offers_count", "contracts_closed",
-            "conversion_l_to_v", "conversion_v_to_o", "conversion_o_to_c", "conversion_l_to_c",
-            "avg_deal_size", "wow_delta_pct", "mom_delta_pct",
+            "leads_total",
+            "visits_count",
+            "offers_count",
+            "contracts_closed",
+            "conversion_l_to_v",
+            "conversion_v_to_o",
+            "conversion_o_to_c",
+            "conversion_l_to_c",
+            "avg_deal_size",
+            "wow_delta_pct",
+            "mom_delta_pct",
         ]
         for field in kpi_fields:
             val = kpi_row.get(field)

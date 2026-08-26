@@ -41,15 +41,13 @@ class GetStuckLeadsInput(BaseModel):
         ge=1,
         le=365,
         description=(
-            "Days since last activity threshold. Default 14 (matches ANOM-03 "
-            "stuck-offer rule)."
+            "Days since last activity threshold. Default 14 (matches ANOM-03 stuck-offer rule)."
         ),
     )
     status: str | None = Field(
         None,
         description=(
-            "Optional funnel stage filter (e.g., 'oferta'). When omitted, "
-            "returns all stuck items."
+            "Optional funnel stage filter (e.g., 'oferta'). When omitted, returns all stuck items."
         ),
     )
 
@@ -86,8 +84,7 @@ async def _handler(
 
     if inp.status is not None:
         leads = [
-            lead for lead in leads
-            if str(lead.get("status", "")).lower() == inp.status.lower()
+            lead for lead in leads if str(lead.get("status", "")).lower() == inp.status.lower()
         ]
 
     return {

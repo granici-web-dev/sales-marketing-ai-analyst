@@ -34,16 +34,16 @@ logger = structlog.get_logger(__name__)
 # uses the same buckets as Sales source breakdown. Source IDs verified from
 # 1219 ingested leads (2026-05-28). Unmapped IDs fall back to "other".
 MEFI_SOURCE_ID_TO_NAME: dict[int, str] = {
-    5: "showroom",      # Walk-in to physical showroom — "Vizita" in client Excel
-    11: "mail",         # Email leads
-    10: "telefon",      # Inbound phone calls
-    9: "whatsapp",      # WhatsApp Business
-    6: "site",          # Website contact forms
-    2: "meta",          # Facebook/Instagram paid ads
-    3: "recomandare",   # Word-of-mouth referrals
-    12: "colaborare",   # Partner/collaboration
-    7: "arhitect",      # Interior architect referrals
-    13: "client_fidel", # Repeat customers
+    5: "showroom",  # Walk-in to physical showroom — "Vizita" in client Excel
+    11: "mail",  # Email leads
+    10: "telefon",  # Inbound phone calls
+    9: "whatsapp",  # WhatsApp Business
+    6: "site",  # Website contact forms
+    2: "meta",  # Facebook/Instagram paid ads
+    3: "recomandare",  # Word-of-mouth referrals
+    12: "colaborare",  # Partner/collaboration
+    7: "arhitect",  # Interior architect referrals
+    13: "client_fidel",  # Repeat customers
 }
 
 
@@ -131,33 +131,38 @@ class DashboardReadService:
         period_l_to_c = _ratio(contracts_count, leads_total)
 
         # ── Step 2: Last-day rates and deltas (last row in range DESC) ────────
-        stmt_rates = select(
-            DailyKpi.conversion_l_to_v,
-            DailyKpi.conversion_v_to_o,
-            DailyKpi.conversion_l_to_o,
-            DailyKpi.conversion_o_to_c,
-            DailyKpi.conversion_l_to_c,
-            DailyKpi.leads_total_wow_delta,
-            DailyKpi.leads_total_mom_delta,
-            DailyKpi.conversion_l_to_v_wow_delta,
-            DailyKpi.conversion_l_to_v_mom_delta,
-            DailyKpi.conversion_v_to_o_wow_delta,
-            DailyKpi.conversion_v_to_o_mom_delta,
-            DailyKpi.conversion_l_to_o_wow_delta,
-            DailyKpi.conversion_l_to_o_mom_delta,
-            DailyKpi.conversion_o_to_c_wow_delta,
-            DailyKpi.conversion_o_to_c_mom_delta,
-            DailyKpi.conversion_l_to_c_wow_delta,
-            DailyKpi.conversion_l_to_c_mom_delta,
-            DailyKpi.revenue_wow_delta,
-            DailyKpi.revenue_mom_delta,
-            DailyKpi.avg_deal_size_wow_delta,
-            DailyKpi.avg_deal_size_mom_delta,
-        ).where(
-            DailyKpi.tenant_id == self._tenant_id,
-            DailyKpi.date >= from_date,
-            DailyKpi.date <= to_date,
-        ).order_by(DailyKpi.date.desc()).limit(1)
+        stmt_rates = (
+            select(
+                DailyKpi.conversion_l_to_v,
+                DailyKpi.conversion_v_to_o,
+                DailyKpi.conversion_l_to_o,
+                DailyKpi.conversion_o_to_c,
+                DailyKpi.conversion_l_to_c,
+                DailyKpi.leads_total_wow_delta,
+                DailyKpi.leads_total_mom_delta,
+                DailyKpi.conversion_l_to_v_wow_delta,
+                DailyKpi.conversion_l_to_v_mom_delta,
+                DailyKpi.conversion_v_to_o_wow_delta,
+                DailyKpi.conversion_v_to_o_mom_delta,
+                DailyKpi.conversion_l_to_o_wow_delta,
+                DailyKpi.conversion_l_to_o_mom_delta,
+                DailyKpi.conversion_o_to_c_wow_delta,
+                DailyKpi.conversion_o_to_c_mom_delta,
+                DailyKpi.conversion_l_to_c_wow_delta,
+                DailyKpi.conversion_l_to_c_mom_delta,
+                DailyKpi.revenue_wow_delta,
+                DailyKpi.revenue_mom_delta,
+                DailyKpi.avg_deal_size_wow_delta,
+                DailyKpi.avg_deal_size_mom_delta,
+            )
+            .where(
+                DailyKpi.tenant_id == self._tenant_id,
+                DailyKpi.date >= from_date,
+                DailyKpi.date <= to_date,
+            )
+            .order_by(DailyKpi.date.desc())
+            .limit(1)
+        )
         rates_result = await self._session.execute(stmt_rates)
         rates_row = rates_result.first()
 
@@ -169,20 +174,24 @@ class DashboardReadService:
             return Decimal(str(val)) if val is not None else None
 
         # ── Step 3: Source breakdown from source_daily_kpi ────────────────────
-        stmt_src = select(
-            SourceDailyKpi.source,
-            func.coalesce(func.sum(SourceDailyKpi.leads), 0).label("leads"),
-            func.sum(SourceDailyKpi.visits).label("visits"),
-            func.coalesce(func.sum(SourceDailyKpi.offers), 0).label("offers"),
-            func.coalesce(func.sum(SourceDailyKpi.deals_won), 0).label("deals_won"),
-            func.sum(SourceDailyKpi.revenue).label("revenue"),
-            # conversion_rate recomputed from summed counts below (hotfix 2026-05-30) —
-            # NOT averaged daily rates (deals_won is event-based; leads is cohort).
-        ).where(
-            SourceDailyKpi.tenant_id == self._tenant_id,
-            SourceDailyKpi.date >= from_date,
-            SourceDailyKpi.date <= to_date,
-        ).group_by(SourceDailyKpi.source)
+        stmt_src = (
+            select(
+                SourceDailyKpi.source,
+                func.coalesce(func.sum(SourceDailyKpi.leads), 0).label("leads"),
+                func.sum(SourceDailyKpi.visits).label("visits"),
+                func.coalesce(func.sum(SourceDailyKpi.offers), 0).label("offers"),
+                func.coalesce(func.sum(SourceDailyKpi.deals_won), 0).label("deals_won"),
+                func.sum(SourceDailyKpi.revenue).label("revenue"),
+                # conversion_rate recomputed from summed counts below (hotfix 2026-05-30) —
+                # NOT averaged daily rates (deals_won is event-based; leads is cohort).
+            )
+            .where(
+                SourceDailyKpi.tenant_id == self._tenant_id,
+                SourceDailyKpi.date >= from_date,
+                SourceDailyKpi.date <= to_date,
+            )
+            .group_by(SourceDailyKpi.source)
+        )
         src_result = await self._session.execute(stmt_src)
         src_rows = src_result.all()
 
@@ -195,22 +204,28 @@ class DashboardReadService:
         for r in src_rows:
             src_leads = int(r.leads) if r.leads is not None else 0
             src_deals_won = int(r.deals_won) if r.deals_won is not None else 0
-            source_breakdown.append({
-                "source": r.source,
-                "leads": src_leads,
-                "visits": int(r.visits) if r.visits is not None else None,
-                "offers": int(r.offers) if r.offers is not None else 0,
-                "deals_won": src_deals_won,
-                "revenue": Decimal(str(r.revenue)) if r.revenue is not None else None,
-                "conversion_rate": _src_rate(src_deals_won, src_leads),
-            })
+            source_breakdown.append(
+                {
+                    "source": r.source,
+                    "leads": src_leads,
+                    "visits": int(r.visits) if r.visits is not None else None,
+                    "offers": int(r.offers) if r.offers is not None else 0,
+                    "deals_won": src_deals_won,
+                    "revenue": Decimal(str(r.revenue)) if r.revenue is not None else None,
+                    "conversion_rate": _src_rate(src_deals_won, src_leads),
+                }
+            )
 
         # ── Step 4: Revenue time series — always daily granularity (SALE-05) ─
-        stmt_ts = select(DailyKpi.date, DailyKpi.revenue).where(
-            DailyKpi.tenant_id == self._tenant_id,
-            DailyKpi.date >= from_date,
-            DailyKpi.date <= to_date,
-        ).order_by(DailyKpi.date.asc())
+        stmt_ts = (
+            select(DailyKpi.date, DailyKpi.revenue)
+            .where(
+                DailyKpi.tenant_id == self._tenant_id,
+                DailyKpi.date >= from_date,
+                DailyKpi.date <= to_date,
+            )
+            .order_by(DailyKpi.date.asc())
+        )
         ts_result = await self._session.execute(stmt_ts)
         ts_rows = ts_result.all()
 
@@ -294,30 +309,40 @@ class DashboardReadService:
         log = logger.bind(tenant_id=str(self._tenant_id))
         log.info("dashboard.salespeople.start")
 
-        stmt = select(
-            SalespersonDailyKpi.salesperson_external_id,
-            MefiSalesperson.name,
-            func.coalesce(func.sum(SalespersonDailyKpi.leads_assigned), 0).label("leads_assigned"),
-            func.coalesce(func.sum(SalespersonDailyKpi.visits_conducted), 0).label("visits_conducted"),
-            func.coalesce(func.sum(SalespersonDailyKpi.offers_sent), 0).label("offers_sent"),
-            func.coalesce(func.sum(SalespersonDailyKpi.deals_won), 0).label("deals_won"),
-            func.sum(SalespersonDailyKpi.revenue).label("revenue"),
-            func.avg(SalespersonDailyKpi.avg_time_to_first_touch_minutes).label("avg_ttft"),
-            func.avg(SalespersonDailyKpi.data_completeness_pct).label("data_completeness_pct"),
-            # Conversion rates recomputed from SUMMED counts below (hotfix 2026-05-30) —
-            # NOT averaged daily rates (which mix event-based deals_won with cohort
-            # denominators and are noisy). deals_won is event-based (signed in period).
-        ).outerjoin(
-            MefiSalesperson,
-            and_(
-                MefiSalesperson.tenant_id == SalespersonDailyKpi.tenant_id,
-                cast(SalespersonDailyKpi.salesperson_external_id, SAInteger) == MefiSalesperson.external_id,
-            ),
-        ).where(
-            SalespersonDailyKpi.tenant_id == self._tenant_id,
-            SalespersonDailyKpi.date >= from_date,
-            SalespersonDailyKpi.date <= to_date,
-        ).group_by(SalespersonDailyKpi.salesperson_external_id, MefiSalesperson.name)
+        stmt = (
+            select(
+                SalespersonDailyKpi.salesperson_external_id,
+                MefiSalesperson.name,
+                func.coalesce(func.sum(SalespersonDailyKpi.leads_assigned), 0).label(
+                    "leads_assigned"
+                ),
+                func.coalesce(func.sum(SalespersonDailyKpi.visits_conducted), 0).label(
+                    "visits_conducted"
+                ),
+                func.coalesce(func.sum(SalespersonDailyKpi.offers_sent), 0).label("offers_sent"),
+                func.coalesce(func.sum(SalespersonDailyKpi.deals_won), 0).label("deals_won"),
+                func.sum(SalespersonDailyKpi.revenue).label("revenue"),
+                func.avg(SalespersonDailyKpi.avg_time_to_first_touch_minutes).label("avg_ttft"),
+                func.avg(SalespersonDailyKpi.data_completeness_pct).label("data_completeness_pct"),
+                # Conversion rates recomputed from SUMMED counts below (hotfix 2026-05-30) —
+                # NOT averaged daily rates (which mix event-based deals_won with cohort
+                # denominators and are noisy). deals_won is event-based (signed in period).
+            )
+            .outerjoin(
+                MefiSalesperson,
+                and_(
+                    MefiSalesperson.tenant_id == SalespersonDailyKpi.tenant_id,
+                    cast(SalespersonDailyKpi.salesperson_external_id, SAInteger)
+                    == MefiSalesperson.external_id,
+                ),
+            )
+            .where(
+                SalespersonDailyKpi.tenant_id == self._tenant_id,
+                SalespersonDailyKpi.date >= from_date,
+                SalespersonDailyKpi.date <= to_date,
+            )
+            .group_by(SalespersonDailyKpi.salesperson_external_id, MefiSalesperson.name)
+        )
 
         result = await self._session.execute(stmt)
         rows = result.all()
@@ -351,27 +376,31 @@ class DashboardReadService:
             if revenue is not None and deals_won > 0:
                 avg_deal_size = revenue / Decimal(str(deals_won))
 
-            salespeople.append({
-                "external_id": r.salesperson_external_id,
-                "name": r.name,
-                "leads_assigned": leads_assigned,
-                "visits_conducted": visits_conducted,
-                "offers_sent": offers_sent,
-                "deals_won": deals_won,
-                "revenue": revenue,
-                "win_rate": win_rate,
-                "avg_deal_size": avg_deal_size,
-                "avg_time_to_first_touch_minutes": (
-                    int(r.avg_ttft) if r.avg_ttft is not None else None
-                ),
-                "data_completeness_pct": (
-                    Decimal(str(r.data_completeness_pct)) if r.data_completeness_pct is not None else None
-                ),
-                "conversion_l_to_v": sp_conversion_l_to_v,
-                "conversion_v_to_o": sp_conversion_v_to_o,
-                "conversion_o_to_c": sp_conversion_o_to_c,
-                "conversion_l_to_c": sp_conversion_l_to_c,
-            })
+            salespeople.append(
+                {
+                    "external_id": r.salesperson_external_id,
+                    "name": r.name,
+                    "leads_assigned": leads_assigned,
+                    "visits_conducted": visits_conducted,
+                    "offers_sent": offers_sent,
+                    "deals_won": deals_won,
+                    "revenue": revenue,
+                    "win_rate": win_rate,
+                    "avg_deal_size": avg_deal_size,
+                    "avg_time_to_first_touch_minutes": (
+                        int(r.avg_ttft) if r.avg_ttft is not None else None
+                    ),
+                    "data_completeness_pct": (
+                        Decimal(str(r.data_completeness_pct))
+                        if r.data_completeness_pct is not None
+                        else None
+                    ),
+                    "conversion_l_to_v": sp_conversion_l_to_v,
+                    "conversion_v_to_o": sp_conversion_v_to_o,
+                    "conversion_o_to_c": sp_conversion_o_to_c,
+                    "conversion_l_to_c": sp_conversion_l_to_c,
+                }
+            )
 
         log.info("dashboard.salespeople.done", count=len(salespeople))
         return {
@@ -399,15 +428,19 @@ class DashboardReadService:
         log.info("dashboard.marketing.start")
 
         # ── Step 1: Lead volume by source time series (MARK-01) ──────────────
-        stmt_vol = select(
-            SourceDailyKpi.source,
-            SourceDailyKpi.date,
-            SourceDailyKpi.leads,
-        ).where(
-            SourceDailyKpi.tenant_id == self._tenant_id,
-            SourceDailyKpi.date >= from_date,
-            SourceDailyKpi.date <= to_date,
-        ).order_by(SourceDailyKpi.source, SourceDailyKpi.date.asc())
+        stmt_vol = (
+            select(
+                SourceDailyKpi.source,
+                SourceDailyKpi.date,
+                SourceDailyKpi.leads,
+            )
+            .where(
+                SourceDailyKpi.tenant_id == self._tenant_id,
+                SourceDailyKpi.date >= from_date,
+                SourceDailyKpi.date <= to_date,
+            )
+            .order_by(SourceDailyKpi.source, SourceDailyKpi.date.asc())
+        )
         vol_result = await self._session.execute(stmt_vol)
         vol_rows = vol_result.all()
 
@@ -417,10 +450,12 @@ class DashboardReadService:
             src = r.source
             if src not in vol_by_source:
                 vol_by_source[src] = []
-            vol_by_source[src].append({
-                "date": r.date,
-                "leads": int(r.leads) if r.leads is not None else 0,
-            })
+            vol_by_source[src].append(
+                {
+                    "date": r.date,
+                    "leads": int(r.leads) if r.leads is not None else 0,
+                }
+            )
 
         lead_volume_by_source = [
             {
@@ -488,31 +523,27 @@ class DashboardReadService:
         total_by_category: dict[str, int] = {}
         for r in junk_result.all():
             category = MEFI_SOURCE_ID_TO_NAME.get(r.source_id, "other")
-            junk_by_category[category] = (
-                junk_by_category.get(category, 0) + int(r.junk_count)
-            )
+            junk_by_category[category] = junk_by_category.get(category, 0) + int(r.junk_count)
         for r in total_result.all():
             category = MEFI_SOURCE_ID_TO_NAME.get(r.source_id, "other")
-            total_by_category[category] = (
-                total_by_category.get(category, 0) + int(r.total)
-            )
+            total_by_category[category] = total_by_category.get(category, 0) + int(r.total)
 
         junk_by_source: list[dict] = []
-        all_categories = sorted(
-            set(junk_by_category.keys()) | set(total_by_category.keys())
-        )
+        all_categories = sorted(set(junk_by_category.keys()) | set(total_by_category.keys()))
         for category in all_categories:
             junk_count = junk_by_category.get(category, 0)
             total = total_by_category.get(category, 0)
             junk_pct: Decimal | None = None
             if total > 0:
                 junk_pct = Decimal(str(junk_count)) / Decimal(str(total))
-            junk_by_source.append({
-                "source": category,
-                "junk_count": junk_count,
-                "total_leads": total,
-                "junk_pct": junk_pct,
-            })
+            junk_by_source.append(
+                {
+                    "source": category,
+                    "junk_count": junk_count,
+                    "total_leads": total,
+                    "junk_pct": junk_pct,
+                }
+            )
 
         log.info("dashboard.marketing.done")
 
@@ -521,7 +552,7 @@ class DashboardReadService:
             "lead_volume_by_source": lead_volume_by_source,
             "site_conversion_rate": site_conversion_rate,
             "junk_by_source": junk_by_source,
-            "ad_spend": None,   # MARK-03: ad spend deferred to Iteration 2
+            "ad_spend": None,  # MARK-03: ad spend deferred to Iteration 2
             "cpl": None,
             "cac": None,
             "roas": None,

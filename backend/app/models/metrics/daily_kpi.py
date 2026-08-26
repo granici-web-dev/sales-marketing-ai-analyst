@@ -76,12 +76,8 @@ class DailyKpi(Base, TenantScopedMixin):
     # ── Funnel counts ─────────────────────────────────────────────────────────
     # visits_count is NULL when MEFI history is unavailable (KI-03 / migration 006).
     visits_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    offers_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0"
-    )
-    contracts_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0"
-    )
+    offers_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    contracts_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
     # ── Conversion rates — NUMERIC(8,4) — widened from NUMERIC(5,4) in migration 005
     # Daily counts are cohort-independent: e.g. 13 offers / 1 visit = 13.0 is valid.
@@ -115,20 +111,40 @@ class DailyKpi(Base, TenantScopedMixin):
     leads_total_wow_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
     leads_total_mom_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
 
-    conversion_l_to_v_wow_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
-    conversion_l_to_v_mom_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
+    conversion_l_to_v_wow_delta: Mapped[Decimal | None] = mapped_column(
+        Numeric(8, 4), nullable=True
+    )
+    conversion_l_to_v_mom_delta: Mapped[Decimal | None] = mapped_column(
+        Numeric(8, 4), nullable=True
+    )
 
-    conversion_v_to_o_wow_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
-    conversion_v_to_o_mom_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
+    conversion_v_to_o_wow_delta: Mapped[Decimal | None] = mapped_column(
+        Numeric(8, 4), nullable=True
+    )
+    conversion_v_to_o_mom_delta: Mapped[Decimal | None] = mapped_column(
+        Numeric(8, 4), nullable=True
+    )
 
-    conversion_l_to_o_wow_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
-    conversion_l_to_o_mom_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
+    conversion_l_to_o_wow_delta: Mapped[Decimal | None] = mapped_column(
+        Numeric(8, 4), nullable=True
+    )
+    conversion_l_to_o_mom_delta: Mapped[Decimal | None] = mapped_column(
+        Numeric(8, 4), nullable=True
+    )
 
-    conversion_o_to_c_wow_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
-    conversion_o_to_c_mom_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
+    conversion_o_to_c_wow_delta: Mapped[Decimal | None] = mapped_column(
+        Numeric(8, 4), nullable=True
+    )
+    conversion_o_to_c_mom_delta: Mapped[Decimal | None] = mapped_column(
+        Numeric(8, 4), nullable=True
+    )
 
-    conversion_l_to_c_wow_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
-    conversion_l_to_c_mom_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
+    conversion_l_to_c_wow_delta: Mapped[Decimal | None] = mapped_column(
+        Numeric(8, 4), nullable=True
+    )
+    conversion_l_to_c_mom_delta: Mapped[Decimal | None] = mapped_column(
+        Numeric(8, 4), nullable=True
+    )
 
     revenue_wow_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)
     revenue_mom_delta: Mapped[Decimal | None] = mapped_column(Numeric(8, 4), nullable=True)

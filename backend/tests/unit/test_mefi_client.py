@@ -3,6 +3,7 @@
 Covers MEFI-01, MEFI-03, MEFI-09, MEFI-10 requirements.
 Uses respx to mock httpx requests (no real MEFI API calls).
 """
+
 from __future__ import annotations
 
 import httpx
@@ -205,9 +206,7 @@ class TestMefiClientHealthCheck:
     async def test_health_check_returns_false_on_401(self) -> None:
         """health_check returns False on auth error — does not propagate."""
         with respx.mock:
-            respx.post(f"{BASE_URL}/leads/search").mock(
-                return_value=httpx.Response(401)
-            )
+            respx.post(f"{BASE_URL}/leads/search").mock(return_value=httpx.Response(401))
             async with MefiClient(api_key="bad_key") as client:
                 result = await client.health_check()
             assert result is False
@@ -233,9 +232,7 @@ class TestMefiClientAuthenticate:
     async def test_authenticate_returns_false_on_401(self) -> None:
         """authenticate returns False on 401 (invalid key)."""
         with respx.mock:
-            respx.post(f"{BASE_URL}/leads/search").mock(
-                return_value=httpx.Response(401)
-            )
+            respx.post(f"{BASE_URL}/leads/search").mock(return_value=httpx.Response(401))
             async with MefiClient(api_key="bad_key") as client:
                 result = await client.authenticate(credentials={})
             assert result is False
@@ -244,9 +241,7 @@ class TestMefiClientAuthenticate:
     async def test_authenticate_returns_false_on_403(self) -> None:
         """authenticate returns False on 403 (forbidden)."""
         with respx.mock:
-            respx.post(f"{BASE_URL}/leads/search").mock(
-                return_value=httpx.Response(403)
-            )
+            respx.post(f"{BASE_URL}/leads/search").mock(return_value=httpx.Response(403))
             async with MefiClient(api_key="expired_key") as client:
                 result = await client.authenticate(credentials={})
             assert result is False
@@ -264,12 +259,14 @@ class TestSettingsMefiApiKey:
     def test_mefi_api_key_field_exists_in_settings(self) -> None:
         """Settings model has mefi_api_key field."""
         from app.core.config import Settings
+
         fields = Settings.model_fields
         assert "mefi_api_key" in fields
 
     def test_mefi_api_key_has_no_default(self) -> None:
         """mefi_api_key has no default value — startup fails without MEFI_API_KEY env var."""
         from app.core.config import Settings
+
         field = Settings.model_fields["mefi_api_key"]
         # Pydantic v2: required field has no default
         assert field.is_required()

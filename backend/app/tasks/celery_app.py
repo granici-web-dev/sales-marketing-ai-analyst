@@ -43,7 +43,6 @@ celery_app.conf.update(
     # Timezone — Europe/Bucharest (Romanian market pilot, INFRA-04)
     timezone="Europe/Bucharest",
     enable_utc=True,
-
     # celery-redbeat scheduler (INFRA-04)
     # Stores the beat schedule in Redis so it survives restarts.
     # RedBeatScheduler replaces the default file-based scheduler.
@@ -54,20 +53,17 @@ celery_app.conf.update(
     # 9 hours (32400s) covers all ETL scenarios in Phase 2+ (INFRA-04 requires >= 8h).
     redbeat_lock_timeout=60 * 60 * 9,  # 32400 seconds = 9 hours
     redbeat_key_prefix="analyst:redbeat",
-
     # Visibility timeout (INFRA-04): Redis re-enqueues tasks that take longer
     # than visibility_timeout, causing duplicates. Must exceed the longest task runtime.
     # Phase 2 ETL backfill may take hours — 9h is safe.
     broker_transport_options={
         "visibility_timeout": 60 * 60 * 9,  # 32400 seconds = 9 hours
     },
-
     # Serialization — JSON only (T-05-02 mitigation).
     # pickle is disabled to prevent arbitrary code execution via malicious payloads.
     task_serializer="json",
     result_serializer="json",
     accept_content=["json"],
-
     # Worker reliability settings.
     # task_acks_late=True: task is acknowledged AFTER completion, not when received.
     #   Prevents task loss if worker crashes mid-execution.
@@ -77,7 +73,6 @@ celery_app.conf.update(
     task_acks_late=True,
     task_reject_on_worker_lost=True,
     worker_prefetch_multiplier=1,
-
     # Task routing — backfill runs on a dedicated queue to avoid blocking
     # the default queue during 12-month historical data fetch (MEFI-12).
     #

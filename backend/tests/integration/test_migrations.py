@@ -99,8 +99,7 @@ async def test_tenant_id_not_null_constraint() -> None:
         )
 
         assert row is not None, (
-            "users.tenant_id column not found in information_schema — "
-            "did alembic upgrade head run?"
+            "users.tenant_id column not found in information_schema — did alembic upgrade head run?"
         )
         assert row["is_nullable"] == "NO", (
             f"users.tenant_id must be NOT NULL. "

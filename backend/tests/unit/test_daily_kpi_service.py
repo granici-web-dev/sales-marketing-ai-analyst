@@ -138,8 +138,7 @@ class TestWoWMoMDeltas:
         service, _ = _make_service()
         result = service._compute_delta(Decimal("15000"), Decimal("0"))  # type: ignore[attr-defined]
         assert result is None, (
-            "mom_delta must be None when prior is zero (D-11) — "
-            "division by zero must be guarded"
+            "mom_delta must be None when prior is zero (D-11) — division by zero must be guarded"
         )
 
     @pytest.mark.asyncio
