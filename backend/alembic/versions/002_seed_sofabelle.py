@@ -8,13 +8,23 @@ Seeds the initial Sofa Belle tenant record and the admin user account.
 Both inserts use ON CONFLICT (id) DO NOTHING for idempotency (D-07):
 running `alembic upgrade head` multiple times does not create duplicate records.
 
-Security notes (T-04-02):
-  - The admin password is stored as a bcrypt hash with work factor 12.
-  - The plaintext password is NEVER stored anywhere in the codebase.
-  - Initial password: Admin1234!  (must be changed after first login)
-  - Hash was computed using:
-    python -c "import bcrypt; print(bcrypt.hashpw(b'Admin1234!', bcrypt.gensalt(rounds=12)).decode())"
-  - Hash value: $2b$12$NiZht6VcY7E5p2r0aMRtW.ODg6uvd/PvEC78f71SuXbqggJW319vy
+О пароле (правка после прогона сканеров, миграция 011).
+
+Здесь стоял bcrypt-хеш пароля «Admin1234!», а сам пароль — в этой самой
+строке рядом с ним. То есть «плейнтекст нигде не хранится» было неправдой:
+он хранился в двух видах сразу, в файле, который лежит в открытом репозитории.
+
+Двери это не открывало: входа по паролю в кабинете нет вовсе — пользователь
+приходит сессией движка, и такие пользователи заводятся с hashed_password
+= NULL (см. app/services/auth/link.py). Проверять пароль в этом коде некому.
+Но появится вход по паролю — и эта учётка примет общеизвестный пароль
+молча, без единой новой строки в миграциях.
+
+Поэтому сюда пишется «!» — значение, которое не является хешем ничего и
+которому не соответствует ни один пароль: bcrypt на нём не совпадёт никогда.
+На момент этой миграции колонка ещё NOT NULL (её отпускает 010), поэтому
+NULL здесь написать нельзя. Миграция 011 доводит до NULL и вычищает старый
+хеш из баз, где он уже успел записаться.
 
 This migration does NOT need a downgrade — seed data is not reversed.
 If re-running from scratch, drop and recreate the database.
@@ -41,10 +51,9 @@ SOFA_BELLE_TENANT_ID = "00000000-0000-0000-0000-000000000001"
 ADMIN_USER_ID = "00000000-0000-0000-0000-000000000002"
 ADMIN_EMAIL = "admin@sofabelle.ro"
 
-# bcrypt hash of initial admin password "Admin1234!" (work factor 12).
-# Generated via: python -c "import bcrypt; print(bcrypt.hashpw(b'Admin1234!', bcrypt.gensalt(rounds=12)).decode())"
-# IMPORTANT: Change this password immediately after first login.
-ADMIN_PASSWORD_HASH = "$2b$12$NiZht6VcY7E5p2r0aMRtW.ODg6uvd/PvEC78f71SuXbqggJW319vy"
+# Запертая учётка: «!» не является bcrypt-хешем, и ни один пароль ему
+# не соответствует. Колонка на этом шаге ещё NOT NULL — см. docstring.
+LOCKED_PASSWORD = "!"
 
 
 def upgrade() -> None:
@@ -65,7 +74,7 @@ def upgrade() -> None:
     )
 
     # Insert admin user — idempotent (ON CONFLICT DO NOTHING)
-    # Password stored as bcrypt hash — see module docstring for details.
+    # Пароля у учётки нет — см. docstring модуля.
     op.execute(
         sa.text("""
             INSERT INTO users (id, tenant_id, email, hashed_password, is_active, created_at, updated_at)
@@ -75,7 +84,7 @@ def upgrade() -> None:
             id=admin_uuid,
             tenant_id=tenant_uuid,
             email=ADMIN_EMAIL,
-            pw=ADMIN_PASSWORD_HASH,
+            pw=LOCKED_PASSWORD,
         )
     )
 

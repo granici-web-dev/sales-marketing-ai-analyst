@@ -64,10 +64,16 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: semgrep
+        # `.planning` исключён: это архив планов и исследований, прозой,
+        # а не выполняемый код. Сканер находит там строки вида «хеш пароля»
+        # внутри записи о том, как решение принималось, — запись эту править
+        # нельзя, она документ. Настоящие секреты в тех же файлах всё равно
+        # ищет gitleaks: он ходит по всему дереву и по всей истории.
         run: |
           docker run --rm -v "$PWD:/src" -w /src \
             semgrep/semgrep:1.174.0 \
             semgrep scan --metrics=off --error --quiet \
+              --exclude=.planning \
               --config=p/ci \
               --config=p/python \
               --config=p/typescript \
