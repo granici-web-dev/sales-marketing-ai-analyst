@@ -72,8 +72,14 @@ async def _handler(
     # f-string interpolation below stays injection-safe.
     group_col = _GROUP_COLUMNS[inp.group_by]
 
+    # Scanners (bandit B608, semgrep avoid-sqlalchemy-text) flag the two
+    # `{group_col}` interpolations. `group_col` comes from _GROUP_COLUMNS above,
+    # never from the caller: the Pydantic Literal is the first defense and the
+    # dict lookup the second, failing closed with KeyError. Dates and tenant_id
+    # bind as `:params`.
+    # nosemgrep: python.sqlalchemy.security.audit.avoid-sqlalchemy-text.avoid-sqlalchemy-text
     sql = text(
-        "SELECT "
+        "SELECT "  # nosec B608
         f"  {group_col} AS group_key, "
         "  COUNT(*) AS lost_count "
         "FROM v_mefi_leads_active "

@@ -1,0 +1,105 @@
+# Сканеры безопасности: секреты, код, зависимости.
+#
+# Отдельно от ci.yml по двум причинам. Первая: расписание. Уязвимость
+# в зависимости появляется без единого нашего коммита, и проверка, которая
+# ходит только на push, узнаёт о ней в следующий раз, когда мы что-нибудь
+# напишем. Вторая: независимые задачи вместо шагов подряд — упавший сканер
+# секретов не должен прятать находки сканера зависимостей.
+#
+# Инструменты запускаются образами с закреплённой версией, а не действиями
+# из маркетплейса: у gitleaks официальное действие требует лицензии для
+# организаций, а закреплённый образ ещё и воспроизводим — в CI работает
+# ровно то, что проверено на машине.
+#
+# Что каждый находит:
+#   gitleaks — ключи и токены, по ВСЕЙ истории, а не только в текущем дереве;
+#   semgrep  — опасные конструкции в коде и незакреплённые действия;
+#   bandit   — то же для Python, своим набором правил;
+#   trivy    — известные уязвимости в зависимостях и в Dockerfile.
+#
+# Исключения записываются рядом с причиной — `nosec`, `nosemgrep` в самом
+# коде. Подавление без причины — это отключённая проверка, притворяющаяся
+# включённой.
+name: Безопасность
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Еженедельно, утром понедельника: новая CVE приходит без нашего участия.
+    - cron: "23 6 * * 1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Секреты в истории
+    runs-on: ubuntu-latest
+    steps:
+      # Закреплено по хешу, а не по метке: метку `v5` владелец действия может
+      # передвинуть на любой коммит, и наш CI выполнит его без единой правки
+      # у нас. Обновлять — вместе с новой проверкой.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          # Вся история, а не последний коммит: ключ, удалённый следующей
+          # правкой, остаётся в истории и остаётся действующим ключом.
+          fetch-depth: 0
+
+      - name: gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            ghcr.io/gitleaks/gitleaks:v8.30.1 \
+            git --no-banner --redact --exit-code 1
+
+  code:
+    name: Код и действия
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: semgrep
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src \
+            semgrep/semgrep:1.174.0 \
+            semgrep scan --metrics=off --error --quiet \
+              --config=p/ci \
+              --config=p/python \
+              --config=p/typescript \
+              --config=p/javascript \
+              --config=p/nodejs \
+              --config=p/secrets \
+              --config=p/github-actions \
+              --config=p/sql-injection
+
+      - name: bandit
+        # Не дубль semgrep: наборы правил разные, и пересечение у них небольшое.
+        # Запускается по коду приложения, не по тестам: в тестах «пароль
+        # в строке» — это фикстура, и красный на ней учит игнорировать красное.
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src python:3.11-slim \
+            sh -c "pip install --quiet bandit==1.9.4 && bandit -r backend/app -q"
+
+  deps:
+    name: Зависимости и образы
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: trivy
+        # `--file-patterns` — не украшение: замок питона называется
+        # requirements.lock, а не requirements.txt, и без этой строки trivy
+        # его не узнаёт и молча не проверяет весь backend. Проверено:
+        # с ней разбирается 98 пакетов, без неё — ноль целей.
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src \
+            aquasec/trivy:0.74.0 \
+            fs --scanners vuln,misconfig \
+               --severity HIGH,CRITICAL \
+               --file-patterns 'pip:.*requirements\.lock' \
+               --exit-code 1 --no-progress .

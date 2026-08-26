@@ -111,8 +111,14 @@ async def _handler(
         where_clauses.append("(created_at_source AT TIME ZONE 'Europe/Bucharest')::date <= :dt")
         bindkwargs["dt"] = inp.date_to
 
+    # Scanners (bandit B608, semgrep avoid-sqlalchemy-text) flag the two
+    # f-strings below. Neither carries caller input: `source_table` is a literal
+    # ternary a few lines up, and every element of `where_clauses` is a literal
+    # written in this function -- the values they compare against arrive as bound
+    # `:params`. The markers are scoped to these lines, so a future f-string that
+    # *does* interpolate input still trips the scanner.
     sql = (
-        "SELECT external_id, lifecycle, source_id, assigned_to_id, "
+        "SELECT external_id, lifecycle, source_id, assigned_to_id, "  # nosec B608
         "       created_at_source, estimated_value "
         f"FROM {source_table} "
         f"WHERE {' AND '.join(where_clauses)} "
@@ -121,6 +127,7 @@ async def _handler(
     )
     # LM-4: bind tenant_id explicitly via PG_UUID — text() bypasses
     # with_loader_criteria. Other params bind via .params() at execute time.
+    # nosemgrep: python.sqlalchemy.security.audit.avoid-sqlalchemy-text.avoid-sqlalchemy-text
     stmt = text(sql).bindparams(bindparam("tid", type_=PG_UUID(as_uuid=True)))
 
     result = await session.execute(stmt, bindkwargs)

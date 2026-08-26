@@ -1,3 +1,20 @@
+#
+# Три находки semgrep подавлены, и вот почему.
+#
+# Он просит настройки защиты от подмены пакетов: выдержку перед установкой
+# свежих версий (minimumReleaseAge), явную политику доверия к сборочным
+# скриптам и запрет экзотических источников для вложенных зависимостей.
+# Все три — настоящие и полезные: именно выдержка спасает от червя, который
+# живёт в npm часы до того, как его снимут.
+#
+# Все три появились в pnpm 10, а проект на pnpm 9 — и локально, и в образе,
+# и в CI. Написать их здесь означало бы получить файл, который выглядит
+# защищённым и не делает ничего.
+#
+# Переход на pnpm 10 — отдельная работа со своей проверкой: формат замка,
+# перенос onlyBuiltDependencies из package.json, образ, CI. Пока не сделан,
+# подавление стоит здесь с этой записью, а не молча в настройках сканера.
+# nosemgrep: package_managers.pnpm.pnpm-missing-minimum-release-age.pnpm-minimum-release-age, package_managers.pnpm.pnpm-trust-policy.pnpm-trust-policy, package_managers.pnpm.pnpm-block-exotic-sub-dependencies.pnpm-block-exotic-sub-dependencies
 packages:
   - '.'
 allowBuilds:

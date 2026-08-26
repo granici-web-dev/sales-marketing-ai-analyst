@@ -2,5 +2,8 @@ node_modules
 .next
 .git
 *.md
-pnpm-lock.yaml
-pnpm-workspace.yaml
+
+# pnpm-lock.yaml и pnpm-workspace.yaml здесь СТОЯЛИ, и из-за этого установка
+# в образе разрешала версии заново: собранное вчера отличалось от собранного
+# сегодня, а замок, который CI проверяет `--frozen-lockfile`, в образ
+# не доезжал вовсе. Не возвращать.
