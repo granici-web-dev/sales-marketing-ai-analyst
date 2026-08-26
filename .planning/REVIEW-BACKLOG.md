@@ -59,6 +59,20 @@ Nothing here is speculative — every claim was measured against the code.
 - [x] **Python dependencies have never been checked.** `pip-audit` is in the
       dev extras and has been run. Commit `a506afd`. Result below.
 
+- [x] **Five advisories in starlette, on the HTTP layer.** starlette 1.0.1 →
+      1.6.0, pinned directly in `pyproject.toml` because fastapi asks only for
+      `>=0.46` and would install the vulnerable version again. Closes
+      PYSEC-2026-248 (`request.url` rebuilt from an unvalidated path) and
+      PYSEC-2026-249 (form limits ignored for urlencoded bodies), both on the
+      request path of every endpoint. Verified by request, not only by suite:
+      the app boots on 1.6.0, `/healthz` and `/health/data` answer 200, a
+      protected route without a token answers 401, login issues a token, an
+      authenticated dashboard returns real funnel numbers, and CORS preflight
+      passes. `pydantic-settings` 2.14.1 → 2.15.0 in the same pass; its finding
+      needs `secrets_dir`, which this project does not use, so no floor was
+      raised for it. Audit 12 findings → 6, all remaining in `pip`,
+      `setuptools` and `pytest` — tooling, not shipped. Commit `7f11226`.
+
 ---
 
 ## Before the next deploy
@@ -73,18 +87,6 @@ Nothing here is speculative — every claim was measured against the code.
       *Fix:* access token in memory, refresh token in an `HttpOnly; Secure;
       SameSite=Strict` cookie set by the backend. If the cookie must stay, add
       `Secure` at minimum. Half a day, touches login and the API client.
-
-- [ ] **Five advisories in starlette, on the HTTP layer.** First `pip-audit`
-      run: 12 findings in 5 packages, of which `pip`, `setuptools` and `pytest`
-      are tooling and not shipped. What is shipped: starlette 1.0.1 with
-      PYSEC-2026-248 (`request.url` rebuilt from an unvalidated path),
-      PYSEC-2026-249 (`request.form()` limits not enforced for urlencoded
-      bodies), plus two that do not apply here — `StaticFiles` on Windows and
-      `HTTPEndpoint` method dispatch, neither of which this app uses. Also
-      pydantic-settings 2.14.1, whose finding needs `secrets_dir`, unused here.
-      *Fix:* starlette >= 1.3.1 — 1.6.0 resolves cleanly against the installed
-      fastapi 0.136.1, checked with a dry run. Own commit, own test pass: it is
-      the HTTP layer.
 
 - [ ] **`/health/data` has no authentication, and now no tenant either.** It is
       the one endpoint with no `get_current_user`, so it served Sofa Belle's
