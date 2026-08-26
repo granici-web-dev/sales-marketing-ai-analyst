@@ -108,6 +108,14 @@ jobs:
         # packageManager в frontend/package.json. Записанная здесь числом,
         # она разъезжалась с образом и с машиной разработчика — так это
         # и случилось с девяткой.
+        with:
+          # Путь от корня репозитория, а не от frontend. `defaults.run.
+          # working-directory` действует только на шаги `run:`, на входы
+          # действия — нет: без этой строки действие ищет package.json
+          # в корне и падает «No pnpm version is specified». Соседний
+          # cache-dependency-path у setup-node написан от корня по той же
+          # причине.
+          package_json_file: frontend/package.json
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
