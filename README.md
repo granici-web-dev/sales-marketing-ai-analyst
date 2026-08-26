@@ -12,6 +12,8 @@
 ## Quick Links
 
 - 📖 [SPEC.md](./SPEC.md) — Full product specification
+- 🎯 [PRODUCT.md](./PRODUCT.md) — Whose cabinet this is, and what it promises
+- 🎨 [DESIGN.md](./DESIGN.md) — Tokens, themes and the rules behind them
 - 🤖 [CLAUDE.md](./CLAUDE.md) — Instructions for Claude Code
 - 🏗️ [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — System architecture
 - 💻 [docs/STACK.md](./docs/STACK.md) — Tech stack details

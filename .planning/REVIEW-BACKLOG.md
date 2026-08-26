@@ -268,15 +268,24 @@ remaining surfaces.
       carry `rounded-md`; they read as controls either way, so this is no longer
       the mismatch it was.
 
-- [ ] **PRODUCT.md and DESIGN.md were never captured.** `impeccable` ran under
-      its scoped-refinement path because no product context exists. Every future
-      design task will re-derive the same answers.
-      *Fix:* `/impeccable init`, then `document` to write DESIGN.md from the
-      tokens that now exist.
+- [x] **PRODUCT.md and DESIGN.md were never captured.** Written, by hand rather
+      than by `impeccable` — the tool is not installed here, and most of what it
+      would have asked already exists: `SPEC.md` §1 has the product concept and
+      `docs/SOFABELLE.md` the pilot client. Restating those would have made a
+      third place to keep in sync.
 
----
+      What was genuinely missing: the product picture *after* the two products
+      merged into one cabinet — `SPEC.md` still describes the analyst as
+      standalone with its own login — and the design system, which existed only
+      as comments scattered across individual components.
 
-## Coverage gaps, not defects
+- [ ] **The base Button is 36 px tall; the 44 px touch target is added by hand.**
+      Found while writing `DESIGN.md`: `h-9` in the primitive, `min-h-11` or
+      `min-h-[44px]` at 26 call sites across 11 files, and 16 files use
+      `<Button>` — so roughly a third of the buttons in the cabinet miss the
+      target entirely. The reader opens this from a phone between calls.
+      *Fix:* in the primitive, which restyles every button at once — a visible
+      change, not a mechanical one.
 
 - [ ] **Frontend coverage: 15.7% of lines, 89 of 109 files at zero.** Measured,
       not counted — `pnpm test:coverage`. The old entry said "6 test files
