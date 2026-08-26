@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from datetime import date
-from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.dependencies import get_current_user
+from app.core.tenancy import require_tenant_id
 from app.db.deps import get_session
 from app.schemas.auth import UserOut
 from app.schemas.dashboards.marketing import MarketingDashboardResponse
@@ -29,7 +28,7 @@ async def get_sales_dashboard(
     current_user: UserOut = Depends(get_current_user),
 ) -> SalesDashboardResponse:
     logger.debug("dashboards.sales.request", user_id=str(current_user.id))
-    svc = DashboardReadService(session, UUID(settings.sofa_belle_tenant_id))
+    svc = DashboardReadService(session, require_tenant_id())
     data = await svc.get_sales_dashboard(from_date, to_date)
     return SalesDashboardResponse(**data)
 
@@ -42,7 +41,7 @@ async def get_salespeople_dashboard(
     current_user: UserOut = Depends(get_current_user),
 ) -> SalespeopleDashboardResponse:
     logger.debug("dashboards.salespeople.request", user_id=str(current_user.id))
-    svc = DashboardReadService(session, UUID(settings.sofa_belle_tenant_id))
+    svc = DashboardReadService(session, require_tenant_id())
     data = await svc.get_salespeople_dashboard(from_date, to_date)
     return SalespeopleDashboardResponse(**data)
 
@@ -55,6 +54,6 @@ async def get_marketing_dashboard(
     current_user: UserOut = Depends(get_current_user),
 ) -> MarketingDashboardResponse:
     logger.debug("dashboards.marketing.request", user_id=str(current_user.id))
-    svc = DashboardReadService(session, UUID(settings.sofa_belle_tenant_id))
+    svc = DashboardReadService(session, require_tenant_id())
     data = await svc.get_marketing_dashboard(from_date, to_date)
     return MarketingDashboardResponse(**data)

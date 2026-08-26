@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
-from uuid import UUID
 
 import redis.asyncio as aioredis
 import structlog
@@ -11,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.dependencies import get_current_user
+from app.core.tenancy import require_tenant_id
 from app.db.deps import get_session
 from app.schemas.auth import UserOut
 
@@ -41,7 +41,7 @@ async def get_insight_today(
 ) -> InsightEnvelope:
     from app.services.insights.insight_read_service import InsightReadService
 
-    svc = InsightReadService(session, UUID(settings.sofa_belle_tenant_id))
+    svc = InsightReadService(session, require_tenant_id())
     data = await svc.get_today()
     if data is None:
         raise HTTPException(status_code=404, detail="No insight available for today")
@@ -56,7 +56,7 @@ async def get_insight_by_date(
 ) -> InsightEnvelope:
     from app.services.insights.insight_read_service import InsightReadService
 
-    svc = InsightReadService(session, UUID(settings.sofa_belle_tenant_id))
+    svc = InsightReadService(session, require_tenant_id())
     data = await svc.get_by_date(query_date)
     if data is None:
         raise HTTPException(status_code=404, detail="No insight for this date")
@@ -91,7 +91,7 @@ async def refresh_insights(
     # the AI narrative for any historical day just needs a fresh Claude call.
     from app.tasks.insights.generate_daily_insights import generate_daily_insights
 
-    tenant_id_str = str(UUID(settings.sofa_belle_tenant_id))
+    tenant_id_str = str(require_tenant_id())
     kpi_date_iso = target_date.isoformat() if target_date is not None else None
     task = generate_daily_insights.delay(tenant_id_str, kpi_date_iso)
 

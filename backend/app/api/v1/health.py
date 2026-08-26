@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from uuid import UUID
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
+from app.core.tenancy import require_tenant_id
 from app.db.deps import get_session
 from app.schemas.health import HealthDataResponse, HealthResponse
 from app.services.dashboards.health_read_service import HealthReadService
@@ -22,6 +20,6 @@ async def live() -> HealthResponse:
 async def get_health_data(
     session: AsyncSession = Depends(get_session),
 ) -> HealthDataResponse:
-    svc = HealthReadService(session, UUID(settings.sofa_belle_tenant_id))
+    svc = HealthReadService(session, require_tenant_id())
     data = await svc.get_health()
     return HealthDataResponse(**data)

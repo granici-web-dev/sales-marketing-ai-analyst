@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from uuid import UUID
 
 import redis.asyncio as aioredis
 import structlog
@@ -11,6 +10,7 @@ from pydantic import BaseModel
 
 from app.core.config import settings
 from app.core.dependencies import get_current_user
+from app.core.tenancy import require_tenant_id
 from app.schemas.auth import UserOut
 
 logger = structlog.get_logger(__name__)
@@ -43,7 +43,7 @@ async def trigger_sync(
     insights are intentionally NOT in this chain — they're expensive and
     user-controlled separately (Insights page "Generează insight" button).
     """
-    tenant_id_str = str(UUID(settings.sofa_belle_tenant_id))
+    tenant_id_str = str(require_tenant_id())
     rate_key = f"rate_limit:sync_trigger:{tenant_id_str}"
 
     async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:

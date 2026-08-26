@@ -11,6 +11,10 @@ to be passed explicitly — `target_date` included. Omitting it does not give th
 default `None`: it hands the handler the `Query(None)` marker object itself,
 and the first `target_date.isoformat()` inside raises AttributeError. That is
 what broke both tests here (fixed 2026-08-25); the endpoint was always correct.
+
+The tenant context is part of the same bargain. In a real request
+`StructlogContextMiddleware` sets it before routing; calling the handler
+directly skips that, so the test sets it itself.
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -19,13 +23,19 @@ from uuid import UUID
 import pytest
 
 MOCK_USER_ID = UUID("00000000-0000-0000-0000-000000000002")
+# Deliberately not the Sofa Belle UUID in config: if the handler ever goes back
+# to reading settings, the assertion below sees a different value and fails.
+MOCK_TENANT_ID = UUID("00000000-0000-0000-0000-0000000000ff")
 
 
 @pytest.mark.asyncio
 async def test_refresh_rate_limit_first_call_enqueues() -> None:
     """First call within window: Redis SET NX returns True → 202 + pipeline_run_id."""
     from app.api.v1.insights import refresh_insights
+    from app.core.tenancy import set_tenant_id
     from app.schemas.auth import UserOut
+
+    set_tenant_id(MOCK_TENANT_ID)
 
     mock_user = UserOut(id=MOCK_USER_ID, email="test@sofabelle.ro", is_active=True)
     mock_task = MagicMock()
@@ -65,7 +75,11 @@ async def test_refresh_rate_limit_first_call_enqueues() -> None:
     # No date given → the task must be told "latest", not a stringified marker.
     tenant_id, kpi_date = mock_generate.delay.call_args.args
     assert kpi_date is None, f"expected no date, task received {kpi_date!r}"
-    assert tenant_id
+    # The task must inherit the tenant of the request, not a value read from
+    # config. Today both are equal in production and only this line tells them
+    # apart; the day the context var comes from the JWT, it is the difference
+    # between the right data and someone else's.
+    assert tenant_id == str(MOCK_TENANT_ID), f"task got tenant {tenant_id!r}"
 
 
 @pytest.mark.asyncio
