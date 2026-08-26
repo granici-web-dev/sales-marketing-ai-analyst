@@ -42,7 +42,7 @@ Reverse-engineered from manifests and source on **2026-08-25**
 | i18n | next-intl | `4.12.0` exact |
 | Tokens | jose | `6.2.3` exact |
 | Tests | vitest + Testing Library + jsdom | `^4.1.7` |
-| Package manager | pnpm | — |
+| Package manager | pnpm | `10.34.5` via `packageManager` |
 
 ## Infrastructure
 

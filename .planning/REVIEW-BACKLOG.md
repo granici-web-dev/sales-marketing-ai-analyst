@@ -309,13 +309,12 @@ remaining surfaces.
       by two scanners independently and are now suppressed with the reason
       inline.
 
-- [ ] **pnpm 9 → 10.** Semgrep asks for `minimumReleaseAge`, `trustPolicy` and
-      `blockExoticSubDependencies` — the settings that would have blunted the
-      recent npm worms. All three landed in pnpm 10; the project runs pnpm 9
-      locally, in the image and in CI. Writing them now yields a file that looks
-      protected and does nothing, so they are suppressed with that reason in
-      `frontend/pnpm-workspace.yaml`. The migration is lockfile format, moving
-      `onlyBuiltDependencies` out of `package.json`, the Dockerfile and CI.
+- [x] **pnpm 9 → 10.** Done: `10.34.5`, pinned once in `packageManager` and read
+      from there by CI, the image and corepack. All three hardening settings are
+      live in `frontend/pnpm-workspace.yaml` and each was mutation-tested. The
+      cooldown bites immediately and correctly: `next` sits on `16.3.1` rather
+      than `16.3.3`, because 16.3.3 was published a day earlier than the install
+      — the CVE that prompted the bump is fixed in both.
 
 - [ ] **The control set still needs Bedrock keys**, so it is not in CI. Its
       corpus is reproducible now (`npm run seed:control` in the engine repo)
