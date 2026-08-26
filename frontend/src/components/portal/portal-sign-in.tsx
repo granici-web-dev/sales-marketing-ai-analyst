@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function PortalSignIn() {
+export function PortalSignIn({ redirectTo }: { redirectTo?: string } = {}) {
   const t = useTranslations("agents.signIn");
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -40,8 +40,9 @@ export function PortalSignIn() {
         }),
       });
       if (response.ok) {
-        // Печенье поставил сервер; список агентов рисуется на сервере, значит
-        // страницу надо перерисовать, а не просто перерендерить у клиента.
+        // Печенье поставил сервер, а всё содержимое кабинета рисуется на
+        // сервере — значит нужна перерисовка, а не перерендеринг у клиента.
+        if (redirectTo) router.replace(redirectTo);
         router.refresh();
         return;
       }

@@ -103,97 +103,36 @@ class TestSettings:
     def test_settings_has_all_required_fields(self):
         """Settings class should have all required fields defined."""
         from app.core.config import Settings
-        import inspect
         fields = Settings.model_fields
         assert "database_url" in fields
         assert "redis_url" in fields
-        assert "jwt_secret_key" in fields
-        assert "jwt_algorithm" in fields
-        assert "access_token_expire_minutes" in fields
-        assert "refresh_token_expire_days" in fields
         assert "sofa_belle_tenant_id" in fields
         assert "log_level" in fields
+        assert "engine_base_url" in fields
 
-    def test_jwt_algorithm_default_is_hs256(self):
-        """JWT algorithm should default to HS256."""
-        from app.core.config import Settings
-        field = Settings.model_fields["jwt_algorithm"]
-        assert field.default == "HS256"
+    def test_no_jwt_settings_remain(self):
+        """Свои токены удалены вместе с входом по паролю.
 
-    def test_access_token_expire_minutes_default_is_15(self):
+        Настройка, которую никто не читает, живёт до первого человека,
+        решившего, что она что-то делает. Проверка стоит здесь, чтобы поля
+        не вернулись «на всякий случай» вместе с чужим кодом.
+        """
         from app.core.config import Settings
-        field = Settings.model_fields["access_token_expire_minutes"]
-        assert field.default == 15
+        leftovers = [
+            name for name in Settings.model_fields
+            if name.startswith(("jwt_", "access_token_", "refresh_token_"))
+        ]
+        assert leftovers == [], f"остались настройки своих токенов: {leftovers}"
 
-    def test_refresh_token_expire_days_default_is_30(self):
+    def test_engine_cache_default_is_a_minute(self):
+        """Отзыв сессии в движке действует с этой задержкой, поэтому она мала."""
         from app.core.config import Settings
-        field = Settings.model_fields["refresh_token_expire_days"]
-        assert field.default == 30
+        assert Settings.model_fields["engine_session_cache_seconds"].default == 60
 
     def test_sofa_belle_tenant_id_has_default(self):
         from app.core.config import Settings
         field = Settings.model_fields["sofa_belle_tenant_id"]
         assert field.default == "00000000-0000-0000-0000-000000000001"
-
-
-class TestSecurity:
-    """Test PyJWT security utilities."""
-
-    def _make_settings_env(self, monkeypatch):
-        """Set environment variables for settings."""
-        monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://x:x@localhost/x")
-        monkeypatch.setenv("REDIS_URL", "redis://localhost/0")
-        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-32chars-minimum-abc")
-
-    def test_create_access_token_returns_string(self, monkeypatch):
-        self._make_settings_env(monkeypatch)
-        from app.core.security import create_access_token
-        token = create_access_token({"sub": "user-id"})
-        assert isinstance(token, str)
-        assert len(token) > 0
-
-    def test_verify_token_decodes_valid_access_token(self, monkeypatch):
-        self._make_settings_env(monkeypatch)
-        from app.core.security import create_access_token, verify_token
-        token = create_access_token({"sub": "user-id"})
-        result = verify_token(token)
-        assert result is not None
-        assert result["sub"] == "user-id"
-
-    def test_verify_token_returns_none_for_invalid_string(self, monkeypatch):
-        self._make_settings_env(monkeypatch)
-        from app.core.security import verify_token
-        result = verify_token("not-a-jwt-token")
-        assert result is None
-
-    def test_verify_token_returns_none_for_garbage(self, monkeypatch):
-        self._make_settings_env(monkeypatch)
-        from app.core.security import verify_token
-        result = verify_token("garbage.garbage.garbage")
-        assert result is None
-
-    def test_create_refresh_token_has_type_refresh(self, monkeypatch):
-        self._make_settings_env(monkeypatch)
-        from app.core.security import create_refresh_token, verify_token
-        token = create_refresh_token({"sub": "user-id"})
-        result = verify_token(token)
-        assert result is not None
-        assert result.get("type") == "refresh"
-
-    def test_security_module_uses_pyjwt_not_jose(self):
-        """Verify the security module uses PyJWT (import jwt) not python-jose."""
-        import ast
-        import os
-        security_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "app", "core", "security.py"
-        )
-        with open(security_path) as f:
-            source = f.read()
-        # Must not contain jose import
-        assert "from jose" not in source
-        assert "import jose" not in source
-        # Must contain PyJWT import
-        assert "import jwt" in source
 
 
 class TestLogging:

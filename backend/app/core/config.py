@@ -23,11 +23,9 @@ class Settings(BaseSettings):
     # Redis (Celery broker + backend + celery-redbeat)
     redis_url: str
 
-    # JWT auth (D-01: HS256; access 15 min, refresh 30 days)
-    jwt_secret_key: str
-    jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 15
-    refresh_token_expire_days: int = 30
+    # Своих токенов у кабинета больше нет: сессию выдаёт и отзывает движок.
+    # Поля JWT удалены вместе с входом по паролю — настройка, которую никто
+    # не читает, живёт до первого человека, решившего, что она что-то делает.
 
     # MEFI CRM API read key (lrd_* prefix)
     mefi_api_key: str
@@ -38,6 +36,13 @@ class Settings(BaseSettings):
 
     # Multi-tenancy seam (D-05): hardcoded for MVP1-3; replaced by JWT claim in Iteration 4
     sofa_belle_tenant_id: str = "00000000-0000-0000-0000-000000000001"
+
+    # Движок (assistwidget) — источник личности. Пусто значит «сводить не с чем»:
+    # вход через движок отключён, и остаётся собственный вход по паролю.
+    engine_base_url: str = ""
+    # Сколько держать разобранную сессию, прежде чем спросить движок снова.
+    # Отзыв в движке действует с этой задержкой, поэтому она маленькая.
+    engine_session_cache_seconds: int = 60
 
     # Logging
     log_level: str = "INFO"

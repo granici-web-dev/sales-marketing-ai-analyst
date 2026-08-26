@@ -1,18 +1,17 @@
+/**
+ * Что делает клиент запросов после перехода на общий вход.
+ *
+ * Раньше здесь проверялась цепочка «401 → обновить токен → повторить запрос».
+ * Цепочки больше нет вместе с токеном: удостоверяет движок, его печенье
+ * уезжает с каждым запросом само и живёт две недели.
+ *
+ * Осталось два обязательства, и оба стоит держать тестом. Первое: печенье
+ * действительно отправляется — без `credentials` браузер его не приложит, а
+ * кабинет молча покажет пустоту. Второе: 401 возвращает человека ко входу, а
+ * не оставляет его перед экраном, который ничего не объясняет.
+ */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { apiFetch } from "../api-client";
-
-/**
- * Regression coverage for the chat auth-expiry bug: the chat streaming POST in
- * useChat.ts used raw fetch() and bypassed this 401 → refresh → retry path, so
- * a turn sent after the 15-min access token expired failed with a generic error
- * instead of transparently refreshing. useChat now routes through apiFetch; these
- * tests lock the behavior apiFetch must provide — including that the retry
- * REPLAYS the original method + body (so the chat POST body survives the retry).
- */
-
-function setCookie(token: string) {
-  document.cookie = `access_token=${token}; path=/`;
-}
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -21,68 +20,68 @@ function jsonResponse(status: number, body: unknown): Response {
   });
 }
 
-describe("apiFetch 401 refresh-retry (D-02)", () => {
+describe("apiFetch", () => {
+  let assigned: string | null = null;
+
   beforeEach(() => {
-    setCookie("OLD_TOKEN");
+    assigned = null;
+    // window.location.href — не присваиваемое в jsdom; подменяем целиком.
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: {
+        get href() {
+          return "http://localhost/";
+        },
+        set href(value: string) {
+          assigned = value;
+        },
+      },
+    });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    document.cookie =
-      "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   });
 
-  it("passes through without refreshing when the first response is ok", async () => {
-    const fetchMock = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(jsonResponse(200, { ok: true }));
+  it("отправляет печенье сессии", async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(200, { ok: true }));
+    vi.stubGlobal("fetch", fetchMock);
 
-    const resp = await apiFetch("/api/v1/chat/conversations");
+    await apiFetch("/api/v1/health/data");
 
-    expect(resp.status).toBe(200);
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    // Без этого браузер не приложит печенье, и кабинет покажет пустоту
+    // человеку, который вошёл.
+    expect(init.credentials).toBe("include");
+  });
+
+  it("сохраняет метод и тело запроса", async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(200, { ok: true }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await apiFetch("/api/v1/chat", { method: "POST", body: '{"q":1}' });
+
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.method).toBe("POST");
+    expect(init.body).toBe('{"q":1}');
+  });
+
+  it("на 401 возвращает ко входу", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse(401, { detail: "expired" })));
+
+    const response = await apiFetch("/api/v1/dashboards/sales");
+
+    expect(response.status).toBe(401);
+    expect(assigned).toBe("/login");
+  });
+
+  it("ничего не делает, пока ответы в порядке", async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(200, { ok: true }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await apiFetch("/api/v1/health/data");
+
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(
-      fetchMock.mock.calls.every(([u]) => !String(u).includes("/auth/refresh")),
-    ).toBe(true);
+    expect(assigned).toBeNull();
   });
-
-  it("on 401, refreshes the token and retries the original request once", async () => {
-    const fetchMock = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(jsonResponse(401, { detail: "Invalid or expired token" }))
-      .mockResolvedValueOnce(jsonResponse(200, { access_token: "NEW_TOKEN" }))
-      .mockResolvedValueOnce(jsonResponse(200, { streamed: true }));
-
-    const resp = await apiFetch("/api/v1/chat/conversations/abc/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: "salut" }),
-    });
-
-    expect(resp.status).toBe(200);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-
-    // Call 2 is the refresh.
-    const [refreshUrl, refreshOpts] = fetchMock.mock.calls[1];
-    expect(String(refreshUrl)).toContain("/api/v1/auth/refresh");
-    expect((refreshOpts as RequestInit).method).toBe("POST");
-
-    // Call 3 replays the ORIGINAL request: same url, method, and body, with the
-    // refreshed bearer token. Body replay is the streaming-POST regression.
-    const [retryUrl, retryOpts] = fetchMock.mock.calls[2];
-    expect(String(retryUrl)).toContain(
-      "/api/v1/chat/conversations/abc/messages",
-    );
-    expect((retryOpts as RequestInit).method).toBe("POST");
-    expect((retryOpts as RequestInit).body).toBe(
-      JSON.stringify({ content: "salut" }),
-    );
-    const retryHeaders = new Headers((retryOpts as RequestInit).headers);
-    expect(retryHeaders.get("Authorization")).toBe("Bearer NEW_TOKEN");
-  });
-
-  // NB: the "refresh fails → redirect to /login" branch is intentionally not
-  // unit-tested here — it assigns window.location.href, which jsdom rejects with
-  // "Not implemented: navigation". That branch is unchanged stock apiFetch
-  // behavior (unrelated to the chat-streaming fix) and is covered manually.
 });

@@ -250,30 +250,68 @@ async def test_upsert_is_idempotent() -> None:
 
 @pytest.mark.no_cover
 def test_no_claude_calls_in_http_handlers() -> None:
-    """AsyncAnthropic must not appear in app/api/ HTTP handler layer (AI-09).
+    """Claude не вызывается из обработчиков HTTP — кроме одного, названного (AI-09).
 
-    AI-09: Claude API calls are ONLY allowed from Celery tasks (app/tasks/etl/).
-    This test greps the codebase to verify no AsyncAnthropic instantiation
-    exists in app/api/ or app/schemas/ — those are HTTP-handler territory.
+    Правило: обращения к Claude живут в задачах Celery, а не на пути запроса.
+    Долгий вызов, занимающий рабочий процесс, — это отказ в обслуживании при
+    десятке одновременных посетителей.
 
-    This test does NOT require TEST_DATABASE_URL and runs on every pytest run.
-    REQUIRED TO PASS from Wave 0 (no production code exists yet, so trivially true).
+    Исключение ровно одно, и оно старше этой проверки: потоковый чат Фазы 8.
+    Ответ, который печатается посетителю по мере готовности, в пакетную модель
+    Celery не укладывается вовсе, и решение это записано в `docs/CHAT.md` и в
+    шапке самого `chat.py`.
+
+    Проверка этого исключения не знала и с появлением чата стала красной —
+    причём падала на СОБСТВЕННЫХ комментариях chat.py, объясняющих, почему он
+    исключение. Красный тест, о котором известно, что он красный, перестаёт
+    быть проверкой и начинает быть шумом, в котором тонет следующая настоящая
+    находка.
+
+    Исключение записано строкой, которую видно. Отсутствие строки читалось бы
+    как забывчивость — и однажды кто-нибудь «починил» бы гейт, сняв его.
     """
-    # Navigate from tests/integration/ up to the project root (CR-03 fix: dynamic path)
     project_root = Path(__file__).resolve().parent.parent.parent.parent
     api_dir = project_root / "backend" / "app" / "api"
 
+    # Потоковый чат: обоснование в docs/CHAT.md и в шапке chat.py.
+    ALLOWED = {"chat.py"}
+
     result = subprocess.run(
-        ["grep", "-r", "AsyncAnthropic", "--include=*.py", str(api_dir)],
+        ["grep", "-rl", "AsyncAnthropic", "--include=*.py", str(api_dir)],
         capture_output=True,
         text=True,
     )
 
-    assert result.stdout == "", (
-        f"AI-09 VIOLATION: AsyncAnthropic found in HTTP handler layer (app/api/):\n"
-        f"{result.stdout}\n"
-        "Claude API calls must only exist in app/tasks/etl/ (never in HTTP handlers)"
+    offenders = sorted(
+        Path(line).name
+        for line in result.stdout.splitlines()
+        if line and Path(line).name not in ALLOWED
     )
+
+    assert offenders == [], (
+        "AI-09: обращение к Claude в слое HTTP: "
+        + ", ".join(offenders)
+        + " — место таким вызовам в app/tasks/, а не на пути запроса"
+    )
+
+
+def test_the_ai09_gate_still_sees_the_directory() -> None:
+    """Сторож сторожа.
+
+    Гейт выше проходит и тогда, когда grep ничего не нашёл по неверному пути:
+    пустой вывод неотличим от чистого кода. Чат обязан находиться — если он
+    перестал, значит сломался поиск, а не исчезло исключение.
+    """
+    project_root = Path(__file__).resolve().parent.parent.parent.parent
+    api_dir = project_root / "backend" / "app" / "api"
+
+    result = subprocess.run(
+        ["grep", "-rl", "AsyncAnthropic", "--include=*.py", str(api_dir)],
+        capture_output=True,
+        text=True,
+    )
+    found = {Path(line).name for line in result.stdout.splitlines() if line}
+    assert "chat.py" in found, f"поиск по {api_dir} не нашёл даже chat.py: {found}"
 
 
 @_integration_skip

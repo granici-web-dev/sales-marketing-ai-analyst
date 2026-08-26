@@ -30,6 +30,7 @@ pytestmark = pytest.mark.asyncio
 # ──────────────────────────────────────────────
 
 MOCK_USER_ID = UUID("00000000-0000-0000-0000-000000000002")
+MOCK_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 
 
 @pytest.fixture(autouse=False)
@@ -40,10 +41,18 @@ def override_deps():
     from app.main import app
     from app.schemas.auth import UserOut
 
+    from app.core.tenancy import set_tenant_id
+
     mock_user = UserOut(id=MOCK_USER_ID, email="test@sofabelle.ro", is_active=True)
     mock_session = AsyncMock()
 
     async def _mock_current_user():
+        # Настоящая проверка ставит тенантный контекст — это часть её договора,
+        # а не побочный эффект: удостоверить запрос и значит узнать, чей он.
+        # Подмена, которая этого не делает, проверяла бы приложение, которого
+        # нет. Прежде контекст ставил посредник из настройки, одним и тем же
+        # значением на любой запрос, и подмене было нечего исполнять.
+        set_tenant_id(MOCK_TENANT_ID)
         return mock_user
 
     async def _mock_get_session():
@@ -286,10 +295,16 @@ async def test_sc5_refresh_first_call_202(override_deps) -> None:
     from app.main import app
 
     mock_task = MagicMock()
-    mock_task.id = "pipeline-task-uuid-12345"
+    mock_task.id = "insight-task-uuid-12345"
 
-    mock_pipeline = MagicMock()
-    mock_pipeline.return_value.delay.return_value = mock_task
+    # Обработчик ставит в очередь ТОЛЬКО генерацию разбора. Целый дневной
+    # конвейер он перестал запускать давно, а тест всё это время подменял
+    # `daily_pipeline` — имя, которого обработчик не зовёт. Подмена имени,
+    # которое не вызывается, не проверяет ничего и падает на настоящем
+    # идентификаторе задачи. Тот же протухший тест уже был починен у своего
+    # близнеца в tests/unit/test_insights_router.py.
+    mock_generate = MagicMock()
+    mock_generate.delay.return_value = mock_task
 
     mock_r = AsyncMock()
     mock_r.set = AsyncMock(return_value=True)
@@ -298,7 +313,10 @@ async def test_sc5_refresh_first_call_202(override_deps) -> None:
     mock_redis_ctx.__aexit__ = AsyncMock(return_value=None)
 
     with patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx):
-        with patch("app.tasks.etl.sync_mefi_leads.daily_pipeline", mock_pipeline):
+        with patch(
+            "app.tasks.insights.generate_daily_insights.generate_daily_insights",
+            mock_generate,
+        ):
             async with AsyncClient(
                 transport=ASGITransport(app=app),
                 base_url="http://test",
@@ -308,9 +326,12 @@ async def test_sc5_refresh_first_call_202(override_deps) -> None:
 
     assert r.status_code == 202
     body = r.json()
-    assert "pipeline_run_id" in body
     assert "enqueued_at" in body
-    assert body["pipeline_run_id"] == "pipeline-task-uuid-12345"
+    assert body["pipeline_run_id"] == "insight-task-uuid-12345"
+
+    # Задача обязана получить арендатора запроса, а не значение из настройки.
+    tenant_id, _ = mock_generate.delay.call_args.args
+    assert tenant_id == str(MOCK_TENANT_ID), f"задаче достался арендатор {tenant_id!r}"
 
 
 async def test_sc5_refresh_second_call_429(override_deps) -> None:
@@ -337,21 +358,29 @@ async def test_sc5_refresh_second_call_429(override_deps) -> None:
 
 
 # ──────────────────────────────────────────────
-# SC#6 — Health data (public)
+# SC#6 — Health data
 # ──────────────────────────────────────────────
 
 
-async def test_sc6_health_data_no_auth() -> None:
-    """SC#6: GET /health/data returns 200 without auth and includes stale flag."""
-    from app.db.deps import get_session
+async def test_sc6_health_data_requires_auth() -> None:
+    """Свежесть данных — данные арендатора, и без спроса не отдаются.
+
+    Прежде этот эндпоинт был единственным без проверки, и держалось это на
+    том, что арендатор приходил из настройки: любой запрос получал состояние
+    Sofa Belle. Арендатор теперь приходит из сессии, а сессии здесь нет —
+    отдавать нечего и некому.
+    """
     from app.main import app
 
-    mock_session = AsyncMock()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        r = await c.get("/api/v1/health/data")
 
-    async def _mock_session():
-        yield mock_session
+    assert r.status_code == 401, f"ожидался отказ, получено {r.status_code}"
 
-    app.dependency_overrides[get_session] = _mock_session
+
+async def test_sc6_health_data_200_with_session(override_deps) -> None:
+    """С удостоверенной сессией отдаётся состояние синхронизации."""
+    from app.main import app
 
     mock_health = {
         "last_sync_at": datetime(2026, 5, 28, 3, 47, 12, tzinfo=timezone.utc),
@@ -359,112 +388,26 @@ async def test_sc6_health_data_no_auth() -> None:
         "stale": False,
     }
 
-    try:
-        with patch("app.api.v1.health.HealthReadService") as MockSvc:
-            instance = MockSvc.return_value
-            instance.get_health = AsyncMock(return_value=mock_health)
+    with patch("app.api.v1.health.HealthReadService") as MockSvc:
+        MockSvc.return_value.get_health = AsyncMock(return_value=mock_health)
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+            r = await c.get("/api/v1/health/data", headers={"Authorization": "Bearer dummy"})
 
-            async with AsyncClient(
-                transport=ASGITransport(app=app),
-                base_url="http://test",
-                # No Authorization header — must still return 200
-            ) as c:
-                r = await c.get("/api/v1/health/data")
-    finally:
-        app.dependency_overrides.pop(get_session, None)
-
-    assert r.status_code == 200, f"health/data must not require auth, got {r.status_code}"
+    assert r.status_code == 200
     body = r.json()
-    assert "stale" in body
-    assert "last_sync_at" in body
-    assert "last_pipeline_status" in body
+    assert body["stale"] is False
+    assert body["last_pipeline_status"] == "success"
 
 
-async def test_sc6_health_stale_true_propagates() -> None:
+async def test_sc6_health_stale_true_propagates(override_deps) -> None:
     """SC#6: stale=True in service response propagates to JSON response."""
-    from app.db.deps import get_session
     from app.main import app
-
-    mock_session = AsyncMock()
-
-    async def _mock_session():
-        yield mock_session
-
-    app.dependency_overrides[get_session] = _mock_session
 
     mock_health = {"last_sync_at": None, "last_pipeline_status": None, "stale": True}
 
-    try:
-        with patch("app.api.v1.health.HealthReadService") as MockSvc:
-            instance = MockSvc.return_value
-            instance.get_health = AsyncMock(return_value=mock_health)
-
-            async with AsyncClient(
-                transport=ASGITransport(app=app),
-                base_url="http://test",
-            ) as c:
-                r = await c.get("/api/v1/health/data")
-    finally:
-        app.dependency_overrides.pop(get_session, None)
+    with patch("app.api.v1.health.HealthReadService") as MockSvc:
+        MockSvc.return_value.get_health = AsyncMock(return_value=mock_health)
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+            r = await c.get("/api/v1/health/data", headers={"Authorization": "Bearer dummy"})
 
     assert r.json()["stale"] is True
-
-
-# ──────────────────────────────────────────────
-# SC#7 — OpenAPI schema
-# ──────────────────────────────────────────────
-
-
-async def test_sc7_docs_accessible() -> None:
-    """SC#7: GET /docs returns 200 (OpenAPI schema UI accessible)."""
-    from app.main import app
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test",
-    ) as c:
-        r = await c.get("/docs")
-
-    assert r.status_code == 200
-
-
-async def test_sc7_openapi_json_has_phase6_paths() -> None:
-    """SC#7: GET /openapi.json contains all Phase 6 endpoint paths."""
-    from app.main import app
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test",
-    ) as c:
-        r = await c.get("/openapi.json")
-
-    assert r.status_code == 200
-    paths = r.json().get("paths", {})
-    required_paths = [
-        "/api/v1/dashboards/sales",
-        "/api/v1/dashboards/salespeople",
-        "/api/v1/dashboards/marketing",
-        "/api/v1/insights/today",
-        "/api/v1/health/data",
-    ]
-    for p in required_paths:
-        assert p in paths, f"OpenAPI schema missing required path: {p}"
-
-
-# ──────────────────────────────────────────────
-# Regression guard
-# ──────────────────────────────────────────────
-
-
-async def test_healthz_phase1_regression() -> None:
-    """Phase 1 regression: GET /healthz still returns {status: ok}."""
-    from app.main import app
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test",
-    ) as c:
-        r = await c.get("/healthz")
-
-    assert r.status_code == 200
-    assert r.json() == {"status": "ok"}

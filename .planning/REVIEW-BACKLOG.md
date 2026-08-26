@@ -73,40 +73,38 @@ Nothing here is speculative — every claim was measured against the code.
       raised for it. Audit 12 findings → 6, all remaining in `pip`,
       `setuptools` and `pytest` — tooling, not shipped. Commit `7f11226`.
 
+- [x] **Access token is readable by any script, and travels over plain HTTP.**
+      Gone with the token. The cabinet no longer issues one: identity comes
+      from the engine, whose cookie is `HttpOnly; SameSite=Strict` and which
+      no script can read. `api-client.ts` stopped reading cookies, the refresh
+      interceptor went with the tokens it refreshed, and `jose` left
+      `package.json`. The non-HttpOnly cookie existed *because* client code had
+      to read it; removing the reader removed the reason.
+
+- [x] **`/health/data` has no authentication, and now no tenant either.** It
+      requires a session like every other endpoint. It was the last one that
+      did not, and it held together only because the tenant came from config.
+
+- [x] **The green test number covered unit tests only.** The whole suite is
+      green: 537 passed, 0 failed. Four stale-red integration tests were
+      repaired — two asserted the old public `/health/data`, one patched
+      `daily_pipeline` (a name the handler stopped calling), and the AI-09
+      grep gate did not know about the documented chat exception and was
+      failing on `chat.py`'s own comments explaining why it is one. 36 tests
+      still skip for want of `TEST_DATABASE_URL`.
+
 ---
 
 ## Before the next deploy
 
-- [ ] **Access token is readable by any script, and travels over plain HTTP.**
-      `frontend/src/lib/api-client.ts`, `src/app/(auth)/login/page.tsx`.
-      Set by client JS as `access_token=…; path=/; SameSite=Lax` — no `HttpOnly`,
-      no `Secure`. One XSS anywhere on the page, including through a dependency,
-      takes the whole token. Also diverges from the Phase 1 decision on record
-      ("HttpOnly cookie + interceptor-based refresh"): the interceptor exists,
-      the HttpOnly does not.
-      *Fix:* access token in memory, refresh token in an `HttpOnly; Secure;
-      SameSite=Strict` cookie set by the backend. If the cookie must stay, add
-      `Secure` at minimum. Half a day, touches login and the API client.
-
-- [ ] **`/health/data` has no authentication, and now no tenant either.** It is
-      the one endpoint with no `get_current_user`, so it served Sofa Belle's
-      data to anyone who asked. It now takes the tenant from the request
-      context, which the middleware still sets for every request — same
-      behaviour today. The day that context comes from the JWT, this endpoint
-      has no tenant to take and will raise `TenantIsolationError`.
-      *Fix:* decide what it is. If it is a dashboard widget, it needs the same
-      auth as the rest; if it is a probe, it must not read tenant data.
-
-- [ ] **The green test number covered unit tests only.** `tests/unit` is 514
-      passed / 1 skipped. The integration suite is not: 35 tests skip for want
-      of `TEST_DATABASE_URL`, and four are stale-red against a live database —
-      `test_protected_route_without_token` (asks for a route that 404s),
-      `test_sc5_refresh_first_call_202` (still patches `daily_pipeline`, a name
-      the handler stopped calling — the same staleness already fixed in its unit
-      twin), `test_no_claude_calls_in_http_handlers` (circular import on reload)
-      and `test_login_invalid_credentials`. None of them fail because of the
-      code they test.
-      *Fix:* repair the four, and wire `TEST_DATABASE_URL` so the other 35 run.
+- [ ] **Linking a client is a manual SQL statement.** A client of the engine
+      reaches the analyst only once `tenants.engine_tenant_id` points at their
+      engine tenant, and nothing sets it. Deliberate — an analyst tenant with
+      no CRM sync is an empty cabinet, and creating one on first login would
+      let someone in to guess whether it is broken. But the step lives in a
+      comment, and a comment is not a procedure.
+      *Fix:* a command that links by client, and a check at startup that says
+      out loud how many tenants are unlinked.
 
 - [ ] **Nothing proves route protection is switched on.** All three findings
       above shared one cause: the file was not running, and code that does not

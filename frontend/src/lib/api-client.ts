@@ -1,53 +1,31 @@
 /**
- * API client with 401 interceptor for transparent token refresh (D-02).
- * On 401: calls POST /api/v1/auth/refresh (refresh_token HttpOnly cookie sent automatically),
- * retries original request once. On second 401: clears access_token cookie, redirects to /login.
+ * Запросы к бэкенду аналитика.
  *
- * Auth: backend expects Authorization: Bearer <access_token>. The token lives in a
- * non-HttpOnly access_token cookie (set by LoginForm + refresh handler); we read it
- * here and forward it as a Bearer header on every request.
+ * ── Чего здесь больше нет ──
+ *
+ * Не осталось ни чтения токена, ни заголовка Authorization, ни перехвата 401
+ * с обновлением. Всё это обслуживало собственный вход аналитика, которого
+ * больше нет: удостоверяет движок, его печенье живёт на этом же домене и
+ * уезжает с каждым запросом само.
+ *
+ * Заодно ушла и застарелая дыра: токен лежал в печенье БЕЗ HttpOnly, потому
+ * что его читал этот файл. Любой скрипт на странице, включая скрипт из
+ * зависимости, читал его тоже. Печенье движка скриптам недоступно.
+ *
+ * Обновлять нечего: сессия живёт две недели и продлевается движком, а не нами.
+ * 401 означает ровно одно — сессия кончилась, и человека надо вернуть ко входу.
  */
 
-function readAccessToken(): string | null {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
-function withAuthHeader(options?: RequestInit): RequestInit {
-  const token = readAccessToken();
-  if (!token) {
-    return { ...options, credentials: "include" };
-  }
-  const headers = new Headers(options?.headers);
-  headers.set("Authorization", `Bearer ${token}`);
-  return { ...options, headers, credentials: "include" };
-}
+/** Куда возвращать, когда сессия кончилась. */
+const LOGIN_PATH = "/login";
 
 export async function apiFetch(url: string, options?: RequestInit): Promise<Response> {
-  const response = await fetch(url, withAuthHeader(options));
+  const response = await fetch(url, { ...options, credentials: "include" });
 
-  if (response.status === 401) {
-    // Attempt token refresh (D-02)
-    const refreshResponse = await fetch("/api/v1/auth/refresh", {
-      method: "POST",
-      credentials: "include",
-    });
-
-    if (refreshResponse.ok) {
-      const data = await refreshResponse.json();
-      // Store new access token in non-HttpOnly cookie (proxy.ts reads it server-side)
-      document.cookie = `access_token=${data.access_token}; path=/; SameSite=Lax`;
-
-      // Retry original request with refreshed token in Authorization header
-      return fetch(url, withAuthHeader(options));
-    } else {
-      // Refresh failed — clear access token and redirect to login
-      document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      window.location.href = "/login";
-      // Return the original 401 response (redirect will happen before it's used)
-      return response;
-    }
+  if (response.status === 401 && typeof window !== "undefined") {
+    // Возврат ко входу, а не молчаливая пустая страница: человек должен
+    // понимать, что от него хотят.
+    window.location.href = LOGIN_PATH;
   }
 
   return response;

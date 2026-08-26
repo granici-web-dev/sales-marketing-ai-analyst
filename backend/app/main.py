@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import uuid as uuid_mod
 from contextlib import asynccontextmanager
-from uuid import UUID
 
 import structlog
 from fastapi import FastAPI
@@ -12,7 +11,6 @@ from structlog.contextvars import bind_contextvars, clear_contextvars
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.logging import configure_logging
-from app.core.tenancy import set_tenant_id
 
 logger = structlog.get_logger(__name__)
 
@@ -43,10 +41,19 @@ app.add_middleware(
 
 
 class StructlogContextMiddleware:
-    """Pure ASGI middleware — sets tenant context and structlog bindings per request.
+    """Pure ASGI middleware — per-request structlog bindings.
 
-    D-05: tenant_id MUST be set inside __call__ (per-request), not in lifespan.
-    Uses pure ASGI class pattern (not BaseHTTPMiddleware) to avoid async context
+    Арендатора здесь больше нет. Прежде он ставился отсюда из настройки —
+    одно и то же значение на любой запрос, кем бы тот ни был сделан. Пока
+    клиент был один, разницы не было; со вторым это была бы выдача чужих
+    данных с кодом 200.
+
+    Теперь арендатор приходит из удостоверенной сессии и ставится в
+    `get_current_user`, то есть тогда, когда уже известно, чей он. Запрос без
+    удостоверения остаётся без арендатора, и тенантный запрос из него
+    отвергается — это и есть работающая изоляция, а не её видимость.
+
+    Pure ASGI class pattern (not BaseHTTPMiddleware) to avoid async context
     copy issues that would break bind_contextvars propagation (Pitfall #5).
     """
 
@@ -56,12 +63,9 @@ class StructlogContextMiddleware:
     async def __call__(self, scope: dict, receive: object, send: object) -> None:
         if scope["type"] == "http":
             clear_contextvars()
-            # D-05: Set tenant per-request here, NOT in lifespan.
-            set_tenant_id(UUID(settings.sofa_belle_tenant_id))
             bind_contextvars(
                 request_id=str(uuid_mod.uuid4()),
                 path=scope.get("path", ""),
-                tenant_id=str(settings.sofa_belle_tenant_id),
             )
         await self.app(scope, receive, send)
 

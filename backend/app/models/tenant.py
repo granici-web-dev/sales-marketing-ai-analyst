@@ -32,3 +32,9 @@ class Tenant(Base, TimestampMixin):
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
     slug: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    # Тот же клиент в движке. NULL — аналитик этому клиенту ещё не подключён,
+    # и вход через движок для него закрыт: пускать в чужие данные по совпадению
+    # почты нельзя, а другого признака у нас нет.
+    engine_tenant_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), nullable=True, unique=True
+    )

@@ -96,23 +96,16 @@ async def test_insights_refresh_requires_auth(app_with_overrides) -> None:
     assert r.status_code in (401, 403)
 
 
-async def test_health_data_no_auth_required(app_with_overrides) -> None:
-    """GET /health/data without Authorization → NOT 401 (public endpoint)."""
-    from unittest.mock import patch
+async def test_health_data_requires_auth(app_with_overrides) -> None:
+    """Свежесть данных — данные арендатора, и без спроса не отдаются.
 
-    mock_health = {"last_sync_at": None, "last_pipeline_status": None, "stale": True}
+    Прежде эндпоинт был единственным без проверки, и держалось это на том, что
+    арендатор приходил из настройки: любой запрос получал состояние Sofa Belle.
+    """
+    async with AsyncClient(
+        transport=ASGITransport(app=app_with_overrides),
+        base_url="http://test",
+    ) as client:
+        r = await client.get("/api/v1/health/data")
 
-    with patch(
-        "app.api.v1.health.HealthReadService"
-    ) as MockHealthSvc:
-        instance = MockHealthSvc.return_value
-        instance.get_health = AsyncMock(return_value=mock_health)
-
-        async with AsyncClient(
-            transport=ASGITransport(app=app_with_overrides),
-            base_url="http://test",
-        ) as client:
-            r = await client.get("/api/v1/health/data")
-
-    assert r.status_code != 401, f"health/data must not require auth, got {r.status_code}"
-    assert r.status_code == 200
+    assert r.status_code in (401, 403), f"ожидался отказ, получено {r.status_code}"

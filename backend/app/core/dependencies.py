@@ -1,82 +1,76 @@
 from __future__ import annotations
 
-"""FastAPI dependencies for Phase 6 Backend HTTP API.
+"""Кто делает запрос.
 
-T-06-01-01: get_current_user validates Bearer JWT signature and expiry via
-            verify_token(); invalid or missing token → 401, never 403.
-T-06-01-02: Returns UserOut(id, email, is_active) only — no password hash,
-            no tenant_id leakage in the returned object.
+## Что изменилось и почему
 
-Note on tenant context: StructlogContextMiddleware in main.py sets the
-tenant_id ContextVar (hardcoded settings.sofa_belle_tenant_id) on every HTTP
-request BEFORE routing runs.  get_current_user does NOT need to set tenant
-context — it only validates the JWT and provides user.id for rate-limit keying.
+Раньше здесь проверялся собственный JWT аналитика. Теперь личность
+удостоверяет движок: у него отзываемая серверная сессия, печенье с HttpOnly и
+SameSite=Strict, scrypt и сравнение постоянного времени, — а главное, у клиента
+Davoq должна быть одна учётная запись на семь агентов, а не своя у каждого.
+
+Тенантный контекст ставится ЗДЕСЬ же, из разобранной сессии. Прежде его
+ставил посредник из настройки `sofa_belle_tenant_id` — одно и то же значение
+на любой запрос. Пока клиент был один, разницы не было; с приходом второго
+это была бы выдача чужих данных с кодом 200.
+
 """
 
-from uuid import UUID
-
 import structlog
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
+from fastapi import Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import verify_token
 from app.db.deps import get_session
-from app.models.user import User
 from app.schemas.auth import UserOut
+from app.services.auth.engine_session import (
+    ENGINE_SESSION_COOKIE,
+    EngineUnreachable,
+    resolve,
+)
+from app.services.auth.link import TenantNotLinked, resolve_local_user
 
 logger = structlog.get_logger(__name__)
 
-security = HTTPBearer()
+UNAUTHORIZED = "Invalid or expired session"
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
     session: AsyncSession = Depends(get_session),
 ) -> UserOut:
-    """FastAPI dependency — validate Bearer JWT and return the active user.
-
-    Behaviour contract (T-06-01-01):
-    - Missing Authorization header → FastAPI raises 403 automatically (HTTPBearer
-      auto_error=True default); callers see 401 from the router's exception handler.
-    - Invalid / expired token (verify_token returns None) → 401 "Invalid or expired token"
-    - Valid JWT for unknown user or is_active=False → 401 "User not found or inactive"
-    - Valid JWT for active user → UserOut with id=UUID, email, is_active=True
-
-    Args:
-        credentials: Bearer token extracted by HTTPBearer security scheme.
-        session: Async SQLAlchemy session from get_session dependency.
+    """Удостоверить запрос и поставить тенантный контекст.
 
     Returns:
-        UserOut with id, email, is_active — no password hash, no tenant_id (T-06-01-02).
+        UserOut с id, email, is_active — без хеша пароля и без tenant_id (T-06-01-02).
 
     Raises:
-        HTTPException(401): For all authentication failures.
+        HTTPException(401): сессия недействительна.
+        HTTPException(503): движок не ответил — это наша неполадка, а не отказ
+            в доступе, и выглядеть она обязана по-разному.
     """
-    # Step 1: decode and verify the JWT signature + expiry
-    payload = verify_token(credentials.credentials)
-    if payload is None:
-        logger.warning("auth_token_invalid")
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    engine_token = request.cookies.get(ENGINE_SESSION_COOKIE)
+    if not engine_token:
+        raise HTTPException(status_code=401, detail=UNAUTHORIZED)
 
-    # Step 2: extract user_id from "sub" claim
     try:
-        user_id = UUID(payload["sub"])
-    except (KeyError, ValueError):
-        logger.warning("auth_token_missing_sub")
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        identity = await resolve(engine_token)
+    except EngineUnreachable as exc:
+        # Отправить человека на форму входа означало бы предложить ему войти
+        # заново и не объяснить, почему не пускает: сессия-то у него верная.
+        logger.warning("auth.engine_unreachable", error=str(exc)[:200])
+        raise HTTPException(
+            status_code=503,
+            detail="Контур учётных записей недоступен. Попробуйте через минуту.",
+        ) from exc
 
-    # Step 3: confirm user exists and is active (SELECT specific columns — no SELECT *)
-    stmt = select(User.id, User.email, User.is_active).where(
-        User.id == user_id,
-        User.is_active.is_(True),
-    )
-    result = await session.execute(stmt)
-    row = result.first()
+    if identity is None:
+        raise HTTPException(status_code=401, detail=UNAUTHORIZED)
 
-    if row is None:
-        logger.warning("auth_user_not_found_or_inactive", user_id=str(user_id))
-        raise HTTPException(status_code=401, detail="User not found or inactive")
-
-    return UserOut(id=row.id, email=row.email, is_active=row.is_active)
+    try:
+        return await resolve_local_user(session, identity)
+    except TenantNotLinked as exc:
+        logger.warning("auth.tenant_not_linked", reason=str(exc)[:120])
+        raise HTTPException(
+            status_code=403,
+            detail="Аналитик не подключён для этого клиента.",
+        ) from exc
