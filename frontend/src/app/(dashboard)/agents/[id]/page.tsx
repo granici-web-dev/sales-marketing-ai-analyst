@@ -1,8 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { ArrowUpRight, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { engineBaseUrl } from "@/lib/engine";
+import { UnlockPanel } from "@/components/portal/unlock-panel";
 import { loadPortalNav } from "@/lib/portal-nav.server";
 import type { AgentAccess } from "@/lib/portal-agents";
 
@@ -32,7 +32,6 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
   const agent = nav.agents.find((a) => a.id === id);
   if (!agent) notFound();
 
-  const enginePanel = `${engineBaseUrl()}/admin`;
   const locked = agent.access === "locked";
 
   return (
@@ -53,39 +52,23 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
           <p className="text-sm text-muted-foreground">{t("page.unavailable")}</p>
         )}
 
-        {locked && (
-          <>
-            <p className="text-sm">{t("page.locked")}</p>
-            {agent.priceFrom !== null && (
-              <p className="mt-2 text-sm tabular-nums text-muted-foreground">
-                {t("priceFrom", { price: agent.priceFrom })}
-              </p>
-            )}
-            <a
-              href={enginePanel}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-control bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
-            >
-              {t("unlock")}
-              <ArrowUpRight size={14} aria-hidden="true" />
-            </a>
-          </>
-        )}
+        {locked &&
+          (agent.plan ? (
+            <UnlockPanel plan={agent.plan} />
+          ) : (
+            /* Ни один покупаемый тариф его не даёт. Кнопка, ведущая к отказу
+               «этот пакет ещё не продаётся», хуже отсутствия кнопки. */
+            <p className="text-sm text-muted-foreground">{t("page.notPurchasable")}</p>
+          ))}
 
         {(agent.access === "unlocked" || agent.access === "expiring") && (
           <>
-            <p className="text-sm">{t("page.elsewhere")}</p>
+            <p className="text-sm">{t("page.running")}</p>
             {agent.access === "expiring" && agent.daysLeft !== null && (
               <p className="mt-2 text-sm text-warn">
                 {t("daysLeft", { days: agent.daysLeft })}
               </p>
             )}
-            <a
-              href={enginePanel}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-control border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
-            >
-              {t("open")}
-              <ArrowUpRight size={14} aria-hidden="true" />
-            </a>
           </>
         )}
       </div>

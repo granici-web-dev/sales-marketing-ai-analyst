@@ -40,6 +40,7 @@ export const loadPortalNav = cache(async (): Promise<PortalNav> => {
             href: `/agents/${agent.id}`,
             daysLeft: agent.daysLeft,
             priceFrom: agent.priceFrom,
+            plan: agent.plan,
           },
     ),
   };

@@ -13,6 +13,14 @@ import { engineGet, type EngineResult } from "@/lib/engine";
 
 export type AgentAccess = "unlocked" | "expiring" | "locked" | "unavailable";
 
+/** Чем агент включается: самый дешёвый покупаемый тариф, куда он входит. */
+export interface UnlockPlan {
+  id: string;
+  name: string;
+  priceEur: number;
+  priceEurYearly: number;
+}
+
 /** То, что отдаёт движок. Форма повторяет `PortalAgent` из billing/agents.ts. */
 interface EngineAgent {
   id: string;
@@ -22,6 +30,8 @@ interface EngineAgent {
   priceFrom: number | null;
   /** Дней до конца оплаченного периода. null — бессрочно либо не куплен. */
   daysLeft: number | null;
+  /** Чем включить. null — ни один покупаемый тариф его не даёт. */
+  plan: UnlockPlan | null;
 }
 
 export type PortalAgent = EngineAgent;

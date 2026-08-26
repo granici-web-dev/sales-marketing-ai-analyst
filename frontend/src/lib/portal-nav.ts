@@ -25,7 +25,7 @@
  * своей подпиской». Этот кабинет и есть его кабинет: спрашивать движок,
  * открыт ли аналитик, значит спрашивать не того.
  */
-import type { AgentAccess } from "@/lib/portal-agents";
+import type { AgentAccess, UnlockPlan } from "@/lib/portal-agents";
 
 /** Агент, чей кабинет это и есть. Его экраны живут здесь, а не в движке. */
 export const HOST_AGENT = "data-analyst";
@@ -40,6 +40,8 @@ export interface NavAgent {
   href: string;
   daysLeft: number | null;
   priceFrom: number | null;
+  /** Чем включить. null — покупаемого тарифа с ним нет. */
+  plan: UnlockPlan | null;
 }
 
 export interface PortalAccount {
@@ -67,6 +69,7 @@ export const HOST_AGENT_NAV: NavAgent = {
   href: HOST_AGENT_HREF,
   daysLeft: null,
   priceFrom: null,
+  plan: null,
 };
 
 /** Заперт ли раздел: и «можно купить», и «ещё не построен» одинаково закрыты. */

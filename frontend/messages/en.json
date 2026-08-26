@@ -312,7 +312,23 @@
     "page": {
       "unavailable": "This agent is still being built. When it is ready it shows up here, with nothing to ask for.",
       "locked": "This agent is not running. It is turned on from the subscription, together with the plan that includes it.",
-      "elsewhere": "This agent is running and is managed in the Davoq panel."
+      "notPurchasable": "This agent comes with a plan that cannot yet be bought from the portal. Write to us and we will turn it on.",
+      "running": "The agent is running."
+    },
+    "unlockPanel": {
+      "lead": "This agent is turned on with the {plan} plan.",
+      "period": "Billing period",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "perMonth": "{price} € / month",
+      "perYear": "{price} € / year",
+      "yearlySaving": "Two months free compared with paying monthly.",
+      "subscribe": "Subscribe",
+      "requested": "Request sent. We will call you and turn the agent on.",
+      "changed": "The plan has changed. The agent starts in a moment.",
+      "signedOut": "Your session expired. Sign in again.",
+      "failed": "Could not start the payment. Try again.",
+      "note": "Payment goes through your Davoq account. You can cancel at any time — the agent keeps running until the end of the paid period."
     }
   },
   "settings": {
