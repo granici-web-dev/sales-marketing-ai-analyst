@@ -13,6 +13,9 @@ import os
 
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://x:x@localhost/x")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+# Settings declares this one required. Every test that reaches MEFI patches the
+# client; the value only has to exist so `Settings()` constructs without a .env.
+os.environ.setdefault("MEFI_API_KEY", "test-key")
 
 from uuid import UUID
 

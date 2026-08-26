@@ -1,0 +1,122 @@
+# Проверки, которые до этого запускались только руками.
+#
+# Каждый шаг ниже уже был зелёным на машине разработчика в момент заведения:
+# ruff 0 находок, ruff format без расхождений, mypy 0 ошибок, 572 теста с базой
+# и 73 на фронтенде. Гейт заводится зелёным — иначе его первым же делом
+# научатся не читать.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Новый толчок в ту же ветку отменяет предыдущий прогон: смысл имеет последний.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Бэкенд — линтер, формат, типы, тесты
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: analyst
+          POSTGRES_PASSWORD: analyst
+          POSTGRES_DB: analyst_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U analyst -d analyst_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://analyst:analyst@localhost:5432/analyst_test
+      # Отдельное имя, потому что наличие DATABASE_URL говорит лишь о том, что
+      # приложение настроено, а не о том, что рядом стоит одноразовая база.
+      TEST_DATABASE_URL: postgresql+asyncpg://analyst:analyst@localhost:5432/analyst_test
+      REDIS_URL: redis://localhost:6379/0
+      # Значения-заглушки: обращения к обеим службам в тестах подменяются,
+      # существовать они обязаны лишь для того, чтобы Settings собрался.
+      MEFI_API_KEY: test-key
+      ANTHROPIC_API_KEY: test-key
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Установить зависимости
+        run: pip install -e ".[dev]"
+
+      - name: Линтер
+        run: ruff check .
+
+      - name: Формат
+        run: ruff format --check .
+
+      - name: Типы
+        run: mypy
+
+      - name: Миграции
+        run: alembic upgrade head
+
+      - name: Тесты
+        # Без базы 39 из них пропускаются. Здесь база есть, поэтому пропусков
+        # быть не должно ни одного, кроме трёх помеченных явно.
+        run: pytest -q
+
+  frontend:
+    name: Фронтенд — линтер, типы, тесты, сборка
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Установить зависимости
+        # --frozen-lockfile: расхождение lock-файла с package.json должно
+        # останавливать прогон, а не молча разрешаться.
+        run: pnpm install --frozen-lockfile
+
+      - name: Линтер
+        run: pnpm lint
+
+      - name: Типы
+        run: pnpm typecheck
+
+      - name: Тесты
+        run: pnpm vitest run
+
+      - name: Сборка
+        run: pnpm build

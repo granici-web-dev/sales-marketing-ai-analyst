@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     """Typed configuration loaded from environment variables and .env file.
 
     All secrets are read from the environment — never hardcoded.
-    Required fields (database_url, redis_url, jwt_secret_key) must be set
-    via environment variables or .env file; startup will fail if missing.
+    Required fields (database_url, redis_url, mefi_api_key) must be set via
+    environment variables or a .env file; startup fails if any is missing.
     """
 
     model_config = SettingsConfigDict(
@@ -37,8 +37,8 @@ class Settings(BaseSettings):
     # Multi-tenancy seam (D-05): hardcoded for MVP1-3; replaced by JWT claim in Iteration 4
     sofa_belle_tenant_id: str = "00000000-0000-0000-0000-000000000001"
 
-    # Движок (assistwidget) — источник личности. Пусто значит «сводить не с чем»:
-    # вход через движок отключён, и остаётся собственный вход по паролю.
+    # Движок (assistwidget) — источник личности. Своего входа у кабинета нет,
+    # поэтому пустое значение означает, что войти не сможет никто.
     engine_base_url: str = ""
     # Сколько держать разобранную сессию, прежде чем спросить движок снова.
     # Отзыв в движке действует с этой задержкой, поэтому она маленькая.

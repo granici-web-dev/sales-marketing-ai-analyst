@@ -93,6 +93,49 @@ Nothing here is speculative — every claim was measured against the code.
       failing on `chat.py`'s own comments explaining why it is one. 36 tests
       still skip for want of `TEST_DATABASE_URL`.
 
+- [x] **CI exists.** `.github/workflows/ci.yml`, two jobs. Backend: ruff,
+      `ruff format --check`, mypy, `alembic upgrade head`, pytest against a
+      postgres and a redis service. Frontend: eslint, tsc, vitest, `next build`,
+      with `--frozen-lockfile`. It was made green before it was switched on:
+      a gate that arrives red teaches people to stop reading it.
+
+- [x] **54 `noqa` markers suppressed rules that were not enabled.** `BLE` is on,
+      so its 28 markers now mean something. `PLC0415` is off *by name*: deferred
+      imports are the design here (INFRA-05, fork safety), 442 of them are
+      deliberate, and the rule asks for the opposite — its 97 markers became
+      plain comments. `RUF100` is on, which is the systemic fix: a marker that
+      outlives its rule is now itself an error.
+
+- [x] **Linter output was 1 033 lines; it is 0.** 589 of them were `E402` caused
+      by `from __future__ import annotations` sitting *above* the module
+      docstring in 130 of 200 files — which meant those modules had no docstring
+      at all, only an inert string expression. Real docstrings went 22 → 151.
+      `B008` is ignored with a note (it is `Depends()`); `E501` is ignored
+      because `ruff format` owns line length for code and what remains is
+      Romanian prompt text and SQL. The formatter ran once over 102 files;
+      that revision is in `.git-blame-ignore-revs`.
+
+- [x] **`mypy` was declared `strict` and not installed.** 212 errors on first
+      run, now 0. The clusters: `Tool` declared its handler as taking any
+      `BaseModel` (callable parameters are contravariant — it claimed one tool's
+      handler could be called with another's input); eight signatures said
+      `object` where a real type existed; `Result.rowcount` where DML returns a
+      `CursorResult`; plain dicts where the Anthropic SDK has parameter types.
+      One relaxation kept and named: `disallow_any_generics` off, 138 bare
+      `dict`/`list` annotations, a breadth debt rather than a defect.
+
+- [x] **39 integration tests had never run; 24 of them failed.** Found by
+      standing up the database for CI. A module-scoped async engine against
+      function-scoped event loops; a `get_current_user` override that identified
+      the user but never set the tenant; raw SQL against three columns that never
+      existed; an async test calling a Celery task that does `asyncio.run()`
+      internally. Two tests asserted things the code contradicts on purpose,
+      and the code was right both times. With a database: 572 pass, 3 skip.
+
+- [x] **`pnpm-lock.yaml` had drifted.** It still listed `jose`, removed from
+      `package.json` when the token went. `--frozen-lockfile` caught it on the
+      first run — before the workflow was ever pushed.
+
 ---
 
 ## Before the next deploy
@@ -121,33 +164,7 @@ Nothing here is speculative — every claim was measured against the code.
 
 ## Before CI can be trusted
 
-- [ ] **54 `noqa` markers suppress rules that are not enabled.** 28
-      `# noqa: BLE001`, 26 `# noqa: PLC0415`; `[tool.ruff.lint] select` lists
-      `E F I N UP S B A COM C4 PT RET SIM TID` — no `BLE`, no `PLC`. The
-      broad-catch discipline is real as a convention and unenforced as
-      configuration, while the markers make it look enforced.
-      *Fix:* add `BLE` and `PLC` to `select`.
-
-- [ ] **Linter output is 1 033 lines, of which a handful matter.** 344 `E402`
-      (almost all from `from __future__ import annotations` sitting above the
-      module docstring), 91 `E501`, 38 `B008` (which is `Depends()` and
-      `Query()`, the FastAPI idiom, not a defect), 12 real `F401`.
-      Nothing breaks, but a linter with that output will never be a gate, and the
-      thirteenth real finding is invisible inside it.
-      *Fix:* `B008` into `ignore` with a note about FastAPI, settle the
-      docstring/`__future__` order, run `ruff check --fix` for the 190 automatic
-      ones.
-
-- [ ] **`mypy` is configured `strict = true` and is not installed.** Never run,
-      so the size of the debt is unknown.
-      *Fix:* add it to dev extras and run it once to find out. If the debt is
-      large, either lower strictness to something true or enable per-module.
-      Declared-and-unchecked is worse than honestly off.
-
-- [ ] **No CI at all.** No `.github/workflows`, nothing. 511 backend tests and 53
-      frontend tests run only when someone runs them.
-      *Blocked on:* the three items above, otherwise the gate is red on arrival.
-      Phase 9.
+Done. All four, plus what the work uncovered — see *Done* above for the detail.
 
 ---
 
