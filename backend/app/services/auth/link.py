@@ -14,7 +14,14 @@
 
 Привязка ставится один раз при подключении клиента:
 
-    UPDATE tenants SET engine_tenant_id = '<uuid из движка>' WHERE slug = '...';
+    python -m app.cli tenants link <slug> <uuid из движка>
+
+Раньше здесь стоял UPDATE, который следовало выполнить руками. Шаг, живущий
+в комментарии, — не процедура: его нельзя ни повторить, ни проверить, ни
+запретить сделать неправильно. Команда отказывается переставить готовую
+привязку без явного `--force` и не даёт привязать одного арендатора движка
+к двум клиентам; при запуске приложение вслух говорит, сколько клиентов
+осталось непривязанными.
 """
 
 from __future__ import annotations
@@ -24,10 +31,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.tenancy import set_tenant_id
-from app.models.tenant import Tenant
 from app.models.user import User
 from app.schemas.auth import UserOut
 from app.services.auth.engine_session import EngineIdentity
+from app.services.tenants import directory
 
 logger = structlog.get_logger(__name__)
 
@@ -42,25 +49,14 @@ async def resolve_local_user(session: AsyncSession, identity: EngineIdentity) ->
     Raises:
         TenantNotLinkedError: аналитик этому клиенту не подключён.
     """
-    # Единственный запрос во всём приложении, который выполняется ДО того, как
-    # арендатор известен, — потому что им арендатор и определяется.
+    # Единственный запрос на пути входа, который выполняется ДО того, как
+    # арендатор известен, — потому что им арендатор и определяется. Он и все
+    # прочие обращения к `tenants` живут в `services/tenants/directory.py`,
+    # где объяснено, почему идут мимо ORM.
     #
-    # Идёт он мимо ORM намеренно. Затвор изоляции (`db/session.py`) отвергает
-    # ЛЮБОЙ ORM-запрос без тенантного контекста, не разбирая, к какой таблице.
-    # Это правильная строгость: разбирать «эта таблица тенантная, а эта нет» на
-    # каждом запросе значит однажды разобрать неверно. Здесь же таблица
-    # `tenants` не тенантная по определению — арендатор ею и является, —
-    # поэтому запрос выполняется на соединении сессии, где затвор не стоит.
-    #
-    # Соединение то же самое: своей транзакции здесь не заводится.
+    # Соединение то же самое, что у сессии: своей транзакции здесь не заводится.
     connection = await session.connection()
-    tenant_id = (
-        await connection.execute(
-            select(Tenant.__table__.c.id).where(
-                Tenant.__table__.c.engine_tenant_id == identity.engine_tenant_id
-            )
-        )
-    ).scalar_one_or_none()
+    tenant_id = await directory.find_id_by_engine_tenant(connection, identity.engine_tenant_id)
 
     if tenant_id is None:
         logger.warning(

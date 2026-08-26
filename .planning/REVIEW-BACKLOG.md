@@ -114,6 +114,28 @@ Nothing here is speculative — every claim was measured against the code.
       a locale that does not exist — the last reproducing the next-intl bug and
       caught only by the request half.
 
+- [x] **Linking a client is a command, not a comment.** `python -m app.cli
+      tenants list | link <slug> <uuid> [--force] | unlink <slug>`. The step
+      used to be a `UPDATE tenants SET engine_tenant_id = …` written in a
+      docstring, and a comment cannot refuse anything. The command refuses to
+      point one engine tenant at two clients (that would let one client's login
+      land in another's data) and refuses to move an existing link without
+      `--force`. It is idempotent: re-linking to the same value says so and
+      changes nothing.
+      Every query against `tenants` — the login lookup, the startup count, the
+      command — now lives in `services/tenants/directory.py`, so the one place
+      that must bypass the ORM isolation gate is documented once instead of
+      three times.
+      On startup the backend logs how many tenants are unlinked, with the
+      command to fix them; a database that is down is logged, not swallowed,
+      and does not stop the app. Five mutations seen red: a taken engine tenant
+      allowed, a link replaced without `--force`, `count_unlinked` counting
+      everything, the warning without its command, and the failure path made
+      silent. 589 tests with a database, up from 572.
+      The README's `# Create first admin user (script will be added later)`
+      went with it — that module was never written and never will be, because
+      password login is gone.
+
 - [x] **CI exists.** `.github/workflows/ci.yml`, two jobs. Backend: ruff,
       `ruff format --check`, mypy, `alembic upgrade head`, pytest against a
       postgres and a redis service. Frontend: eslint, tsc, vitest, `next build`,
@@ -161,14 +183,9 @@ Nothing here is speculative — every claim was measured against the code.
 
 ## Before the next deploy
 
-- [ ] **Linking a client is a manual SQL statement.** A client of the engine
-      reaches the analyst only once `tenants.engine_tenant_id` points at their
-      engine tenant, and nothing sets it. Deliberate — an analyst tenant with
-      no CRM sync is an empty cabinet, and creating one on first login would
-      let someone in to guess whether it is broken. But the step lives in a
-      comment, and a comment is not a procedure.
-      *Fix:* a command that links by client, and a check at startup that says
-      out loud how many tenants are unlinked.
+Empty. Both items are in *Done* above.
+
+---
 
 ---
 

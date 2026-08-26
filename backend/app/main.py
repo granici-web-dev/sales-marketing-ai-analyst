@@ -17,12 +17,51 @@ from app.core.logging import configure_logging
 logger = structlog.get_logger(__name__)
 
 
+async def _report_unlinked_tenants() -> None:
+    """Сказать вслух, сколько клиентов не привязано к движку.
+
+    Непривязанный арендатор — это клиент, которого движок пустит, а аналитик
+    не найдёт: человек получит отказ без объяснения, и разбираться придётся по
+    журналу. Раньше о привязке напоминал только комментарий в исходниках.
+
+    Отказ базы здесь не должен мешать приложению подняться: это отчёт о
+    состоянии, а не условие работы. Но и молчать о нём нельзя — иначе строка
+    «непривязанных нет» будет означать сразу две разные вещи.
+    """
+    from sqlalchemy.ext.asyncio import create_async_engine  # deferred (INFRA-05)
+    from sqlalchemy.pool import NullPool
+
+    from app.services.tenants import directory  # deferred (INFRA-05)
+
+    engine = create_async_engine(settings.database_url, poolclass=NullPool)
+    try:
+        async with engine.connect() as conn:
+            unlinked = await directory.count_unlinked(conn)
+            total = len(await directory.list_all(conn))
+    except Exception:
+        logger.exception("startup.tenant_link_check_failed")
+        return
+    finally:
+        await engine.dispose()
+
+    if unlinked:
+        logger.warning(
+            "startup.tenants_unlinked",
+            unlinked=unlinked,
+            total=total,
+            hint="python -m app.cli tenants link <slug> <engine-tenant-uuid>",
+        )
+    else:
+        logger.info("startup.tenants_all_linked", total=total)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # configure_logging only — set_tenant_id MUST NOT be called here.
     # ContextVars set in lifespan do not propagate to HTTP request coroutines;
     # each request runs in its own asyncio task with a fresh context copy (D-05).
     configure_logging(settings.log_level)
+    await _report_unlinked_tenants()
     yield
 
 

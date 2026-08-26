@@ -53,9 +53,33 @@ docker compose up -d
 # Run database migrations
 docker compose exec backend alembic upgrade head
 
-# Create first admin user (script will be added later)
-# docker compose exec backend python -m app.scripts.create_admin
+# Link the client to its engine tenant — without this nobody can log in
+docker compose exec backend python -m app.cli tenants list
+docker compose exec backend python -m app.cli tenants link <slug> <engine-tenant-uuid>
 ```
+
+### Linking a client
+
+Identity comes from the engine (assistwidget); the analyst has no login of its
+own. A client reaches the cabinet only once `tenants.engine_tenant_id` points at
+their engine tenant, and nothing sets that automatically — an analyst tenant with
+no CRM sync is an empty cabinet, and creating one on first login would let
+somebody in to guess whether it is broken.
+
+Get the engine tenant id with `npm run client list` in the engine repository,
+then:
+
+```bash
+python -m app.cli tenants list                      # who is linked, who is not
+python -m app.cli tenants link <slug> <uuid>        # link
+python -m app.cli tenants link <slug> <uuid> --force  # move an existing link
+python -m app.cli tenants unlink <slug>             # revoke access
+```
+
+The command refuses to point one engine tenant at two clients, and refuses to
+move an existing link without `--force`: a moved link sends whoever logs in next
+into somebody else's data. On startup the backend logs how many tenants are
+still unlinked — a client who cannot log in should be visible before they call.
 
 The application will be available at:
 
