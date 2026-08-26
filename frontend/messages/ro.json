@@ -356,6 +356,7 @@
     "knowledge": "Bază de cunoștințe",
     "appearance": "Aspect",
     "install": "Instalare",
+    "drive": "Google Drive",
     "knowledgeScreen": {
       "addHeading": "Adaugă materiale",
       "pageUrl": "Adresa paginii",
@@ -490,6 +491,31 @@
       "save": "Salvează",
       "saved": "Salvat",
       "notifyNote": "Anunțul pleacă la două minute după ce vizitatorul lasă un contact — atât cât îi ia asistentului să afle restul detaliilor. Câmpul gol oprește anunțurile; cererile rămân oricum aici."
+    },
+    "driveScreen": {
+      "heading": "Dosarul cu materiale",
+      "loading": "Se încarcă…",
+      "notConnected": "Dosarul nu este conectat. Conectarea se face o singură dată și cere confirmare în browser — cereți acest lucru persoanei care a configurat sistemul.",
+      "lastCheck": "Ultima verificare: {when} · verificăm și singuri la fiecare {every} minute",
+      "never": "încă niciuna",
+      "counts": "adăugate {added} · actualizate {updated} · șterse {removed} · neschimbate {same}",
+      "errors": "erori {n}",
+      "syncNow": "Sincronizează acum",
+      "syncing": "Se sincronizează…",
+      "stalled": "Sincronizarea nu s-a încheiat în 90 de secunde. Serviciul care citește dosarul pare oprit — anunțați persoana care a configurat sistemul.",
+      "howItWorks": "Puneți un fișier în dosar și apăsați „Sincronizează acum” — apare mai jos. Scoateți-l din dosar și botul nu îl mai folosește: așa retrageți materialele depășite.",
+      "alsoSitePages": "Pe lângă fișierele din dosar, botul citește și cele {n} pagini preluate de pe site-ul dumneavoastră.",
+      "gapsClosed": "După materialele adăugate, {n} întrebări la care botul nu știa să răspundă s-au închis. Le vedeți în Analize.",
+      "gapsReopened": "{n} întrebări au revenit în listă: materialul din care botul răspundea la ele nu mai este în dosar.",
+      "filesHeading": "Fișiere din dosar",
+      "unreadable": "{n} necitit(e)",
+      "empty": "Dosarul este gol. Puneți în el prețuri, condiții de livrare, garanție — orice răspundeți zilnic la telefon.",
+      "status": {
+        "indexed": "Indexat",
+        "processing": "Se procesează",
+        "uploaded": "În așteptare",
+        "failed": "Eșuat"
+      }
     }
   }
 }

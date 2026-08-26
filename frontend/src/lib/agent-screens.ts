@@ -18,6 +18,10 @@ const CHATBOT: AgentScreen[] = [
   { id: "conversations" },
   { id: "analytics" },
   { id: "knowledge" },
+  // Рядом с базой знаний: обе вкладки про материалы, из которых бот отвечает.
+  // Какая из них видна — решает движок, а не эта таблица: у клиента с папкой
+  // на Drive вторая дорога обычно только заставляет выбирать, куда класть файл.
+  { id: "drive" },
   { id: "appearance" },
   { id: "install" },
 ];
@@ -26,4 +30,5 @@ const SCREENS: Record<string, AgentScreen[]> = {
   chatbot: CHATBOT,
 };
 
-export const screensOf = (agentId: string): AgentScreen[] => SCREENS[agentId] ?? [];
+export const screensOf = (agentId: string): AgentScreen[] =>
+  SCREENS[agentId] ?? [];

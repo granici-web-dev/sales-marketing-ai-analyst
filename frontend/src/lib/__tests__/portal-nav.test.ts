@@ -10,7 +10,9 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-const cookieStore = vi.hoisted(() => ({ value: undefined as string | undefined }));
+const cookieStore = vi.hoisted(() => ({
+  value: undefined as string | undefined,
+}));
 
 vi.mock("next/headers", () => ({
   cookies: async () => ({
@@ -21,20 +23,53 @@ vi.mock("next/headers", () => ({
   }),
 }));
 
-import { HOST_AGENT, HOST_AGENT_HREF, isLocked } from "@/lib/portal-nav";
+import {
+  HOST_AGENT,
+  HOST_AGENT_HREF,
+  isLocked,
+  isScreenVisible,
+} from "@/lib/portal-nav";
 import { loadPortalNav } from "@/lib/portal-nav.server";
 
 const ENGINE_AGENTS = [
-  { id: "chatbot", access: "unlocked", tier: "basic", priceFrom: 149, daysLeft: null },
-  { id: "data-analyst", access: "unavailable", tier: null, priceFrom: null, daysLeft: null },
-  { id: "voice-assistant", access: "locked", tier: null, priceFrom: 249, daysLeft: null },
+  {
+    id: "chatbot",
+    access: "unlocked",
+    tier: "basic",
+    priceFrom: 149,
+    daysLeft: null,
+  },
+  {
+    id: "data-analyst",
+    access: "unavailable",
+    tier: null,
+    priceFrom: null,
+    daysLeft: null,
+  },
+  {
+    id: "voice-assistant",
+    access: "locked",
+    tier: null,
+    priceFrom: 249,
+    daysLeft: null,
+  },
 ];
 
-function engineFetch(agentsStatus: number, meStatus = 200) {
+function engineFetch(
+  agentsStatus: number,
+  meStatus = 200,
+  hiddenScreens?: string[],
+) {
   return vi.fn(async (url: string) => {
     const body = url.endsWith("/admin/api/agents")
       ? { agents: ENGINE_AGENTS }
-      : { email: "client@davoq.md", tenant: { name: "Sofa Belle" } };
+      : {
+          email: "client@davoq.md",
+          tenant: {
+            name: "Sofa Belle",
+            ...(hiddenScreens ? { hiddenScreens } : {}),
+          },
+        };
     const status = url.endsWith("/admin/api/agents") ? agentsStatus : meStatus;
     return new Response(JSON.stringify(body), {
       status,
@@ -111,6 +146,52 @@ describe("loadPortalNav", () => {
 
     const nav = await loadPortalNav();
 
-    expect(nav.account).toEqual({ email: "client@davoq.md", tenantName: "Sofa Belle" });
+    expect(nav.account).toEqual({
+      email: "client@davoq.md",
+      tenantName: "Sofa Belle",
+    });
+  });
+});
+
+describe("скрытые экраны", () => {
+  beforeEach(() => {
+    process.env.ENGINE_BASE_URL = "http://engine.test";
+    cookieStore.value = "session-token";
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("список берётся у движка, а не вычисляется здесь", async () => {
+    vi.stubGlobal("fetch", engineFetch(200, 200, ["drive", "connectors"]));
+
+    const nav = await loadPortalNav();
+
+    expect(nav.hiddenScreens).toEqual(["drive", "connectors"]);
+    expect(isScreenVisible(nav.hiddenScreens, "drive")).toBe(false);
+    expect(isScreenVisible(nav.hiddenScreens, "knowledge")).toBe(true);
+  });
+
+  it("движок промолчал про экраны — не прячем ничего", async () => {
+    // Старый движок без этого поля не должен запирать кабинет целиком.
+    vi.stubGlobal("fetch", engineFetch(200));
+
+    const nav = await loadPortalNav();
+
+    expect(nav.hiddenScreens).toEqual([]);
+    expect(isScreenVisible(nav.hiddenScreens, "drive")).toBe(true);
+  });
+
+  it("не вошли в движок — список пуст, но и агентов движка нет", async () => {
+    // Пустой список тогда означает «спросить было не у кого», а не «всё открыто»:
+    // чужих вкладок в этом случае всё равно не рисуют.
+    cookieStore.value = undefined;
+    vi.stubGlobal("fetch", engineFetch(200));
+
+    const nav = await loadPortalNav();
+
+    expect(nav.hiddenScreens).toEqual([]);
+    expect(nav.agents.map((a) => a.id)).toEqual([HOST_AGENT]);
   });
 });

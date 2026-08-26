@@ -21,13 +21,27 @@ export const loadPortalNav = cache(async (): Promise<PortalNav> => {
   // сложились бы в задержку на каждой странице кабинета.
   const [result, me] = await Promise.all([
     fetchPortalAgents(),
-    engineGet<{ email: string; tenant: { name: string } | null }>("/admin/api/me"),
+    engineGet<{
+      email: string;
+      tenant: { name: string; hiddenScreens?: string[] } | null;
+    }>("/admin/api/me"),
   ]);
 
-  if (!result.ok) return { agents: [HOST_AGENT_NAV], account: null, linked: false };
+  if (!result.ok) {
+    return {
+      agents: [HOST_AGENT_NAV],
+      account: null,
+      linked: false,
+      hiddenScreens: [],
+    };
+  }
 
   return {
     linked: true,
+    // Пустой список, если движок не ответил: у аналитика своих скрытых экранов
+    // нет, а рисовать чужие вкладки всё равно нечем — агентов движка в этом
+    // случае в списке не будет.
+    hiddenScreens: me.ok ? (me.data.tenant?.hiddenScreens ?? []) : [],
     account: me.ok
       ? { email: me.data.email, tenantName: me.data.tenant?.name ?? null }
       : null,

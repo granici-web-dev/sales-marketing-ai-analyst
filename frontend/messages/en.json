@@ -356,6 +356,7 @@
     "knowledge": "Knowledge base",
     "appearance": "Appearance",
     "install": "Installation",
+    "drive": "Google Drive",
     "knowledgeScreen": {
       "addHeading": "Add material",
       "pageUrl": "Page address",
@@ -490,6 +491,31 @@
       "save": "Save",
       "saved": "Saved",
       "notifyNote": "The notice goes out two minutes after the visitor leaves a contact — the time the assistant needs to learn the rest. An empty field stops the notices; the requests stay here either way."
+    },
+    "driveScreen": {
+      "heading": "Materials folder",
+      "loading": "Loading…",
+      "notConnected": "The folder is not connected. Connecting happens once and needs a confirmation in the browser — ask whoever set the system up.",
+      "lastCheck": "Last check: {when} · we also check every {every} minutes on our own",
+      "never": "none yet",
+      "counts": "added {added} · updated {updated} · removed {removed} · unchanged {same}",
+      "errors": "errors {n}",
+      "syncNow": "Sync now",
+      "syncing": "Syncing…",
+      "stalled": "The sync did not finish within 90 seconds. The service that reads the folder looks stopped — tell whoever set the system up.",
+      "howItWorks": "Put a file in the folder and press “Sync now” — it shows up below. Take it out of the folder and the bot stops using it: that is how you withdraw outdated material.",
+      "alsoSitePages": "Besides the files in the folder, the bot also reads the {n} pages taken from your website.",
+      "gapsClosed": "After the material you added, {n} questions the bot could not answer are now closed. You can see them under Analytics.",
+      "gapsReopened": "{n} questions came back to the list: the material the bot answered them from is no longer in the folder.",
+      "filesHeading": "Files in the folder",
+      "unreadable": "{n} unreadable",
+      "empty": "The folder is empty. Put prices, delivery terms, warranty in it — whatever you answer on the phone every day.",
+      "status": {
+        "indexed": "Indexed",
+        "processing": "Processing",
+        "uploaded": "Pending",
+        "failed": "Failed"
+      }
     }
   }
 }

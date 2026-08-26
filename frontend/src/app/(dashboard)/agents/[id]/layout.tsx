@@ -4,7 +4,7 @@ import { Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AgentTabs } from "@/components/portal/agent-tabs";
 import { screensOf } from "@/lib/agent-screens";
-import { isLocked } from "@/lib/portal-nav";
+import { isLocked, isScreenVisible } from "@/lib/portal-nav";
 import { loadPortalNav } from "@/lib/portal-nav.server";
 import type { AgentAccess } from "@/lib/portal-agents";
 
@@ -23,6 +23,9 @@ const TONE: Record<AgentAccess, "ok" | "warn" | "neutral"> = {
  *
  * Запертому вкладок не показываем. Вкладка, ведущая к настройкам того, чего
  * у человека нет, — это приглашение потрогать чужое.
+ *
+ * Скрытые экраны тоже не рисуем: движок отвечает на них отказом, и вкладка,
+ * ведущая к сообщению «раздел недоступен», хуже отсутствующей вкладки.
  */
 export default async function AgentLayout({
   children,
@@ -39,20 +42,37 @@ export default async function AgentLayout({
   if (!agent) notFound();
 
   const locked = isLocked(agent.access);
-  const screens = locked ? [] : screensOf(agent.id);
+  const screens = locked
+    ? []
+    : screensOf(agent.id).filter((s) =>
+        isScreenVisible(nav.hiddenScreens, s.id),
+      );
 
   return (
     <div className="space-y-6">
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          {locked && <Lock size={15} className="text-muted-foreground" aria-hidden="true" />}
-          <h1 className="text-xl font-semibold tracking-tight">{t(`names.${agent.id}`)}</h1>
-          <Badge variant={TONE[agent.access]}>{t(`access.${agent.access}`)}</Badge>
+          {locked && (
+            <Lock
+              size={15}
+              className="text-muted-foreground"
+              aria-hidden="true"
+            />
+          )}
+          <h1 className="text-xl font-semibold tracking-tight">
+            {t(`names.${agent.id}`)}
+          </h1>
+          <Badge variant={TONE[agent.access]}>
+            {t(`access.${agent.access}`)}
+          </Badge>
         </div>
 
         {screens.length > 0 && (
           <AgentTabs
-            tabs={screens.map((s) => ({ href: `/agents/${agent.id}/${s.id}`, labelKey: s.id }))}
+            tabs={screens.map((s) => ({
+              href: `/agents/${agent.id}/${s.id}`,
+              labelKey: s.id,
+            }))}
             namespace="agentScreens"
             label={t(`names.${agent.id}`)}
           />
