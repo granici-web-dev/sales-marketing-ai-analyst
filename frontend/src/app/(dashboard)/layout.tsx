@@ -1,52 +1,31 @@
-"use client";
-
-import { isServer, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Providers } from "@/components/providers";
 import Sidebar from "@/components/sidebar";
 import Topbar from "@/components/topbar";
-import DataFreshnessBanner from "@/components/data-freshness-banner";
+import { loadPortalNav } from "@/lib/portal-nav.server";
 
-function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 5 * 60 * 1000, // 5 minutes — D-11
-        refetchOnWindowFocus: false, // D-11
-      },
-    },
-  });
-}
-
-let browserQueryClient: QueryClient | undefined = undefined;
-
-function getQueryClient() {
-  if (isServer) {
-    // Server: always make a new query client (new per request)
-    return makeQueryClient();
-  }
-  // Browser: use singleton to avoid re-creating client on suspense
-  if (!browserQueryClient) browserQueryClient = makeQueryClient();
-  return browserQueryClient;
-}
-
-export default function DashboardLayout({
+/**
+ * Оболочка портала.
+ *
+ * Серверная намеренно: слева стоят агенты клиента, а знает о них движок.
+ * Рисовать их у клиента значило бы отдать список пустым и дорисовать после
+ * загрузки — то есть показать кабинет без агентов тому, у кого они есть.
+ */
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // NOTE: Do NOT use useState for the QueryClient — see Pattern 2 in RESEARCH.md
-  // Using getQueryClient() prevents cache loss when a child suspends on initial render.
-  const queryClient = getQueryClient();
+  const nav = await loadPortalNav();
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <Providers>
       <div className="min-h-screen">
-        <Sidebar />
-        <Topbar />
-        <main className="ml-0 md:ml-[240px] mt-14 p-4 md:p-8 bg-white min-h-[calc(100vh-56px)]">
-          <DataFreshnessBanner />
+        <Sidebar nav={nav} />
+        <Topbar nav={nav} />
+        <main className="ml-0 md:ml-[248px] mt-14 min-h-[calc(100vh-56px)] p-4 md:p-8">
           {children}
         </main>
       </div>
-    </QueryClientProvider>
+    </Providers>
   );
 }

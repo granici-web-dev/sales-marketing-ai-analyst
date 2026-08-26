@@ -22,7 +22,8 @@
     "chat": "Chat AI",
     "integrations": "Integrări",
     "settings": "Setări",
-    "agents": "Agenți"
+    "agents": "Agenți",
+    "subscription": "Abonament"
   },
   "placeholder": {
     "comingSoon": "În curând",
@@ -272,7 +273,8 @@
       "password": "Parolă",
       "submit": "Intră",
       "invalid": "Email sau parolă incorectă.",
-      "unavailable": "Nu am putut ajunge la motor. Încercați din nou."
+      "unavailable": "Nu am putut ajunge la motor. Încercați din nou.",
+      "sidebarHint": "Intrați în contul Davoq ca să vedeți toți agenții."
     },
     "unlock": "Pornește",
     "open": "Deschide",
@@ -303,6 +305,23 @@
       "order-status": "Arată clientului unde e comanda, fără să sune.",
       "content-engine": "Pregătește postări din lucrările dumneavoastră.",
       "data-analyst": "Citește datele din CRM și spune unde se pierd bani."
+    },
+    "subscriptionHeading": "Abonament",
+    "subscriptionLead": "Ce este pornit la dumneavoastră și ce se poate porni.",
+    "signOut": "Ieși",
+    "page": {
+      "unavailable": "Acest agent este încă în lucru. Când va fi gata, apare aici — fără să cereți nimic.",
+      "locked": "Agentul nu este pornit. Se pornește din abonament, împreună cu planul care îl include.",
+      "elsewhere": "Agentul este pornit și se administrează în panoul Davoq."
     }
+  },
+  "settings": {
+    "heading": "Setări",
+    "account": "Cont Davoq",
+    "client": "Client",
+    "email": "Email",
+    "elsewhere": "Setările agenților",
+    "elsewhereLead": "Marca, domeniile și textele fiecărui agent se administrează în panoul Davoq — acolo unde lucrează agentul.",
+    "openPanel": "Deschide panoul Davoq"
   }
 }

@@ -22,7 +22,8 @@
     "chat": "AI Chat",
     "integrations": "Integrations",
     "settings": "Settings",
-    "agents": "Agents"
+    "agents": "Agents",
+    "subscription": "Subscription"
   },
   "placeholder": {
     "comingSoon": "Coming soon",
@@ -272,7 +273,8 @@
       "password": "Password",
       "submit": "Sign in",
       "invalid": "Wrong email or password.",
-      "unavailable": "Could not reach the engine. Try again."
+      "unavailable": "Could not reach the engine. Try again.",
+      "sidebarHint": "Sign in to your Davoq account to see every agent."
     },
     "unlock": "Turn on",
     "open": "Open",
@@ -303,6 +305,23 @@
       "order-status": "Shows the customer where their order is, without a phone call.",
       "content-engine": "Prepares posts from your own work.",
       "data-analyst": "Reads the CRM and says where money is leaking."
+    },
+    "subscriptionHeading": "Subscription",
+    "subscriptionLead": "What is running for you, and what can be.",
+    "signOut": "Sign out",
+    "page": {
+      "unavailable": "This agent is still being built. When it is ready it shows up here, with nothing to ask for.",
+      "locked": "This agent is not running. It is turned on from the subscription, together with the plan that includes it.",
+      "elsewhere": "This agent is running and is managed in the Davoq panel."
     }
+  },
+  "settings": {
+    "heading": "Settings",
+    "account": "Davoq account",
+    "client": "Client",
+    "email": "Email",
+    "elsewhere": "Agent settings",
+    "elsewhereLead": "Branding, domains and each agent's copy are managed in the Davoq panel, where the agent runs.",
+    "openPanel": "Open the Davoq panel"
   }
 }

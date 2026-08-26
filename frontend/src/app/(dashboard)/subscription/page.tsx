@@ -3,11 +3,9 @@ import Link from "next/link";
 import { ArrowRight, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PortalSignIn } from "@/components/portal/portal-sign-in";
-import {
-  fetchPortalAgents,
-  type AgentAccess,
-  type PortalAgent,
-} from "@/lib/portal-agents";
+import { isLocked, type NavAgent } from "@/lib/portal-nav";
+import { loadPortalNav } from "@/lib/portal-nav.server";
+import type { AgentAccess } from "@/lib/portal-agents";
 
 /* Ведомость, а не сетка карточек. Человек пришёл посмотреть, что у него
    есть и чего нет, — это список владений, и читается он строками: имя
@@ -22,23 +20,22 @@ const TONE: Record<AgentAccess, "ok" | "warn" | "neutral"> = {
   unavailable: "neutral",
 };
 
-export default async function AgentsPage() {
+export default async function SubscriptionPage() {
   const t = await getTranslations("agents");
-  const result = await fetchPortalAgents();
+  const nav = await loadPortalNav();
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold">{t("heading")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("lead")}</p>
+        <h1 className="text-xl font-semibold tracking-tight">{t("subscriptionHeading")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("subscriptionLead")}</p>
       </div>
 
-      {/* Не вошёл — на месте списка вход, а не пустая ведомость и не семь
-          замков. Семь замков были бы враньём: мы не знаем, что у человека
-          куплено, пока не знаем, кто он. */}
-      {result.ok ? (
+      {/* Не вошёл — на месте ведомости вход, а не семь замков. Семь замков
+          были бы враньём: мы не знаем, что куплено, пока не знаем, кто он. */}
+      {nav.linked ? (
         <ul className="divide-y divide-border overflow-hidden rounded-card border bg-card">
-          {result.data.map((agent) => (
+          {nav.agents.map((agent) => (
             <AgentRow key={agent.id} agent={agent} />
           ))}
         </ul>
@@ -49,15 +46,15 @@ export default async function AgentsPage() {
   );
 }
 
-async function AgentRow({ agent }: { agent: PortalAgent }) {
+async function AgentRow({ agent }: { agent: NavAgent }) {
   const t = await getTranslations("agents");
-  const open = agent.access === "unlocked" || agent.access === "expiring";
+  const locked = isLocked(agent.access);
 
   return (
     <li className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4 sm:px-5">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          {!open && (
+          {locked && (
             <Lock size={13} className="shrink-0 text-muted-foreground" aria-hidden="true" />
           )}
           <span className="font-medium">{t(`names.${agent.id}`)}</span>
@@ -73,40 +70,24 @@ async function AgentRow({ agent }: { agent: PortalAgent }) {
 
       <div className="flex shrink-0 items-center gap-3">
         {agent.access === "locked" && agent.priceFrom !== null && (
-          <>
-            <span className="text-sm text-muted-foreground tabular-nums">
-              {t("priceFrom", { price: agent.priceFrom })}
-            </span>
-            <button
-              type="button"
-              className="rounded-control bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
-            >
-              {t("unlock")}
-            </button>
-          </>
+          <span className="text-sm tabular-nums text-muted-foreground">
+            {t("priceFrom", { price: agent.priceFrom })}
+          </span>
         )}
 
-        {agent.access === "unavailable" && (
+        {agent.access === "unavailable" ? (
           /* Ни цены, ни кнопки. Оплата за непостроенного агента — это деньги
              за обещание, и никакая формулировка этого не исправляет. */
           <span className="text-sm text-muted-foreground">{t("comingSoon")}</span>
+        ) : (
+          <Link
+            href={agent.href}
+            className="inline-flex items-center gap-1.5 rounded-control border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
+          >
+            {agent.access === "locked" ? t("unlock") : t("open")}
+            <ArrowRight size={14} aria-hidden="true" />
+          </Link>
         )}
-
-        {open &&
-          (agent.href ? (
-            <Link
-              href={agent.href}
-              className="inline-flex items-center gap-1.5 rounded-control border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
-            >
-              {t("open")}
-              <ArrowRight size={14} aria-hidden="true" />
-            </Link>
-          ) : (
-            /* Открыт, но экранов здесь ещё нет: они живут в кабинете движка,
-               пока не перенесены. Врать кнопкой, которая никуда не ведёт,
-               хуже, чем сказать это. */
-            <span className="text-sm text-muted-foreground">{t("elsewhere")}</span>
-          ))}
       </div>
     </li>
   );

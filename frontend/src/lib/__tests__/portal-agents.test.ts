@@ -88,11 +88,8 @@ describe("fetchPortalAgents", () => {
     // Кеш здесь — это замок на оплаченном агенте: права меняются оплатой.
     expect(init.cache).toBe("no-store");
 
-    // Куда ведёт открытый раздел, знает это приложение, а не движок.
-    expect(result.data.map((a) => [a.id, a.href])).toEqual([
-      ["chatbot", null],
-      ["data-analyst", "/insights"],
-    ]);
+    // Ответ движка доезжает как есть: адреса разделов приделывает portal-nav.
+    expect(result.data).toEqual(AGENTS);
   });
 
   it("незаданный адрес движка — поломка настройки, а не «нет доступа»", async () => {

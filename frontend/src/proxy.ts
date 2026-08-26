@@ -29,7 +29,7 @@ const PUBLIC_PATHS = ["/login", "/api/v1/auth", "/api"];
  * Без действующей сессии страница не покажет ни одного агента: она получит
  * 401 и нарисует форму входа. Пустить сюда без сессии нечего — показывать
  * там нечего. */
-const ENGINE_AUTH_PATHS = ["/agents", "/portal"];
+const ENGINE_AUTH_PATHS = ["/", "/agents", "/portal", "/subscription", "/settings"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
