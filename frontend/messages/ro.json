@@ -295,7 +295,8 @@
       "follow-up": "Follow-up automat",
       "order-status": "Statusul comenzii",
       "content-engine": "Motor de conținut",
-      "data-analyst": "Analist de vânzări"
+      "data-analyst": "Analist de vânzări",
+      "outreach": "Outreach"
     },
     "short": {
       "chatbot": "Răspunde 24/7 din materialele companiei și califică lead-ul.",
@@ -304,7 +305,8 @@
       "follow-up": "Revine la clienții care au tăcut și se oprește când răspund.",
       "order-status": "Arată clientului unde e comanda, fără să sune.",
       "content-engine": "Pregătește postări din lucrările dumneavoastră.",
-      "data-analyst": "Citește datele din CRM și spune unde se pierd bani."
+      "data-analyst": "Citește datele din CRM și spune unde se pierd bani.",
+      "outreach": "Caută clienți și parteneri prin campanii de email la rece: firme după segment, adrese verificate, scrisori pornite de la ceva concret despre destinatar."
     },
     "subscriptionHeading": "Abonament",
     "subscriptionLead": "Ce este pornit la dumneavoastră și ce se poate porni.",

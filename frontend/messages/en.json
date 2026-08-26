@@ -295,7 +295,8 @@
       "follow-up": "Automated follow-up",
       "order-status": "Order status",
       "content-engine": "Content engine",
-      "data-analyst": "Sales analyst"
+      "data-analyst": "Sales analyst",
+      "outreach": "Outreach"
     },
     "short": {
       "chatbot": "Answers around the clock from your own material and qualifies the lead.",
@@ -304,7 +305,8 @@
       "follow-up": "Returns to customers who went quiet, and stops when they reply.",
       "order-status": "Shows the customer where their order is, without a phone call.",
       "content-engine": "Prepares posts from your own work.",
-      "data-analyst": "Reads the CRM and says where money is leaking."
+      "data-analyst": "Reads the CRM and says where money is leaking.",
+      "outreach": "Finds customers and partners through cold email: companies by segment, verified addresses, letters written from something concrete about the recipient."
     },
     "subscriptionHeading": "Subscription",
     "subscriptionLead": "What is running for you, and what can be.",
