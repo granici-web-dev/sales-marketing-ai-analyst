@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import DataFreshnessBanner from "@/components/data-freshness-banner";
 import { AgentTabs, type AgentTab } from "@/components/portal/agent-tabs";
 
@@ -21,10 +22,16 @@ const TABS: AgentTab[] = [
   { href: "/integrations", labelKey: "integrations" },
 ];
 
-export default function AnalystLayout({ children }: { children: React.ReactNode }) {
+export default async function AnalystLayout({ children }: { children: React.ReactNode }) {
+  const t = await getTranslations("agents");
+  const name = t("names.data-analyst");
+
   return (
     <div className="space-y-6">
-      <AgentTabs agentId="data-analyst" tabs={TABS} />
+      <div className="space-y-3">
+        <h1 className="text-xl font-semibold tracking-tight">{name}</h1>
+        <AgentTabs tabs={TABS} namespace="nav" label={name} />
+      </div>
       {/* Свежесть данных — свойство аналитика: он один тянет их из CRM. */}
       <DataFreshnessBanner />
       {children}

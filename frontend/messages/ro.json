@@ -339,5 +339,77 @@
     "elsewhere": "Setările agenților",
     "elsewhereLead": "Marca, domeniile și textele fiecărui agent se administrează în panoul Davoq — acolo unde lucrează agentul.",
     "openPanel": "Deschide panoul Davoq"
+  },
+  "agentScreens": {
+    "knowledge": "Bază de cunoștințe",
+    "appearance": "Aspect",
+    "install": "Instalare",
+    "knowledgeScreen": {
+      "addHeading": "Adaugă materiale",
+      "pageUrl": "Adresa paginii",
+      "addPage": "Adaugă pagina",
+      "dropHint": "Trage aici un fișier .docx, .odt, .pdf, .md sau .html — sau alege unul",
+      "sending": "Se trimite…",
+      "listHeading": "Materiale indexate",
+      "loading": "Se încarcă…",
+      "empty": "Încă nimic. Adaugă prima pagină de pe site — botul va putea răspunde din ea în câteva secunde.",
+      "retry": "Reîncearcă",
+      "remove": "Șterge",
+      "status": {
+        "indexed": "Indexat",
+        "processing": "Se procesează",
+        "uploaded": "În așteptare",
+        "failed": "Eșuat"
+      }
+    },
+    "appearanceScreen": {
+      "loading": "Se încarcă…",
+      "presets": "Teme gata făcute",
+      "colours": "Culori",
+      "colour": {
+        "primary": "Culoare principală",
+        "bg": "Fundalul panoului",
+        "text": "Textul",
+        "userBubble": "Replica vizitatorului",
+        "botBubble": "Răspunsul botului"
+      },
+      "darkMode": "Tema întunecată",
+      "dark": {
+        "auto": "după setarea vizitatorului",
+        "light": "mereu deschisă",
+        "dark": "mereu întunecată"
+      },
+      "contrastNote": "Culoarea textului de pe buton și din replici se alege automat, așa că widgetul nu devine ilizibil — dar avertismentele merită rezolvate.",
+      "texts": "Texte",
+      "botName": "Numele botului",
+      "welcome": "Mesajul de întâmpinare",
+      "disclosure": "Textul despre inteligența artificială",
+      "disclosureNote": "Mențiunea că vizitatorul discută cu o inteligență artificială este obligatorie prin lege (AI Act, art. 50) și nu poate fi dezactivată. Puteți schimba formularea; câmpul gol readuce textul implicit.",
+      "save": "Salvează",
+      "saved": "Salvat",
+      "preview": "Previzualizare"
+    },
+    "installScreen": {
+      "loading": "Se încarcă…",
+      "snippetHeading": "Codul de instalat",
+      "copy": "Copiază",
+      "copied": "Copiat",
+      "beforeBody": "Se pune înainte de eticheta </body>.",
+      "verifyHeading": "Verifică instalarea",
+      "verifyLead": "Deschidem pagina și căutăm pe ea codul cu cheia dumneavoastră.",
+      "pageUrl": "Adresa paginii",
+      "check": "Verifică",
+      "checking": "Se verifică…",
+      "reachable": "Pagina răspunde ({status})",
+      "unreachable": "Pagina nu răspunde. {error}",
+      "scriptFound": "Codul widgetului a fost găsit",
+      "scriptMissing": "Codul widgetului nu apare pe pagină",
+      "keyFound": "Cheia corespunde",
+      "keyMissing": "Cheia dumneavoastră nu apare pe pagină",
+      "domainsHeading": "Domenii permise",
+      "domainsLead": "Widgetul răspunde doar pe aceste domenii — câte unul pe rând, subdomeniile sunt incluse automat. Lista goală înseamnă că widgetul nu funcționează nicăieri.",
+      "save": "Salvează",
+      "saved": "Salvat"
+    }
   }
 }

@@ -339,5 +339,77 @@
     "elsewhere": "Agent settings",
     "elsewhereLead": "Branding, domains and each agent's copy are managed in the Davoq panel, where the agent runs.",
     "openPanel": "Open the Davoq panel"
+  },
+  "agentScreens": {
+    "knowledge": "Knowledge base",
+    "appearance": "Appearance",
+    "install": "Installation",
+    "knowledgeScreen": {
+      "addHeading": "Add material",
+      "pageUrl": "Page address",
+      "addPage": "Add page",
+      "dropHint": "Drop a .docx, .odt, .pdf, .md or .html file here — or pick one",
+      "sending": "Sending…",
+      "listHeading": "Indexed material",
+      "loading": "Loading…",
+      "empty": "Nothing yet. Add the first page from the site and the bot can answer from it within seconds.",
+      "retry": "Retry",
+      "remove": "Remove",
+      "status": {
+        "indexed": "Indexed",
+        "processing": "Processing",
+        "uploaded": "Queued",
+        "failed": "Failed"
+      }
+    },
+    "appearanceScreen": {
+      "loading": "Loading…",
+      "presets": "Ready-made themes",
+      "colours": "Colours",
+      "colour": {
+        "primary": "Primary colour",
+        "bg": "Panel background",
+        "text": "Text",
+        "userBubble": "Visitor's message",
+        "botBubble": "Bot's reply"
+      },
+      "darkMode": "Dark theme",
+      "dark": {
+        "auto": "follow the visitor",
+        "light": "always light",
+        "dark": "always dark"
+      },
+      "contrastNote": "Text colour on the button and in the bubbles is chosen automatically, so the widget never becomes unreadable — but the warnings are worth fixing.",
+      "texts": "Copy",
+      "botName": "Bot name",
+      "welcome": "Welcome message",
+      "disclosure": "AI disclosure text",
+      "disclosureNote": "Telling the visitor they are talking to an AI is required by law (AI Act, art. 50) and cannot be switched off. You can change the wording; an empty field restores the default.",
+      "save": "Save",
+      "saved": "Saved",
+      "preview": "Preview"
+    },
+    "installScreen": {
+      "loading": "Loading…",
+      "snippetHeading": "Code to install",
+      "copy": "Copy",
+      "copied": "Copied",
+      "beforeBody": "Goes just before the </body> tag.",
+      "verifyHeading": "Verify the installation",
+      "verifyLead": "We open the page and look for the code carrying your key.",
+      "pageUrl": "Page address",
+      "check": "Verify",
+      "checking": "Checking…",
+      "reachable": "The page answers ({status})",
+      "unreachable": "The page does not answer. {error}",
+      "scriptFound": "The widget code was found",
+      "scriptMissing": "The widget code is not on the page",
+      "keyFound": "The key matches",
+      "keyMissing": "Your key is not on the page",
+      "domainsHeading": "Allowed domains",
+      "domainsLead": "The widget only answers on these domains — one per line, subdomains included automatically. An empty list means the widget works nowhere.",
+      "save": "Save",
+      "saved": "Saved"
+    }
   }
 }
