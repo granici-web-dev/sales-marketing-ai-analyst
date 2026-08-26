@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for `app.services.chat.hallucination_guard` (Plan 08-04 Task 2).
 
 Coverage per <behavior> Tests HG1-HG10:
@@ -14,6 +12,8 @@ Coverage per <behavior> Tests HG1-HG10:
   - HG9: salesperson in whitelist → PASS
   - HG10: empty tool_results allows only common-knowledge numbers
 """
+
+from __future__ import annotations
 
 import pytest
 
@@ -140,9 +140,11 @@ class TestHallucinationGuard:
     def test_extract_numbers_reuses_phase5_pattern(self) -> None:
         """Phase 5 NUMBER_PATTERN + extract_numbers_from_text must be imported,
         not forked."""
+        import pathlib  # deferred (INFRA-05)
+
         import app.services.chat.hallucination_guard as guard
 
-        source = open(guard.__file__).read()
+        source = pathlib.Path(guard.__file__).read_text()
         assert (
             "from app.services.insights.number_validator import" in source
         ), "Hallucination guard must reuse Phase 5 NUMBER_PATTERN — no fork"

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Pydantic v2 response schema for the Marketing Dashboard.
 
 DATA-04: All Decimal fields use @field_serializer returning str | None.
@@ -8,6 +6,8 @@ MARK-03: ad_spend, cpl, cac, roas are always None — placeholder for Iteration 
 Exports: MarketingDashboardResponse, LeadVolumeBySource, LeadVolumeBySourcePoint,
          JunkBySource
 """
+
+from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal

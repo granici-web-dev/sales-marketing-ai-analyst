@@ -4,9 +4,10 @@ import asyncio
 import os
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
+
+from alembic import context
 
 # Alembic Config object — provides access to alembic.ini values
 config = context.config
@@ -24,10 +25,7 @@ config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"])
 # If models are not imported here, Base.metadata will be empty and
 # `alembic revision --autogenerate` will produce empty migration files.
 # See: RESEARCH.md Common Pitfalls #6.
-from app.db.base import Base  # noqa: E402
-import app.models.tenant  # noqa: E402, F401
-import app.models.user  # noqa: E402, F401
-import app.models.pipeline  # noqa: E402, F401
+from app.db.base import Base  # noqa: E402 — must follow the DATABASE_URL set above
 
 # Alembic uses this metadata object to detect schema changes for autogenerate.
 target_metadata = Base.metadata

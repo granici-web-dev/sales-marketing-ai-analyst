@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """SQLAlchemy ORM model for daily_insights table.
 
 One row per tenant per day.
@@ -26,6 +24,8 @@ D-14 status state machine:
 T-05-02-01: raw_response stores Claude JSON output only — no customer PII.
 """
 
+from __future__ import annotations
+
 from datetime import date as date_type
 from datetime import datetime
 from decimal import Decimal
@@ -34,7 +34,7 @@ from sqlalchemy import Date, Integer, Numeric, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TenantScopedMixin, TIMESTAMPTZ
+from app.db.base import TIMESTAMPTZ, Base, TenantScopedMixin
 
 
 class DailyInsight(Base, TenantScopedMixin):

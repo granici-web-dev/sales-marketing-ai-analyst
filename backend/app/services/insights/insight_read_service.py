@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """InsightReadService — reads daily_insights rows for the FastAPI insights router.
 
 Provides:
@@ -13,6 +11,8 @@ INSI-06: generated_at included in response
 
 Phase 6 Plan 02 — read service for insights router in Plan 03.
 """
+
+from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 from uuid import UUID

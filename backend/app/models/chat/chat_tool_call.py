@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """SQLAlchemy ORM model for chat_tool_calls table.
 
 One row per tool invocation by the chat orchestrator. Phase 8 Plan 02 —
@@ -22,6 +20,8 @@ D-21 (audit logging): the `(tenant_id, tool_name, created_at DESC)` index in
 migration 009 backs the "which tools did we call today and how long did each
 take" support query — critical for CHAT-09 latency budget enforcement.
 """
+
+from __future__ import annotations
 
 from uuid import UUID
 

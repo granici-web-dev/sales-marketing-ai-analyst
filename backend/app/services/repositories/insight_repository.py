@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Database write layer for Phase 5 daily_insights table.
 
 Uses pg_insert().on_conflict_do_update() — atomic UPSERT on (tenant_id, date).
@@ -14,6 +12,8 @@ with_loader_criteria fires only on ORM SELECT, NOT on Core INSERT).
 
 Phase 5 Plan 03 — repository layer for InsightService writes.
 """
+
+from __future__ import annotations
 
 from uuid import UUID
 
@@ -66,7 +66,7 @@ class InsightRepository:
                 f"row.tenant_id={row['tenant_id']!r} != repository.tenant_id={self._tenant_id!r}"
             )
 
-        from app.models.insights.daily_insight import DailyInsight  # noqa: PLC0415 — deferred, fork-safe
+        from app.models.insights.daily_insight import DailyInsight  # — deferred, fork-safe
 
         # 2-col conflict target: exclude id + conflict-target cols from update set (D-16)
         update_cols = [c for c in row if c not in {"id", "tenant_id", "date"}]

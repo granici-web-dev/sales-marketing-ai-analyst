@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for calculate_daily_kpis Celery task entry point.
 
 Tests cover: task name, signature, default date behavior, retry config.
@@ -10,7 +8,9 @@ Tests D-10 (default to yesterday Bucharest), D-12 (optional date parameter),
 PIPE-02 (retry on exception), task name assertion.
 """
 
-from datetime import date, datetime, timedelta
+from __future__ import annotations
+
+from datetime import UTC, date, datetime, timedelta
 from unittest.mock import MagicMock, patch
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -23,7 +23,7 @@ BUCHAREST = ZoneInfo("Europe/Bucharest")
 
 def _get_task():
     """Import calculate_daily_kpis — deferred for RED tolerance."""
-    from app.tasks.etl.calculate_daily_kpis import calculate_daily_kpis  # noqa: PLC0415
+    from app.tasks.etl.calculate_daily_kpis import calculate_daily_kpis  # deferred (INFRA-05)
 
     return calculate_daily_kpis
 
@@ -61,14 +61,25 @@ class TestTaskRegistration:
         )
 
     def test_task_is_bound(self) -> None:
-        """Task must be bound (bind=True) to access self.retry()."""
-        task = _get_task()
-        # Bound tasks have the 'bind' attribute or are instances of Task with self
-        # We verify by checking the task is correctly registered in Celery registry
-        from app.tasks.celery_app import celery_app  # noqa: PLC0415
+        """Task must be bound (bind=True) — `self.retry()` needs it to exist.
+
+        Registration alone does not prove boundness, and this test used to check
+        only registration while its name promised more.
+        """
+        from app.tasks.celery_app import celery_app  # deferred (INFRA-05)
 
         assert "tasks.etl.calculate_daily_kpis" in celery_app.tasks, (
             "calculate_daily_kpis must be registered in celery_app.tasks"
+        )
+        import functools  # deferred (INFRA-05)
+
+        # Celery binds `self` by storing the header as a partial over a sentinel;
+        # with bind=False the header is the plain function. `__bound__` is not the
+        # tell — it means bound-to-an-app and is True either way.
+        header = celery_app.tasks["tasks.etl.calculate_daily_kpis"].__header__
+        assert isinstance(header, functools.partial), (
+            "calculate_daily_kpis must be declared with bind=True — without it "
+            "the task body has no `self` and the retry path cannot run"
         )
 
 
@@ -103,33 +114,48 @@ class TestSignatureAndDate:
         )
 
     def test_default_calculation_date_is_yesterday_bucharest(self) -> None:
-        """When calculation_date=None, task calculates for yesterday in Europe/Bucharest — D-10.
+        """calculation_date=None resolves to yesterday in Europe/Bucharest — D-10.
 
-        D-10: calculate_daily_kpis calculates KPIs for yesterday (previous full calendar
-        day in Europe/Bucharest). At 04:00 Bucharest, the previous day is always complete.
+        At 04:00 Bucharest the previous local day is always complete. Resolving
+        against UTC instead would, between local midnight and 02:00, file the
+        previous evening's leads under the wrong day.
         """
-        # Compute expected "yesterday" in Bucharest at any time of day
-        today_bucharest = datetime.now(BUCHAREST).date()
-        expected_yesterday = today_bucharest - timedelta(days=1)
+        from app.tasks.etl.calculate_daily_kpis import resolve_kpi_date  # deferred (INFRA-05)
 
-        # The task's internal _default_date() helper (or equivalent logic) must return this
-        # We verify by importing _calc_async — it resolves the date when calculation_date=None
-        # The core contract: None → yesterday Bucharest date (not UTC yesterday)
-        from app.tasks.etl.calculate_daily_kpis import _calc_async  # type: ignore[attr-defined]  # noqa: PLC0415
+        expected = datetime.now(BUCHAREST).date() - timedelta(days=1)
+        assert resolve_kpi_date(None) == expected
 
-        # _calc_async resolves calculation_date internally — we test the resolution logic
-        # by verifying the function exists and its default date logic is correct
-        # (actual date resolution tested in integration tests with patched asyncio.run)
-        import asyncio as _asyncio
+    def test_utc_would_disagree_at_local_midnight(self) -> None:
+        """The Bucharest rule is not the UTC rule — D-10.
 
-        import inspect
+        01:00 on 1 July in Bucharest is 22:00 on 30 June in UTC. Yesterday is
+        30 June locally and 29 June in UTC; this asserts the resolver picks the
+        local answer, and fails against a UTC implementation.
+        """
+        import app.tasks.etl.calculate_daily_kpis as mod  # deferred (INFRA-05)
 
-        source = inspect.getsource(_calc_async)
-        # D-10: The source must reference Europe/Bucharest (not UTC) for date resolution
-        assert "Bucharest" in source or "BUCHAREST" in source, (
-            "_calc_async must use Europe/Bucharest timezone for default date resolution (D-10), "
-            "not UTC. A UTC default assigns late-evening leads to wrong day."
-        )
+        local_1am = datetime(2026, 7, 1, 1, 0, tzinfo=BUCHAREST)
+        assert local_1am.astimezone(UTC).date() == date(2026, 6, 30)
+
+        class _FrozenDatetime(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return local_1am.astimezone(tz)
+
+        original = mod.datetime
+        mod.datetime = _FrozenDatetime
+        try:
+            assert mod.resolve_kpi_date(None) == date(2026, 6, 30)
+        finally:
+            mod.datetime = original
+
+    def test_supplied_date_is_parsed_not_interpolated(self) -> None:
+        """An explicit date is parsed into a `date`; a malformed one raises — T-03-04-02."""
+        from app.tasks.etl.calculate_daily_kpis import resolve_kpi_date  # deferred (INFRA-05)
+
+        assert resolve_kpi_date("2026-03-14") == date(2026, 3, 14)
+        with pytest.raises(ValueError, match="Invalid isoformat|day is out of range"):
+            resolve_kpi_date("2026-02-30'; DROP TABLE daily_kpi; --")
 
 
 class TestPipelineChain:
@@ -141,7 +167,7 @@ class TestPipelineChain:
         D-18: calculate_daily_kpis is second in the chain:
         sync_mefi_leads → calculate_daily_kpis → detect_anomalies → generate_daily_insights.
         """
-        from app.tasks.etl.sync_mefi_leads import daily_pipeline  # noqa: PLC0415
+        from app.tasks.etl.sync_mefi_leads import daily_pipeline  # deferred (INFRA-05)
 
         pipeline = daily_pipeline(str(TENANT_ID))
         # Celery chain tasks attribute contains the linked tasks
@@ -169,5 +195,5 @@ class TestPipelineChain:
             "app.tasks.etl.calculate_daily_kpis._calc_async", MagicMock()
         ):
             mock_asyncio.run = MagicMock(side_effect=RuntimeError("DB connection failed"))
-            with pytest.raises(Exception):
+            with pytest.raises(RuntimeError, match="DB connection failed"):
                 task.run(str(TENANT_ID), calculation_date=None)

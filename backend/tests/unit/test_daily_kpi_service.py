@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for DailyKpiService.
 
 Tests mock AsyncSession — no live DB required.
@@ -8,6 +6,8 @@ Coverage: conversion rate calculation, WoW/MoM deltas, zero-division guard, delt
 Requirements: METR-01, METR-02, METR-05
 Tests D-11 (NULL deltas on missing prior data), D-16 (NUMERIC, never float).
 """
+
+from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
@@ -24,7 +24,7 @@ def _make_service(mock_session=None):
 
     Import is deferred so the file parses (RED) even before Plan 03 implementation exists.
     """
-    from app.services.metrics.daily_kpi_service import DailyKpiService  # noqa: PLC0415
+    from app.services.metrics.daily_kpi_service import DailyKpiService  # deferred (INFRA-05)
 
     session = mock_session or AsyncMock()
     return DailyKpiService(session, TENANT_ID), session

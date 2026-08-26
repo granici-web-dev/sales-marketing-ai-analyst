@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """``get_salesperson_performance`` chat tool (D-02 + D-03).
 
 Returns per-salesperson KPIs (leads, visits, offers, contracts, revenue,
@@ -15,6 +13,8 @@ DATA-04 / Phase 5 D-19: Decimals serialized as str.
 LM-3: handler signature ``(tenant_id, session, inp)``.
 LM-10: required fields use ``Field(..., description=...)``.
 """
+
+from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal

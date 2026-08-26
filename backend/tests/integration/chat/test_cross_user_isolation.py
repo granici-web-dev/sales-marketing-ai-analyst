@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """CR-01 cross-user authorization regression suite (Phase 8 Plan 08-07).
 
 Verifies that any conversation operation by User A targeting a conversation
@@ -28,6 +26,8 @@ Coverage:
   test_cross_user_post_returns_404       — POST /messages w/ user_b_id → 404 BEFORE rate-limit
   test_cross_user_list_excludes_b_conversations — GET /chat/conversations list does NOT include B
 """
+
+from __future__ import annotations
 
 import os
 from unittest.mock import AsyncMock, MagicMock, patch

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Tool dataclass + handler type alias for the chat tool registry (D-04).
 
 Every chat tool is a thin wrapper around an existing Phase 3/5/6 service
@@ -23,6 +21,8 @@ References:
   - CONTEXT D-04 — TOOLS_REGISTRY contract
 """
 
+from __future__ import annotations
+
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
@@ -30,7 +30,6 @@ from uuid import UUID
 
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-
 
 # LM-3 handler signature: (tenant_id, session, validated_input) -> dict
 ToolHandler = Callable[[UUID, AsyncSession, BaseModel], Awaitable[dict]]

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for SalespersonKpiService.
 
 Tests mock AsyncSession — no live DB required.
@@ -11,7 +9,9 @@ Tests D-05 (NULL for no history), D-06 (business-hours adjusted),
 D-17 (is_active filter), METR-06 (data_completeness_pct).
 """
 
-from datetime import date
+from __future__ import annotations
+
+from datetime import UTC, date
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
@@ -26,7 +26,9 @@ def _make_service(mock_session=None):
 
     Import deferred — file parses (RED) before Plan 03 implementation exists.
     """
-    from app.services.metrics.salesperson_kpi_service import SalespersonKpiService  # noqa: PLC0415
+    from app.services.metrics.salesperson_kpi_service import (
+        SalespersonKpiService,  # deferred (INFRA-05)
+    )
 
     session = mock_session or AsyncMock()
     return SalespersonKpiService(session, TENANT_ID), session
@@ -123,13 +125,13 @@ class TestTimeToFirstTouch:
 
         WR-05: _compute_time_to_first_touch is now synchronous (no I/O inside).
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         session = AsyncMock()
         service, _ = _make_service(session)
 
-        created_at = datetime(2026, 5, 24, 9, 0, 0, tzinfo=timezone.utc)
-        first_touch = datetime(2026, 5, 24, 9, 30, 0, tzinfo=timezone.utc)  # 30 min later
+        created_at = datetime(2026, 5, 24, 9, 0, 0, tzinfo=UTC)
+        first_touch = datetime(2026, 5, 24, 9, 30, 0, tzinfo=UTC)  # 30 min later
 
         history_rows = [{"changed_at": first_touch}]
 

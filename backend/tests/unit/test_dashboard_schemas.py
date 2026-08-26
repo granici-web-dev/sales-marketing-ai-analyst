@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for dashboard response schemas — DATA-04 Decimal serialization.
 
 Verifies that all Decimal | None fields in dashboard schemas serialize as
@@ -9,11 +7,11 @@ T-06-01-03: field_serializer on every Decimal field returns str, preventing
             float precision loss.
 """
 
-import json
-from datetime import date, datetime, timezone
-from decimal import Decimal
+from __future__ import annotations
 
-import pytest
+import json
+from datetime import UTC, date, datetime
+from decimal import Decimal
 
 from app.schemas.dashboards.marketing import JunkBySource, MarketingDashboardResponse
 from app.schemas.dashboards.sales import (
@@ -26,9 +24,8 @@ from app.schemas.dashboards.sales import (
     SourceBreakdownItem,
     StuckOffer,
 )
-from app.schemas.dashboards.salespeople import SalespersonRow, SalespeopleDashboardResponse
+from app.schemas.dashboards.salespeople import SalespersonRow
 from app.schemas.health import HealthDataResponse
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -197,7 +194,7 @@ def test_junk_pct_decimal_as_string() -> None:
 def test_health_data_response_stale_flag() -> None:
     """HealthDataResponse.stale=True validates and round-trips correctly."""
     health = HealthDataResponse(
-        last_sync_at=datetime(2026, 5, 28, 3, 47, 12, tzinfo=timezone.utc),
+        last_sync_at=datetime(2026, 5, 28, 3, 47, 12, tzinfo=UTC),
         last_pipeline_status="success",
         stale=True,
     )

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import redis.asyncio as aioredis
 import structlog
@@ -103,5 +103,5 @@ async def refresh_insights(
     )
     return RefreshResponse(
         pipeline_run_id=str(task.id),
-        enqueued_at=datetime.now(timezone.utc).isoformat(),
+        enqueued_at=datetime.now(UTC).isoformat(),
     )

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """SQLAlchemy ORM models for MEFI CRM raw data storage.
 
 Three tables are defined here:
@@ -19,6 +17,8 @@ are created via the Alembic migration 003_mefi_schema.py.
 Phase 2 Plan 01 — schema foundation for all subsequent MEFI ETL plans.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from decimal import Decimal
 
@@ -26,7 +26,7 @@ from sqlalchemy import Boolean, Integer, Numeric, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TenantScopedMixin, TIMESTAMPTZ
+from app.db.base import TIMESTAMPTZ, Base, TenantScopedMixin
 
 
 class RawMefiLead(Base, TenantScopedMixin):

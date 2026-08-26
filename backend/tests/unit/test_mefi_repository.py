@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for MefiRepository.
 
 Tests mock AsyncSession to avoid DB dependency.
@@ -8,9 +6,11 @@ Coverage: bulk_upsert, history detection, salesperson upsert, tenant validation.
 Requirements: MEFI-02, MEFI-06, DATA-02
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 
 import pytest

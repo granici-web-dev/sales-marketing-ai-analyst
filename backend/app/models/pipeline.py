@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TenantScopedMixin, TIMESTAMPTZ
+from app.db.base import TIMESTAMPTZ, Base, TenantScopedMixin
 
 
 class SyncRun(Base, TenantScopedMixin):

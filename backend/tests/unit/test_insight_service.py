@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for InsightService — RED-state contracts for Phase 5.
 
 All tests will fail with ImportError until Plan 05-02 (Wave 2) implements
@@ -19,20 +17,21 @@ Patterns tested:
   D-18: InsightService constructor follows AnomalyService pattern (session + tenant_id)
 """
 
+from __future__ import annotations
+
 from datetime import date
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import UUID
 
 import pytest
 
 from tests.factories.insight_factory import (
-    DailyInsightResponseDictFactory,
     make_detected_problem_input,
     make_kpi_snapshot,
 )
 
 TENANT_ID_STR = "00000000-0000-0000-0000-000000000001"
-from uuid import UUID
 TENANT_ID = UUID(TENANT_ID_STR)
 
 
@@ -42,7 +41,7 @@ def _make_service(mock_session=None):
     Import deferred — file parses (RED) before Plan 05-02 implements InsightService.
     Returns (service, session) tuple.
     """
-    from app.services.insights.insight_service import InsightService  # noqa: PLC0415
+    from app.services.insights.insight_service import InsightService  # deferred (INFRA-05)
 
     session = mock_session or AsyncMock()
     return InsightService(session, TENANT_ID), session
@@ -86,7 +85,6 @@ class TestInsightServiceRun:
         Number cross-check passes.
         Result: (insight_dict, 'success').
         """
-        from app.services.insights.insight_service import InsightService  # noqa: PLC0415
 
         # Build a valid payload that number validator will accept
         payload = {
@@ -155,7 +153,6 @@ class TestInsightServiceRun:
         D-14: After all retries fail, returns ('dict', 'fallback').
         AI-07: Fallback is built from detected_problems rows without Claude.
         """
-        from app.services.insights.insight_service import InsightService  # noqa: PLC0415
 
         # Build a payload with fabricated number that will fail number cross-check
         payload = {
@@ -200,7 +197,6 @@ class TestInsightServiceRun:
         D-15: summary = "Generare AI eșuată — raport bazat pe anomalii detectate automat"
         Phase 7 frontend reads this string to show the "Generare AI eșuată" banner.
         """
-        from app.services.insights.insight_service import InsightService  # noqa: PLC0415
 
         payload = {
             "summary": "test",
@@ -245,7 +241,6 @@ class TestInsightServiceRun:
         D-15: Each anomaly row becomes a Problem with id=rule_id, actions=[].
         No actions because Claude never succeeded in generating them.
         """
-        from app.services.insights.insight_service import InsightService  # noqa: PLC0415
 
         # 2 detected problems input
         detected_problems = [
@@ -298,7 +293,7 @@ class TestInsightServiceRun:
         = 0.009 + 0.030
         = 0.039 USD
         """
-        from app.services.insights.insight_service import InsightService  # noqa: PLC0415
+        from app.services.insights.insight_service import InsightService  # deferred (INFRA-05)
 
         mock_usage = _make_usage_mock(input_tokens=3000, output_tokens=2000)
         cost = InsightService._compute_cost(mock_usage)
@@ -319,7 +314,6 @@ class TestInsightServiceRun:
         D-16: raw_response column stores last Claude response for debugging on failure.
         Must never be None or empty string on fallback (how else do we debug it?).
         """
-        from app.services.insights.insight_service import InsightService  # noqa: PLC0415
 
         payload = {
             "summary": "test raw",
@@ -364,7 +358,6 @@ class TestInsightServiceRun:
         D-13: Zero-anomaly day generates a positive-only report — Claude still runs.
         No error or early return when detected_problems=[] is passed.
         """
-        from app.services.insights.insight_service import InsightService  # noqa: PLC0415
 
         payload = {
             "summary": "Zi excelentă! Toate metricile în parametri normali.",

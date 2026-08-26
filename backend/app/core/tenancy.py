@@ -5,7 +5,6 @@ from uuid import UUID
 
 from app.core.exceptions import TenantIsolationError
 
-
 # ContextVar default=None ensures no tenant bleeds across async tasks or requests.
 # Each asyncio coroutine gets its own copy of the context — ContextVar semantics
 # guarantee isolation without explicit cleanup between requests.

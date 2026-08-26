@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Chat SQLAlchemy models package (Phase 8).
 
 Re-exports the three AI Chat ORM model classes used for persistence per D-20:
@@ -20,8 +18,10 @@ a CHECK constraint on chat_messages.role, and indexes on the common query
 shapes (history fetch + tool-call audit lookup).
 """
 
-from app.models.chat.chat_conversation import ChatConversation  # noqa: F401
-from app.models.chat.chat_message import ChatMessage  # noqa: F401
-from app.models.chat.chat_tool_call import ChatToolCall  # noqa: F401
+from __future__ import annotations
+
+from app.models.chat.chat_conversation import ChatConversation
+from app.models.chat.chat_message import ChatMessage
+from app.models.chat.chat_tool_call import ChatToolCall
 
 __all__ = ["ChatConversation", "ChatMessage", "ChatToolCall"]

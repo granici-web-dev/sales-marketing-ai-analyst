@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for the Phase 8 Plan 08-05 chat router.
 
 Covers per the plan <behavior> block R1-R12:
@@ -23,8 +21,8 @@ Plus the CR-02 guard-ordering regressions (plan 08-08):
 These tests mock AsyncSession, Redis, and ChatOrchestrator — no real DB or API.
 """
 
-import importlib
-import sys
+from __future__ import annotations
+
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
@@ -123,7 +121,7 @@ def _set_tenant_context():
     from app.core.tenancy import set_tenant_id
 
     set_tenant_id(MOCK_TENANT_ID)
-    yield
+    return
 
 
 def _make_redis_mock(*, incr_return=1, set_nx_return=True, ttl_return=3600) -> tuple[AsyncMock, AsyncMock]:

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for `app.services.chat.title_generator` (Plan 08-04 Task 2).
 
 Coverage per <behavior> Tests TG1-TG5:
@@ -10,12 +8,13 @@ Coverage per <behavior> Tests TG1-TG5:
   - TG5: title stripped of final punctuation + quotes
 """
 
+from __future__ import annotations
+
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
-
 
 CONV_ID: UUID = uuid4()
 
@@ -81,7 +80,7 @@ class TestTitleGenerator:
         client = MagicMock()
         client.messages = MagicMock()
         # Both attempts time out
-        client.messages.create = AsyncMock(side_effect=asyncio.TimeoutError())
+        client.messages.create = AsyncMock(side_effect=TimeoutError())
 
         with patch.object(tg, "AsyncAnthropic", MagicMock(return_value=client)):
             first_user = "Aceasta este o întrebare foarte lungă despre vânzările Sofa Belle din luna mai 2026 și cum merge echipa"

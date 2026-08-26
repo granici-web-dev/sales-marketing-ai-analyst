@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """ToolCallRepository — audit row per tool invocation (D-21).
 
 Every tool call by the orchestrator writes exactly one `chat_tool_calls` row.
@@ -12,6 +10,8 @@ T-08-01: tenant_id is set explicitly to `self._tenant_id` — handlers never
          pass it via `row` so cross-tenant audit pollution is structurally
          impossible.
 """
+
+from __future__ import annotations
 
 from uuid import UUID, uuid4
 

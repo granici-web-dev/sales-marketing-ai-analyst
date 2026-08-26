@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for Phase 3 SQLAlchemy metric models.
 
 Tests cover: __tablename__ values, UniqueConstraint declarations in __table_args__.
@@ -10,9 +8,10 @@ Tests UniqueConstraint names (UPSERT conflict target identifiers),
 2-col key for daily_kpi, 3-col keys for salesperson and source tables.
 """
 
+from __future__ import annotations
+
 import pytest
 from sqlalchemy import UniqueConstraint
-
 
 # ── Import stubs ──────────────────────────────────────────────────────────────
 # Wrapped in try/except so test collection succeeds (RED state) even before

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """``get_trend`` chat tool — time series of one metric (D-02 + D-03).
 
 Returns the daily time series of one metric (revenue, contracts, leads, or
@@ -18,7 +16,10 @@ fixed windows allowed by ``period_days: Literal[7, 30, 90]`` (T-08-04 cost
 guard).
 """
 
-from datetime import date as date_type, timedelta
+from __future__ import annotations
+
+from datetime import date as date_type
+from datetime import timedelta
 from decimal import Decimal
 from typing import Literal
 from uuid import UUID
@@ -28,7 +29,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.chat.tools.base import Tool
 from app.services.metrics.daily_kpi_service import DailyKpiService
-
 
 MetricName = Literal[
     "revenue",

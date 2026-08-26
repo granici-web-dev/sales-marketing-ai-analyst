@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Daily KPI aggregation service.
 
 Computes tenant-level daily KPIs from v_mefi_leads_active (D-14):
@@ -36,14 +34,15 @@ T-03-03-01: Explicit tenant_id filter in every Core SELECT — bypasses with_loa
 Phase 3 Plan 03 — service layer for daily_kpi table writes.
 """
 
+from __future__ import annotations
+
 from datetime import date, timedelta
 from decimal import Decimal
 from uuid import UUID
 
 import structlog
-from sqlalchemy import case, func, select, text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.types import Numeric as NumericType
 
 # func.nullif is the SQLAlchemy Core equivalent of SQL NULLIF(expr, 0).
 # We apply the zero-division guard via Python _rate() helper which mirrors
@@ -135,7 +134,6 @@ class DailyKpiService:
             Dict matching DailyKpi columns, ready for MetricsRepository.upsert_daily_kpi().
         """
         # All model imports deferred — fork-safety (INFRA-05)
-        from app.models.mefi import MefiLeadHistory  # noqa: F401
 
         log = logger.bind(tenant_id=str(self._tenant_id), service="daily_kpi_service")
         log.info("daily_kpi.compute_start", kpi_date=str(kpi_date))

@@ -13,10 +13,8 @@ and live in tests/integration/. This file covers pure unit behaviour only.
 from __future__ import annotations
 
 import ast
-import inspect
 from datetime import date
 from pathlib import Path
-
 
 # ---------------------------------------------------------------------------
 # Helper: load and inspect the module source WITHOUT importing it.
@@ -95,13 +93,10 @@ class TestForkSafety:
         allowed_prefixes = (
             "app.tasks.celery_app",  # Celery app instance — safe
         )
-        stdlib_modules = {
-            "asyncio", "calendar", "datetime", "uuid", "typing",
-            "__future__", "decimal", "collections", "functools",
-        }
         for node in self._get_module_level_imports():
             mod = node.module or ""
-            # stdlib by checking against known stdlib names (no dots leading with 'app')
+            # Only `app.` imports can create a DB pool before Celery forks; stdlib
+            # at module level is fine and is not enumerated here.
             if mod.startswith("app."):
                 assert any(mod == prefix or mod.startswith(prefix + ".") for prefix in allowed_prefixes), (
                     f"Unexpected module-level import 'from {mod}' — only "
@@ -182,7 +177,7 @@ def _exec_helpers() -> dict:
     ) + "\n\n".join(func_sources)
 
     namespace: dict = {}
-    exec(compile(combined, "<helpers>", "exec"), namespace)  # noqa: S102
+    exec(compile(combined, "<helpers>", "exec"), namespace)
     return namespace
 
 

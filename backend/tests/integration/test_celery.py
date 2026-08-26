@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 INFRA-04 and SC#4 integration tests.
 
@@ -11,7 +9,10 @@ These tests require a running Redis instance.
 They will skip if REDIS_URL is not set.
 """
 
+from __future__ import annotations
+
 import os
+
 import pytest
 
 try:

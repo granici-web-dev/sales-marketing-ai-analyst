@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Conversation request/response Pydantic DTOs for Phase 8 AI Chat.
 
 D-15: archived column is part of the response shape (sidebar may filter).
@@ -10,6 +8,8 @@ Mirrors Phase 5 `daily_insight_schema.py` Pydantic v2 conventions:
   - `from __future__ import annotations`
   - Plain BaseModel (no orm_mode in v2 — repository converts to dicts)
 """
+
+from __future__ import annotations
 
 from datetime import datetime
 from uuid import UUID

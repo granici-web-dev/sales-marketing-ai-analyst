@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 INFRA-01 and SC#1 integration tests.
 
@@ -13,8 +11,10 @@ References:
   - SC#1: Phase 1 success criteria #1
 """
 
+from __future__ import annotations
+
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
 # Import stub — survives before implementation exists
 try:

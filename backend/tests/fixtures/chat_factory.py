@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Dict-builder factories for Phase 8 AI Chat test data.
 
 Mirrors the shape of `backend/tests/factories/insight_factory.py`
@@ -19,7 +17,9 @@ Decisions referenced:
   D-37: default title is the Romanian string "Conversație nouă"
 """
 
-from datetime import datetime, timezone
+from __future__ import annotations
+
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 # Canonical Sofa Belle tenant + owner-user (must match tests/conftest.py and
@@ -29,7 +29,7 @@ DEFAULT_USER_ID = UUID("00000000-0000-0000-0000-000000000010")
 
 
 def _now() -> datetime:
-    return datetime(2026, 5, 29, 10, 0, 0, tzinfo=timezone.utc)
+    return datetime(2026, 5, 29, 10, 0, 0, tzinfo=UTC)
 
 
 def make_chat_conversation(**overrides) -> dict:

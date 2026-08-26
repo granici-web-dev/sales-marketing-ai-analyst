@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Pydantic v2 response schema for the Sales Dashboard.
 
 DATA-04: All Decimal fields use @field_serializer returning str | None to
@@ -9,6 +7,8 @@ DATA-04: All Decimal fields use @field_serializer returning str | None to
 Exports: SalesDashboardResponse, PeriodRange, FunnelCounts, ConversionRates,
          KpiCards, SourceBreakdownItem, RevenueSeries, StuckOffer
 """
+
+from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal

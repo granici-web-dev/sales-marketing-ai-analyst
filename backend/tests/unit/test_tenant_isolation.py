@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 D-06 required failing test — proves the SQLAlchemy with_loader_criteria
 enforcement seam is required and will be tested before implementation is written.
@@ -7,8 +5,11 @@ enforcement seam is required and will be tested before implementation is written
 SC#6: DB layer rejects queries when no tenant context is set.
 """
 
-import pytest
+from __future__ import annotations
+
 from uuid import UUID
+
+import pytest
 from sqlalchemy import select
 
 # These imports will fail until implementation is complete — that is expected.

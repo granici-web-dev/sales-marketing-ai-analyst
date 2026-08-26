@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Recorded streaming response: basic single-turn assistant reply (no tools).
 
 Models the simplest Claude Sonnet 4.5 streaming flow per RESEARCH §2 events:
@@ -21,6 +19,8 @@ Decisions referenced:
   D-26: System prompt produces Romanian assistant text.
   D-31: usage block tracks input_tokens + output_tokens + cache_read_input_tokens.
 """
+
+from __future__ import annotations
 
 from typing import Any
 

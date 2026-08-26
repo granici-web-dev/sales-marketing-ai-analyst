@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Create MEFI tables, conformed views, and seed funnel_config.
 
 Revision ID: 003
@@ -49,19 +47,22 @@ Security notes:
   T-02-03: NUMERIC(12,2) prevents float precision loss (DATA-04)
 """
 
+from __future__ import annotations
+
 import json
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 # ── Revision identifiers ──────────────────────────────────────────────────────
 
 revision: str = "003"
-down_revision: Union[str, None] = "002"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "002"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 # ── Funnel configuration (D-08 from 02-CONTEXT.md) ───────────────────────────
 # This JSONB blob is seeded into tenants.funnel_config for Sofa Belle.

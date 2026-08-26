@@ -31,7 +31,7 @@ from app.services.auth.engine_session import EngineIdentity
 logger = structlog.get_logger(__name__)
 
 
-class TenantNotLinked(RuntimeError):
+class TenantNotLinkedError(RuntimeError):
     """У клиента движка нет арендатора аналитика."""
 
 
@@ -39,7 +39,7 @@ async def resolve_local_user(session: AsyncSession, identity: EngineIdentity) ->
     """Найти арендатора и пользователя, поставить тенантный контекст.
 
     Raises:
-        TenantNotLinked: аналитик этому клиенту не подключён.
+        TenantNotLinkedError: аналитик этому клиенту не подключён.
     """
     # Единственный запрос во всём приложении, который выполняется ДО того, как
     # арендатор известен, — потому что им арендатор и определяется.
@@ -66,7 +66,7 @@ async def resolve_local_user(session: AsyncSession, identity: EngineIdentity) ->
             "engine_session.tenant_not_linked",
             engine_tenant_id=str(identity.engine_tenant_id),
         )
-        raise TenantNotLinked(str(identity.engine_tenant_id))
+        raise TenantNotLinkedError(str(identity.engine_tenant_id))
 
     # Контекст ставится ЗДЕСЬ — до первого запроса к тенантным таблицам.
     # Всё, что ниже, уже отфильтровано этим арендатором.
@@ -84,7 +84,7 @@ async def resolve_local_user(session: AsyncSession, identity: EngineIdentity) ->
         if not row.is_active:
             # Выключенный здесь остаётся выключенным, даже если движок его
             # пустил: это два разных решения, и наше про наш кабинет.
-            raise TenantNotLinked(f"user {row.id} inactive")
+            raise TenantNotLinkedError(f"user {row.id} inactive")
         return UserOut(id=row.id, email=row.email, is_active=True)
 
     # Записи с этим идентификатором ещё нет. Прежде чем заводить новую,

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Pydantic v2 schema for DailyInsightResponse — AI Insights Phase 5.
 
 D-05: Full DailyInsightResponse schema (rich SPEC.md version with positives[], warnings[],
@@ -7,8 +5,10 @@ D-05: Full DailyInsightResponse schema (rich SPEC.md version with positives[], w
 D-02: problems[] hard max 3 enforced via Pydantic max_length=3.
 D-19: estimated_loss_ron is Decimal, never float — all monetary values use Decimal.
 
-Classes exported: ActionItem, Problem, Positive, Warning, DailyInsightResponse.
+Classes exported: ActionItem, Problem, Positive, WarningSignal, DailyInsightResponse.
 """
+
+from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
@@ -60,7 +60,7 @@ class Positive(BaseModel):
     recommendation: str
 
 
-class Warning(BaseModel):
+class WarningSignal(BaseModel):
     """A weak signal that does not reach problem severity but warrants monitoring.
 
     Count: Claude decides. These are early warnings, not full problems with actions.
@@ -84,6 +84,6 @@ class DailyInsightResponse(BaseModel):
     summary: str  # one overview paragraph in Romanian
     problems: list[Problem] = Field(max_length=3)  # hard cap at 3 (D-02)
     positives: list[Positive]  # 0-3, Claude decides count
-    warnings: list[Warning]  # 0-N weak signals, Claude decides
+    warnings: list[WarningSignal]  # 0-N weak signals, Claude decides
     weekly_action_plan: list[str] = Field(min_length=1)  # D-03: at least 1 item (5-7 expected)
     generated_at: datetime  # set server-side in InsightService, not by Claude

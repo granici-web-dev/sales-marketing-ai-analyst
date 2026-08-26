@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Hallucination guard — post-stream verification for Phase 8 AI Chat (D-06).
 
 Three concurrent checks run against the assembled assistant text AFTER the
@@ -38,6 +36,9 @@ References:
   - backend/app/services/insights/number_validator.py (REUSE — no fork)
 """
 
+from __future__ import annotations
+
+import contextlib
 import re
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
@@ -46,11 +47,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # REUSE Phase 5 number extractor — do NOT fork (08-04-PLAN.md must_haves).
-from app.services.insights.number_validator import (  # noqa: F401
-    NUMBER_PATTERN,
+from app.services.insights.number_validator import (
     extract_numbers_from_text,
 )
-
 
 # ── Tolerance + skip-list constants ─────────────────────────────────────────
 # Number-match tolerance. Relative ±5% OR absolute ±0.6 — whichever is looser.
@@ -173,10 +172,8 @@ def _compute_derived(base: set[Decimal]) -> set[Decimal]:
         # result needs more digits than the Decimal context allows. Swallow
         # per-value so one bad pair never aborts the whole allow-set (which
         # would degrade matching and flag legitimate, grounded numbers).
-        try:
+        with contextlib.suppress(InvalidOperation, ValueError):
             derived.add(x.quantize(Q))
-        except (InvalidOperation, ValueError):
-            pass
 
     for a in items:
         # ratio -> percentage: Claude renders 0.3149 as "31,5%". Add a*100 so

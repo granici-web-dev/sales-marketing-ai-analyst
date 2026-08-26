@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Database write layer for Phase 4 detected_problems table.
 
 Uses pg_insert().on_conflict_do_update() — atomic UPSERT.
@@ -16,6 +14,8 @@ with_loader_criteria fires only on ORM SELECT, NOT on Core INSERT).
 
 Phase 4 Plan 03 — repository layer for AnomalyService writes.
 """
+
+from __future__ import annotations
 
 from uuid import UUID
 

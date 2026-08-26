@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Database write layer for Phase 3 metric tables.
 
 All writes use pg_insert().on_conflict_do_update() — atomic UPSERT.
@@ -15,6 +13,8 @@ Conflict targets per table (Pitfall 5):
 
 Phase 3 Plan 03 — repository layer for MetricsService writes.
 """
+
+from __future__ import annotations
 
 from uuid import UUID
 

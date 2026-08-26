@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Recorded streaming response: assistant turn that calls 3 distinct tools.
 
 Models a Claude Sonnet 4.5 streaming response that exercises CHAT-02 SC#2
@@ -40,6 +38,8 @@ Decisions referenced:
   D-10: tool pills render inline in the frontend bubble for each tool_use.
   D-30: tool dispatch uses asyncio.gather for parallel execution.
 """
+
+from __future__ import annotations
 
 from typing import Any
 

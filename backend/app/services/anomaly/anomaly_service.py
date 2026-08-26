@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Anomaly detection rule engine for Phase 4.
 
 Implements 5 rule methods + run_all_rules() orchestrator called by the Celery task.
@@ -35,6 +33,8 @@ Testing pattern:
   When called without data (from run_all_rules()), data is fetched from DB internally.
   run_all_rules() only calls _get_junk_ids() and the detect methods — no separate pre-fetch.
 """
+
+from __future__ import annotations
 
 from datetime import date, timedelta
 from decimal import Decimal
@@ -137,8 +137,9 @@ class AnomalyService:
 
     async def _db_fetch_trailing_metrics(self, kpi_date: date) -> list[dict]:
         """Fetch trailing 30-day daily_kpi baseline rows from DB."""
-        from app.models.metrics.daily_kpi import DailyKpi  # deferred — fork-safe
         from sqlalchemy import select  # deferred — fork-safe
+
+        from app.models.metrics.daily_kpi import DailyKpi  # deferred — fork-safe
 
         start_date = kpi_date - timedelta(days=30)
         stmt = (
@@ -169,8 +170,9 @@ class AnomalyService:
 
     async def _db_fetch_current_kpi(self, kpi_date: date) -> dict | None:
         """Fetch today's daily_kpi row from DB."""
-        from app.models.metrics.daily_kpi import DailyKpi  # deferred — fork-safe
         from sqlalchemy import select  # deferred — fork-safe
+
+        from app.models.metrics.daily_kpi import DailyKpi  # deferred — fork-safe
 
         stmt = select(
             DailyKpi.date,
@@ -263,8 +265,9 @@ class AnomalyService:
 
     async def _db_fetch_salesperson_kpis(self, kpi_date: date) -> list[dict]:
         """Fetch salesperson_daily_kpi rows for kpi_date from DB."""
-        from app.models.metrics.salesperson_kpi import SalespersonDailyKpi  # deferred — fork-safe
         from sqlalchemy import select  # deferred — fork-safe
+
+        from app.models.metrics.salesperson_kpi import SalespersonDailyKpi  # deferred — fork-safe
 
         stmt = select(
             SalespersonDailyKpi.salesperson_external_id,
@@ -451,10 +454,7 @@ class AnomalyService:
         for lead in stuck_leads:
             changed_at = lead.get("last_status_changed_at")
             if changed_at is not None:
-                if hasattr(changed_at, "date"):
-                    changed_date = changed_at.date()
-                else:
-                    changed_date = changed_at
+                changed_date = changed_at.date() if hasattr(changed_at, "date") else changed_at
                 days_stuck = (kpi_date - changed_date).days
                 if days_stuck > max_days_stuck:
                     max_days_stuck = days_stuck

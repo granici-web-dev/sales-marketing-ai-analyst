@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for `app.services.chat.orchestrator.ChatOrchestrator` (Plan 08-04 Task 3).
 
 Coverage per <behavior> Tests O1-O13:
@@ -18,6 +16,8 @@ Coverage per <behavior> Tests O1-O13:
   - O13: tool handler exception → tool_result error=True + chat_tool_calls.error set
 """
 
+from __future__ import annotations
+
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
@@ -25,7 +25,6 @@ from uuid import UUID, uuid4
 import pytest
 
 from tests.fixtures.anthropic_responses.basic_turn import BASIC_TURN_EVENTS, BASIC_TURN_TEXT
-
 
 TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 USER_ID = UUID("00000000-0000-0000-0000-000000000010")
@@ -97,7 +96,7 @@ def _build_text_block(text: str) -> MagicMock:
     return b
 
 
-def _build_tool_use_block(*, id: str, name: str, input: dict) -> MagicMock:
+def _build_tool_use_block(*, id: str, name: str, input: dict) -> MagicMock:  # noqa: A002 — mirrors the Anthropic block
     """Build a fake Anthropic content block of type=tool_use."""
     b = MagicMock()
     b.type = "tool_use"
@@ -905,9 +904,9 @@ class TestDetachedTitleSession:
         The callback must therefore build its own session, its own repository
         scoped to the same (tenant, user), and commit there.
         """
+        from app.db import session as session_mod
         from app.services.chat import orchestrator as orch
         from app.services.chat.orchestrator import ChatOrchestrator
-        from app.db import session as session_mod
 
         patches, (uid, aid, msg_repo, conv_repo, _) = _orchestrator_patches(history=[])
 

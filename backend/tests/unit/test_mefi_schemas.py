@@ -11,19 +11,16 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import pytest
-
 # These imports will FAIL (RED) until the schema module is created.
 from app.schemas.mefi import (
+    MefiAssignedTo,
     MefiCustomField,
     MefiLeadResponse,
     MefiMeta,
     MefiSearchResponse,
-    MefiStatusRef,
     MefiSourceRef,
-    MefiAssignedTo,
+    MefiStatusRef,
 )
-
 
 SAMPLE_LEAD_JSON = {
     "id": 42,

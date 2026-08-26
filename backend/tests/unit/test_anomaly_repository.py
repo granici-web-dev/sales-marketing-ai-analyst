@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for AnomalyRepository — RED-state contracts for Phase 4 anomaly detection.
 
 Tests mock AsyncSession — no live DB required.
@@ -14,6 +12,8 @@ Patterns tested:
   WR-04: upsert_detected_problem does NOT commit (caller commits atomically)
   D-01: UPSERT idempotency on (tenant_id, date, rule_id) unique constraint
 """
+
+from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
@@ -32,7 +32,9 @@ def _make_repo(mock_session=None):
     Import deferred — file parses (RED) before Plan 04-02 implements AnomalyRepository.
     Returns (repo, session) tuple.
     """
-    from app.services.repositories.anomaly_repository import AnomalyRepository  # noqa: PLC0415
+    from app.services.repositories.anomaly_repository import (
+        AnomalyRepository,  # deferred (INFRA-05)
+    )
 
     session = mock_session or AsyncMock()
     return AnomalyRepository(session, TENANT_ID), session

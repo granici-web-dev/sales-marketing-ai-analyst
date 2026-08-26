@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """SQLAlchemy ORM model for daily_kpi metric table.
 
 One row per tenant per calendar day — aggregate daily KPIs.
@@ -16,6 +14,8 @@ Ad-spend, GA4, and calls columns are NULLABLE — populated by future phases.
 visits_count/offers_count/contracts_count are NOT NULL with server_default=0.
 """
 
+from __future__ import annotations
+
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -23,7 +23,7 @@ from sqlalchemy import Date, Integer, Numeric, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TenantScopedMixin, TIMESTAMPTZ
+from app.db.base import TIMESTAMPTZ, Base, TenantScopedMixin
 
 
 class DailyKpi(Base, TenantScopedMixin):

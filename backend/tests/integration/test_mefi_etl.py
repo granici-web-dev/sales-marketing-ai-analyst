@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Integration tests for MEFI ETL — Phase 2, Plan 02-05.
 
 These tests verify the Alembic migration 003 schema against a real
@@ -12,6 +10,8 @@ Note: Full integration tests (live DB + alembic upgrade/downgrade) require
 Docker Compose to be running. For CI without Docker, these tests skip
 gracefully via the @pytest.mark.integration marker.
 """
+
+from __future__ import annotations
 
 import os
 

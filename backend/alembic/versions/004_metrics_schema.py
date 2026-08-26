@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Create metric tables, update v_mefi_leads_active, seed business_hours in funnel_config.
 
 Revision ID: 004
@@ -40,19 +38,22 @@ Security notes:
   T-03-02-04: NUMERIC types only for all money/rate/delta columns (D-16)
 """
 
+from __future__ import annotations
+
 import json
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 # ── Revision identifiers ──────────────────────────────────────────────────────
 
 revision: str = "004"
-down_revision: Union[str, None] = "003"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "003"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 # ── Business hours patch (D-07 from 03-CONTEXT.md) ───────────────────────────
 # Seeded into tenants.funnel_config JSONB for Sofa Belle.

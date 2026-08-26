@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for business-hours-adjusted time_to_first_touch calculation.
 
 Pure Python — no AsyncSession or DB required.
@@ -13,10 +11,10 @@ Import at module top (no try/except) — makes file RED at collection if
 app.services.metrics.business_hours does not exist (desired RED state for Wave 0).
 """
 
+from __future__ import annotations
+
 from datetime import datetime, time
 from zoneinfo import ZoneInfo
-
-import pytest
 
 from app.services.metrics.business_hours import business_minutes_between
 

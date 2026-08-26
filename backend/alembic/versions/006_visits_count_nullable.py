@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Make daily_kpi.visits_count nullable.
 
 Revision ID: 006
@@ -25,7 +23,10 @@ already nullable from migration 004 and require no DDL change.
 Downgrade note: restoring NOT NULL requires backfilling NULL→0 first.
 """
 
+from __future__ import annotations
+
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "006"

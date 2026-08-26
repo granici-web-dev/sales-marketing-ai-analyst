@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """``get_loss_reasons`` chat tool — distribution of LOST leads (D-02 + D-03 NEW).
 
 Thin ``text()`` query on ``v_mefi_leads_active`` (which includes both
@@ -17,6 +15,8 @@ because ``with_loader_criteria`` does not fire on ``text()`` queries
 LM-10: required fields use ``Field(..., description=...)``.
 """
 
+from __future__ import annotations
+
 from datetime import date
 from decimal import Decimal
 from typing import Literal
@@ -28,9 +28,10 @@ from sqlalchemy import bindparam, text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services.chat.tools.base import Tool
+
 # Canonical 11-source mapping — single source of truth from Phase 6.
 from app.services.dashboards.dashboard_read_service import MEFI_SOURCE_ID_TO_NAME
-from app.services.chat.tools.base import Tool
 
 logger = structlog.get_logger(__name__)
 

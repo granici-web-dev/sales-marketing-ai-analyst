@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Create daily_insights table for Phase 5 AI Insights generation.
 
 Revision ID: 008
@@ -27,9 +25,12 @@ Security notes:
   T-05-02-03: tenant_id NOT NULL + FK to tenants.id prevents phantom tenant rows.
 """
 
+from __future__ import annotations
+
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 revision = "008"
 down_revision = "007"

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """DashboardFactory — builds valid response dicts for all 3 dashboards + health.
 
 Plain class (not factory-boy) with class methods that return dict objects
@@ -13,7 +11,9 @@ Sofa Belle pilot reference values:
   - Sources: mail_fb_ig, showroom (telefon), site
 """
 
-from datetime import date, datetime, timezone
+from __future__ import annotations
+
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 
@@ -238,7 +238,7 @@ class DashboardFactory:
             and stale flag.
         """
         return {
-            "last_sync_at": datetime(2026, 5, 28, 3, 47, 12, tzinfo=timezone.utc),
+            "last_sync_at": datetime(2026, 5, 28, 3, 47, 12, tzinfo=UTC),
             "last_pipeline_status": "success",
             "stale": stale,
         }

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """factory-boy factories for anomaly detection test data.
 
 Provides DetectedProblemRowFactory, LeadWithNoTouchFactory, StuckOfferLeadFactory
@@ -14,6 +12,8 @@ Decisions locked by Phase 4 CONTEXT.md:
   D-11: junk IDs computed once per run_all_rules() call
   D-20: thresholds locked — slow_first_touch 5h, stuck_offer 15d, drop 35%, sp 30%
 """
+
+from __future__ import annotations
 
 from datetime import date, timedelta
 from decimal import Decimal

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """SQLAlchemy ORM model for source_daily_kpi metric table.
 
 One row per tenant per source category per calendar day — per-source KPIs.
@@ -19,13 +17,15 @@ Using only (tenant_id, date) as conflict target causes UniqueViolationError
 on insert of the second source category.
 """
 
+from __future__ import annotations
+
 from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import Date, Integer, Numeric, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TenantScopedMixin, TIMESTAMPTZ
+from app.db.base import TIMESTAMPTZ, Base, TenantScopedMixin
 
 
 class SourceDailyKpi(Base, TenantScopedMixin):

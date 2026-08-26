@@ -62,7 +62,7 @@ def sync_mefi_leads(self, tenant_id: str) -> dict:  # type: ignore[no-untyped-de
     try:
         return asyncio.run(_sync_async(UUID(tenant_id)))
     except Exception as exc:
-        from app.services.integrations.mefi import RateLimitError  # noqa
+        from app.services.integrations.mefi import RateLimitError
 
         if isinstance(exc, RateLimitError):
             raise self.retry(countdown=exc.retry_after) from exc
@@ -147,7 +147,7 @@ async def _sync_async(tenant_id: UUID) -> dict:
                 # ── Step 4: First-ever sync? Trigger backfill ────────────────
                 lead_count = await repo.get_lead_count_for_tenant()
                 if lead_count == 0:
-                    from app.tasks.etl.backfill_mefi_leads import backfill_mefi_leads  # noqa
+                    from app.tasks.etl.backfill_mefi_leads import backfill_mefi_leads
 
                     backfill_mefi_leads.apply_async(
                         args=[str(tenant_id)], queue="backfill"
@@ -281,17 +281,18 @@ async def _sync_async(tenant_id: UUID) -> dict:
     except Exception as exc:
         # ── Error path: update SyncRun to failed ─────────────────────────────
         try:
-            from sqlalchemy import select as _select  # noqa
-            from app.models.pipeline import SyncRun as _SR  # noqa
-            from app.core.tenancy import set_tenant_id as _set  # noqa
+            from sqlalchemy import select as _select
+
+            from app.core.tenancy import set_tenant_id as _set
+            from app.models.pipeline import SyncRun as _SyncRun
             _set(tenant_id)
             async with TaskSession() as err_session:
                 result = await err_session.execute(
-                    _select(_SR).where(
-                        _SR.tenant_id == tenant_id,
-                        _SR.source == "mefi",
-                        _SR.status == "running",
-                    ).order_by(_SR.started_at.desc()).limit(1)
+                    _select(_SyncRun).where(
+                        _SyncRun.tenant_id == tenant_id,
+                        _SyncRun.source == "mefi",
+                        _SyncRun.status == "running",
+                    ).order_by(_SyncRun.started_at.desc()).limit(1)
                 )
                 run = result.scalar_one_or_none()
                 if run:
@@ -321,9 +322,12 @@ def daily_pipeline(tenant_id: str) -> object:
     Defined here so future phases extend this function without touching celery_app.py.
     """
     from celery import chain
-    from app.tasks.etl.calculate_daily_kpis import calculate_daily_kpis  # noqa: PLC0415
-    from app.tasks.etl.detect_anomalies import detect_anomalies  # noqa: PLC0415
-    from app.tasks.insights.generate_daily_insights import generate_daily_insights  # noqa: PLC0415
+
+    from app.tasks.etl.calculate_daily_kpis import calculate_daily_kpis  # deferred (INFRA-05)
+    from app.tasks.etl.detect_anomalies import detect_anomalies  # deferred (INFRA-05)
+    from app.tasks.insights.generate_daily_insights import (
+        generate_daily_insights,  # deferred (INFRA-05)
+    )
 
     return chain(
         sync_mefi_leads.si(tenant_id),

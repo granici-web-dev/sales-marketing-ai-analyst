@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """ChatOrchestrator — streaming + tool-loop + hallucination guard + persistence.
 
 This is the heart of Phase 8 AI Chat. It runs ONE user turn end-to-end:
@@ -43,6 +41,8 @@ References:
   - backend/app/services/insights/insight_service.py (cost formula + LM-1 pattern)
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -51,12 +51,12 @@ from time import perf_counter
 from uuid import UUID, uuid4
 
 import structlog
-from sqlalchemy.ext.asyncio import AsyncSession
 
 # Module-level import for test patchability (LM-1 mitigation — same pattern as
 # Phase 5 InsightService and Phase 8 title_generator). Instantiated INSIDE
 # `run_turn` per INFRA-05 fork safety (D-29) — NEVER at module level.
 from anthropic import AsyncAnthropic
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.chat.hallucination_guard import (
     build_entity_whitelist,
@@ -73,7 +73,6 @@ from app.services.chat.repositories import (
 )
 from app.services.chat.title_generator import schedule_title_generation
 from app.services.chat.tools import TOOLS_REGISTRY, get_all_tools
-
 
 log = structlog.get_logger(__name__)
 
@@ -149,13 +148,12 @@ class ChatOrchestrator:
         # Instantiate repositories from the registered classes (module-level
         # patch targets so tests can swap them).
         msg_repo = MessageRepository(self._session, self._tenant_id)
-        conv_repo = ConversationRepository(self._session, self._tenant_id, self._user_id)
         tool_repo = ToolCallRepository(self._session, self._tenant_id)
 
         # ── 1. Persist user message + emit conversation_meta ───────────────
         try:
             user_msg_id = await msg_repo.insert_user_message(conversation_id, user_text)
-        except Exception as exc:  # noqa: BLE001 — sanitize per T-08-03
+        except Exception:
             log_.exception("chat.user_persist_failed")
             yield (
                 "error",
@@ -183,7 +181,7 @@ class ChatOrchestrator:
                 regenerate_count=0,
                 message_id=assistant_msg_id,
             )
-        except Exception:  # noqa: BLE001 — sanitize per T-08-03
+        except Exception:
             log_.exception("chat.assistant_stub_failed")
             yield (
                 "error",
@@ -199,7 +197,7 @@ class ChatOrchestrator:
         # outlive the rest of the turn.
         try:
             await self._session.commit()
-        except Exception:  # noqa: BLE001 — sanitize per T-08-03
+        except Exception:
             log_.exception("chat.user_commit_failed")
             yield (
                 "error",
@@ -225,7 +223,7 @@ class ChatOrchestrator:
 
         try:
             history = await msg_repo.load_history(conversation_id, limit=HISTORY_LIMIT)
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 — sanitize per T-08-03
             history = []
         # D-16: D-16 anchor + recent is built by load_history; we just append the new user message.
         base_messages: list[dict] = list(history) + [{"role": "user", "content": user_text}]
@@ -233,7 +231,7 @@ class ChatOrchestrator:
 
         try:
             entity_whitelist = await build_entity_whitelist(self._session, self._tenant_id)
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 — sanitize per T-08-03
             entity_whitelist = {}
 
         # ── 3. Tool loop + guard retry ──────────────────────────────────────
@@ -253,7 +251,7 @@ class ChatOrchestrator:
                 messages = list(base_messages)
 
                 # Inner tool-use loop, capped at MAX_TOOL_ROUNDS (D-30).
-                for round_idx in range(MAX_TOOL_ROUNDS):
+                for _round_idx in range(MAX_TOOL_ROUNDS):
                     # NB: stream(...) is a context manager that returns the
                     # response stream. Anthropic 0.104 supports tools=[...]
                     # + system=[...] (with cache_control) on stream.
@@ -343,7 +341,7 @@ class ChatOrchestrator:
                                 duration_ms=duration_ms,
                                 error=(str(result.get("error", ""))[:500] if is_error else None),
                             )
-                        except Exception:  # noqa: BLE001
+                        except Exception:
                             log_.exception("chat.tool_audit_failed")
                         preview = json.dumps(result, default=str, ensure_ascii=False)[:200]
                         yield (
@@ -372,7 +370,7 @@ class ChatOrchestrator:
                     # having. Close the round here instead.
                     try:
                         await self._session.commit()
-                    except Exception:  # noqa: BLE001 — sanitize per T-08-03
+                    except Exception:
                         log_.exception("chat.tool_round_commit_failed")
 
                     # Append assistant + user(tool_result) to messages for next round.
@@ -410,7 +408,7 @@ class ChatOrchestrator:
                     yield ("assistant_chunk", {"text": GUARD_FALLBACK_TEXT})
                     break
 
-        except Exception as exc:  # noqa: BLE001 — sanitize per T-08-03
+        except Exception:  # noqa: BLE001 — sanitize per T-08-03
             self._log.exception("chat.run_turn_failed")
             yield (
                 "error",
@@ -451,7 +449,7 @@ class ChatOrchestrator:
         # is the finalize UPDATE that fills the assistant stub with its text.
         try:
             await self._session.commit()
-        except Exception:  # noqa: BLE001 — sanitize per T-08-03
+        except Exception:  # noqa: BLE001
             self._log.exception("chat.turn_commit_failed")
             yield (
                 "error",
@@ -510,7 +508,7 @@ class ChatOrchestrator:
                     try:
                         await repo.update_title(cid, title)
                         await detached.commit()
-                    except Exception as exc:  # noqa: BLE001 — sanitize per T-08-03
+                    except Exception as exc:  # noqa: BLE001
                         # WR-10: a lost title is cosmetic and must not take the
                         # turn down, but it stops being invisible.
                         log_.warning("chat.title.commit_failed", error=str(exc)[:200])
@@ -519,7 +517,7 @@ class ChatOrchestrator:
                 schedule_title_generation(
                     conversation_id, user_text, accumulated_text, _update_title
                 )
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: BLE001 — sanitize per T-08-03
                 self._log.exception("chat.title_schedule_failed")
 
     # ──────────────────────────────────────────────────────────────────────
@@ -545,7 +543,7 @@ class ChatOrchestrator:
             result = await tool.handler(self._tenant_id, self._session, validated)
             duration_ms = int((perf_counter() - t0) * 1000)
             return block, result, False, duration_ms
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001 — sanitize per T-08-03
             duration_ms = int((perf_counter() - t0) * 1000)
             return block, {"error": str(exc)[:500]}, True, duration_ms
 

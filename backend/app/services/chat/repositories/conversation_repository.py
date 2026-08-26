@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """ConversationRepository — tenant + user scoped CRUD for `chat_conversations` (Phase 8).
 
 D-15: soft archive via `archived` boolean — no hard delete in MVP1.
@@ -18,7 +16,9 @@ CR-01 (Plan 08-07): per-user authorization — every method also filters by
       constructing the repo with the wrong scope.
 """
 
-from datetime import datetime, timezone
+from __future__ import annotations
+
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import desc, select, update
@@ -150,7 +150,7 @@ class ConversationRepository:
             .where(ChatConversation.tenant_id == self._tenant_id)
             .where(ChatConversation.user_id == self._user_id)
             .where(ChatConversation.id == conversation_id)
-            .values(last_message_at=datetime.now(timezone.utc))
+            .values(last_message_at=datetime.now(UTC))
         )
         await self._session.execute(stmt)
 

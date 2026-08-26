@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Adversarial test runner for Phase 8 AI Chat — gated by RUN_ADVERSARIAL=1.
 
 This module loads `adversarial_chat_questions.yaml` (15 trap questions, 5
@@ -26,6 +24,8 @@ delivers is: the file exists, the env gate works, and the YAML loads with
 the expected category/count distribution. Plan 08-04 fills in the bodies.
 """
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
 
@@ -45,7 +45,7 @@ if os.environ.get("RUN_ADVERSARIAL") != "1":
 # Lazy imports — only loaded when the gate is open so test collection in the
 # default workflow doesn't pull in yaml/orchestrator/etc.
 
-import yaml  # noqa: E402
+import yaml
 
 FIXTURE_PATH = Path(__file__).parent / "adversarial_chat_questions.yaml"
 

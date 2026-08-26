@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """``get_lead_categories_breakdown`` chat tool (D-02 + D-03).
 
 Returns lead volume by canonical source category (11 Sofa Belle categories
@@ -11,6 +9,8 @@ DATA-04: Decimals serialized as str.
 LM-3: handler signature ``(tenant_id, session, inp)``.
 LM-10: required fields use ``Field(..., description=...)``.
 """
+
+from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal

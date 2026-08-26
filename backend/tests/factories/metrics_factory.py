@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """factory-boy factories for metric table test data.
 
 Provides DailyKpiRowFactory, SalespersonKpiRowFactory, SourceKpiRowFactory
@@ -12,7 +10,9 @@ Decisions locked by Phase 3 CONTEXT.md:
   D-17: Only active salespeople (is_active=True) in salesperson rows
 """
 
-from datetime import date, datetime, timezone
+from __future__ import annotations
+
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -98,7 +98,7 @@ class DailyKpiRowFactory(factory.Factory):
     avg_call_duration_seconds = None
     avg_sentiment_score = None
 
-    calculated_at = factory.LazyFunction(lambda: datetime.now(timezone.utc))
+    calculated_at = factory.LazyFunction(lambda: datetime.now(UTC))
 
 
 class SalespersonKpiRowFactory(factory.Factory):
@@ -147,7 +147,7 @@ class SalespersonKpiRowFactory(factory.Factory):
     avg_call_duration_seconds = None
     avg_sentiment_score = None
 
-    calculated_at = factory.LazyFunction(lambda: datetime.now(timezone.utc))
+    calculated_at = factory.LazyFunction(lambda: datetime.now(UTC))
 
 
 class SourceKpiRowFactory(factory.Factory):
@@ -179,7 +179,7 @@ class SourceKpiRowFactory(factory.Factory):
     cac = None
     roas = None
 
-    calculated_at = factory.LazyFunction(lambda: datetime.now(timezone.utc))
+    calculated_at = factory.LazyFunction(lambda: datetime.now(UTC))
 
 
 # ── Builder helpers ────────────────────────────────────────────────────────────

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Кто делает запрос.
 
 ## Что изменилось и почему
@@ -16,6 +14,8 @@ Davoq должна быть одна учётная запись на семь �
 
 """
 
+from __future__ import annotations
+
 import structlog
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,10 +24,10 @@ from app.db.deps import get_session
 from app.schemas.auth import UserOut
 from app.services.auth.engine_session import (
     ENGINE_SESSION_COOKIE,
-    EngineUnreachable,
+    EngineUnreachableError,
     resolve,
 )
-from app.services.auth.link import TenantNotLinked, resolve_local_user
+from app.services.auth.link import TenantNotLinkedError, resolve_local_user
 
 logger = structlog.get_logger(__name__)
 
@@ -54,7 +54,7 @@ async def get_current_user(
 
     try:
         identity = await resolve(engine_token)
-    except EngineUnreachable as exc:
+    except EngineUnreachableError as exc:
         # Отправить человека на форму входа означало бы предложить ему войти
         # заново и не объяснить, почему не пускает: сессия-то у него верная.
         logger.warning("auth.engine_unreachable", error=str(exc)[:200])
@@ -68,7 +68,7 @@ async def get_current_user(
 
     try:
         return await resolve_local_user(session, identity)
-    except TenantNotLinked as exc:
+    except TenantNotLinkedError as exc:
         logger.warning("auth.tenant_not_linked", reason=str(exc)[:120])
         raise HTTPException(
             status_code=403,

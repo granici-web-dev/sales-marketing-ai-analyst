@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Repository layer for Phase 8 AI Chat persistence (D-22).
 
 Three tenant-scoped repositories backed by the migration-009 tables:
@@ -18,11 +16,13 @@ TenantScopedMixin + with_loader_criteria. ORM SELECTs are filtered automatically
 writes assert the dict's tenant_id explicitly.
 """
 
-from app.services.chat.repositories.conversation_repository import (  # noqa: F401
+from __future__ import annotations
+
+from app.services.chat.repositories.conversation_repository import (
     ConversationRepository,
 )
-from app.services.chat.repositories.message_repository import MessageRepository  # noqa: F401
-from app.services.chat.repositories.tool_call_repository import (  # noqa: F401
+from app.services.chat.repositories.message_repository import MessageRepository
+from app.services.chat.repositories.tool_call_repository import (
     ToolCallRepository,
 )
 

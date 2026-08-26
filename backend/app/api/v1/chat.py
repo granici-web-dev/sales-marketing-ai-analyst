@@ -39,16 +39,14 @@ Threat mitigations applied at this layer:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
 import redis.asyncio as aioredis
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
 # Module-level import of AsyncAnthropic for LM-1 testability (Phase 5 pattern).
 # The orchestrator instantiates it per-request (D-29 / INFRA-05) but importing it
@@ -56,7 +54,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # (test_anthropic_scope.py): chat.py contains `AsyncAnthropic`, siblings do not.
 # Re-instantiation inside the SSE event_generator happens via ChatOrchestrator,
 # which is the single owner of the streaming Anthropic call.
-from anthropic import AsyncAnthropic  # noqa: F401 — D-25 documented exception + LM-1
+from anthropic import AsyncAnthropic
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.dependencies import get_current_user
@@ -151,7 +152,7 @@ async def create_conversation(
     first turn.
     """
     tenant_id = require_tenant_id()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     # CR-01 (Plan 08-07): per-user authorization predicate threaded into the
     # repository constructor so every SELECT/UPDATE inside the repo filters by
@@ -284,7 +285,7 @@ async def archive_conversation(
         )
     await repo.soft_archive(conversation_id)
     await session.commit()
-    return None
+    return
 
 
 # ── Endpoint 5: POST /chat/conversations/{id}/messages (SSE — D-09/D-11/D-24) ─
@@ -342,7 +343,7 @@ async def send_message(
     # ── 1. Rate-limit (D-24) ─────────────────────────────────────────────────
     # Hour bucket: align all users to the same wall-clock hour so behavior is
     # predictable. Bucket changes every 3600s, releasing pressure naturally.
-    hour_bucket = int(datetime.now(timezone.utc).timestamp() // RATE_LIMIT_TTL)
+    hour_bucket = int(datetime.now(UTC).timestamp() // RATE_LIMIT_TTL)
     rate_key = f"chat:rate:{current_user.id}:{hour_bucket}"
     lock_key = f"chat:stream:{conversation_id}"
 
@@ -417,7 +418,7 @@ async def send_message(
                     disconnect_probe=request.is_disconnected,
                 ):
                     await queue.put((event_name, payload))
-            except Exception:  # noqa: BLE001 — T-08-03 sanitize
+            except Exception:
                 logger.exception(
                     "chat.unhandled",
                     conversation_id=str(conversation_id),
@@ -439,7 +440,7 @@ async def send_message(
                     item = await asyncio.wait_for(
                         queue.get(), timeout=HEARTBEAT_INTERVAL_S
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # No event for HEARTBEAT_INTERVAL_S — emit SSE comment so
                     # Caddy/nginx (and intermediaries) keep the connection open.
                     yield ":\n\n"
@@ -453,10 +454,8 @@ async def send_message(
             # exits, so its `finally` (queue sentinel) doesn't leak.
             if not producer_task.done():
                 producer_task.cancel()
-                try:
+                with contextlib.suppress(asyncio.CancelledError, Exception):
                     await producer_task
-                except (asyncio.CancelledError, Exception):  # noqa: BLE001
-                    pass
             # Release the stream-lock in Redis. Best-effort: failures here are
             # logged but do not propagate (the lock TTL acts as a safety net).
             try:
@@ -464,7 +463,7 @@ async def send_message(
                     settings.redis_url, decode_responses=True
                 ) as r:
                     await r.delete(lock_key)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 logger.exception(
                     "chat.lock_release_failed",
                     conversation_id=str(conversation_id),
@@ -513,7 +512,7 @@ async def get_suggested_questions(
     try:
         svc = InsightReadService(session, tenant_id)
         insight = await svc.get_today()
-    except Exception:  # noqa: BLE001 — fault-tolerance: never < 5 chips
+    except Exception:
         logger.exception("chat.suggested.insight_fetch_failed")
         insight = None
 

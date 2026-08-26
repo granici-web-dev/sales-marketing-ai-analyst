@@ -4,7 +4,7 @@ Imports expose top-level names for convenient usage across the application.
 """
 from __future__ import annotations
 
-from app.schemas.auth import LoginRequest, TokenResponse, UserOut
+from app.schemas.auth import UserOut
 from app.schemas.mefi import (
     MefiAssignedTo,
     MefiCustomField,
@@ -17,8 +17,6 @@ from app.schemas.mefi import (
 
 __all__ = [
     # Auth
-    "LoginRequest",
-    "TokenResponse",
     "UserOut",
     # MEFI
     "MefiAssignedTo",

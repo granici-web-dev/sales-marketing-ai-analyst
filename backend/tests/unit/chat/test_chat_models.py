@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for Phase 8 AI Chat SQLAlchemy ORM models.
 
 Tests cover D-20 schema contract for the 3 persistence tables:
@@ -25,10 +23,11 @@ Wrapped in try/except so test collection succeeds in RED state (before Task 1
 implementation lands). Tests fail with descriptive messages when models missing.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import pytest
-
 
 # ── Import stubs ──────────────────────────────────────────────────────────────
 # Wrapped per Phase-3 / Phase-5 convention so collection survives the RED state.
@@ -286,7 +285,7 @@ def test_migration_009_exists_with_correct_revision_chain() -> None:
         f"{source[:300]}"
     )
     assert 'down_revision = "008"' in source, (
-        f"Migration 009 must chain from `down_revision = \"008\"` "
+        "Migration 009 must chain from `down_revision = \"008\"` "
         "(008 = daily_insights from Phase 5)."
     )
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Per-source KPI aggregation service.
 
 Computes per-source daily KPIs from v_mefi_leads_active (D-14).
@@ -37,12 +35,14 @@ T-03-03-01: Explicit tenant_id filter in Core SELECTs (bypasses with_loader_crit
 Phase 3 Plan 03 — service layer for source_daily_kpi table writes.
 """
 
+from __future__ import annotations
+
 from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
 import structlog
-from sqlalchemy import select, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
@@ -154,12 +154,6 @@ class SourceKpiService:
         colaborare_ids   = source_categories.get("colaborare",   [12])
         arhitect_ids     = source_categories.get("arhitect",     [7])
         client_fidel_ids = source_categories.get("client_fidel", [13])
-
-        # All known source_ids — everything else → 'other'
-        known_ids = (
-            showroom_ids + mail_ids + telefon_ids + whatsapp_ids + site_ids
-            + meta_ids + recomandare_ids + colaborare_ids + arhitect_ids + client_fidel_ids
-        )
 
         # Query 1 — leads + offers on the CREATION cohort (created_at_source).
         per_source_sql = text("""

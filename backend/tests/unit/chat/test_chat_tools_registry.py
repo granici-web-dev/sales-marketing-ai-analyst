@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for the AI Chat tools registry (Phase 8 Plan 03 — D-01..D-04).
 
 Verifies the contract of ``app.services.chat.tools``:
@@ -17,12 +15,13 @@ keeps the ``(tenant_id, session, inp)`` contract — preventing accidental
 loss of tenant scoping when handlers are refactored.
 """
 
+from __future__ import annotations
+
 import inspect
 from datetime import date
 from uuid import UUID
 
 import pytest
-
 
 # ── Canonical D-02 tool set ────────────────────────────────────────────────────
 
@@ -137,12 +136,12 @@ class TestRegistryShape:
             inp = TOOLS_REGISTRY["explain_metric"].input_schema.model_validate(
                 {"metric_name": "CAC"}
             )
-            assert getattr(inp, "metric_name") == "CAC"
+            assert inp.metric_name == "CAC"
         else:
             inp = TOOLS_REGISTRY["get_funnel_data"].input_schema.model_validate(
                 {"date_from": "2026-05-01", "date_to": "2026-05-19"}
             )
-            assert getattr(inp, "date_from") == _date(2026, 5, 1)
+            assert inp.date_from == _date(2026, 5, 1)
 
 
 # ── Per-handler smoke tests (mocked wrapped service) ──────────────────────────

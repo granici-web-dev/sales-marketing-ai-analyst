@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for DashboardReadService — RED-state contracts for Phase 6 Plan 02.
 
 Tests mock AsyncSession — no live DB required.
@@ -8,6 +6,8 @@ Requirements: SALE-01..07, SALES-01..04, MARK-01..04
 All tests will fail with ImportError until Plan 06-02 creates
 app.services.dashboards.dashboard_read_service.DashboardReadService.
 """
+
+from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
@@ -23,7 +23,9 @@ TO_DATE = date(2026, 5, 19)
 
 def _make_service(mock_session=None):
     """Build DashboardReadService with mocked AsyncSession."""
-    from app.services.dashboards.dashboard_read_service import DashboardReadService  # noqa: PLC0415
+    from app.services.dashboards.dashboard_read_service import (
+        DashboardReadService,  # deferred (INFRA-05)
+    )
 
     session = mock_session or AsyncMock()
     return DashboardReadService(session, TENANT_ID), session

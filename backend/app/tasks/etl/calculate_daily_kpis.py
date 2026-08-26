@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Daily KPI calculation Celery task — second link in the PIPE-01 chain (D-18).
 
 Wires DailyKpiService, SalespersonKpiService, SourceKpiService, and
@@ -25,13 +23,37 @@ Security:
 Phase 3 Plan 04 — final wave of the Metrics Engine phase.
 """
 
+from __future__ import annotations
+
 import asyncio
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 import structlog
 
 from app.tasks.celery_app import celery_app
+
+BUCHAREST = ZoneInfo("Europe/Bucharest")
+
+
+def resolve_kpi_date(calculation_date: str | None) -> date:
+    """Resolve which day the KPIs are for — D-10.
+
+    `None` means yesterday in Europe/Bucharest, not yesterday in UTC: between
+    midnight and 02:00 local the two differ, and a UTC default files that
+    evening's leads under the wrong day.
+
+    A supplied date is parsed by `date.fromisoformat`, so a raw string never
+    reaches SQL (T-03-04-02); a malformed one raises ValueError rather than
+    silently falling back to yesterday.
+
+    Kept at module level and free of DB imports: it is pure, so it can be
+    tested without a database, and it touches nothing that INFRA-05 defers.
+    """
+    if calculation_date is not None:
+        return date.fromisoformat(calculation_date)
+    return datetime.now(BUCHAREST).date() - timedelta(days=1)
 
 logger = structlog.get_logger(__name__)
 
@@ -88,6 +110,7 @@ async def _calc_async(tenant_id: UUID, calculation_date: str | None) -> dict:
     # ---------------------------------------------------------------------------
     # Deferred imports — must stay inside this function body (INFRA-05, Pitfall 2)
     # ---------------------------------------------------------------------------
+
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
     from sqlalchemy.pool import NullPool
 
@@ -98,8 +121,6 @@ async def _calc_async(tenant_id: UUID, calculation_date: str | None) -> dict:
     from app.services.metrics.salesperson_kpi_service import SalespersonKpiService
     from app.services.metrics.source_kpi_service import SourceKpiService
     from app.services.repositories.metrics_repository import MetricsRepository
-    from zoneinfo import ZoneInfo
-    from datetime import date as date_type
 
     # ── Security: set tenant context ────────────────────────────────────────────
     set_tenant_id(tenant_id)
@@ -115,11 +136,7 @@ async def _calc_async(tenant_id: UUID, calculation_date: str | None) -> dict:
     # (T-03-04-02 SQL injection mitigation). ValueError on malformed date propagates
     # to autoretry exception handler (correct — invalid date should not silently
     # default to yesterday).
-    BUCHAREST = ZoneInfo("Europe/Bucharest")
-    if calculation_date is not None:
-        kpi_date = date_type.fromisoformat(calculation_date)
-    else:
-        kpi_date = datetime.now(BUCHAREST).date() - timedelta(days=1)
+    kpi_date = resolve_kpi_date(calculation_date)
 
     log.info("kpi.compute_start", kpi_date=str(kpi_date))
 
@@ -203,18 +220,19 @@ async def _calc_async(tenant_id: UUID, calculation_date: str | None) -> dict:
         # ── Error path: update SyncRun to failed (T-03-04-06 / PIPE-04) ────────
         # Open a NEW session — the original session may have rolled back
         try:
-            from sqlalchemy import select as _select  # noqa: PLC0415
-            from app.models.pipeline import SyncRun as _SR  # noqa: PLC0415
-            from app.core.tenancy import set_tenant_id as _set  # noqa: PLC0415
+            from sqlalchemy import select as _select  # deferred (INFRA-05)
+
+            from app.core.tenancy import set_tenant_id as _set  # deferred (INFRA-05)
+            from app.models.pipeline import SyncRun as _SyncRun  # deferred (INFRA-05)
 
             _set(tenant_id)
             async with TaskSession() as err_session:
                 result = await err_session.execute(
-                    _select(_SR).where(
-                        _SR.tenant_id == tenant_id,
-                        _SR.source == "metrics",
-                        _SR.status == "running",
-                    ).order_by(_SR.started_at.desc()).limit(1)
+                    _select(_SyncRun).where(
+                        _SyncRun.tenant_id == tenant_id,
+                        _SyncRun.source == "metrics",
+                        _SyncRun.status == "running",
+                    ).order_by(_SyncRun.started_at.desc()).limit(1)
                 )
                 run = result.scalar_one_or_none()
                 if run:

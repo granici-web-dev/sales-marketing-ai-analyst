@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """factory-boy factories for MEFI lead test data.
 
 Provides LeadResponseFactory and CustomFieldFactory for building
 MefiLeadResponse instances in unit and integration tests without
 needing a real MEFI API connection.
 """
+
+from __future__ import annotations
 
 from decimal import Decimal
 
@@ -47,10 +47,9 @@ class LeadResponseFactory(factory.Factory):
 def make_showroom_lead(showroom: str = "Brașov", status_id: int = 17) -> MefiLeadResponse:
     """Build a lead with showroom custom field set."""
     cf = MefiCustomField(field_id=14, value=showroom)
-    lead = LeadResponseFactory.build(
+    return LeadResponseFactory.build(
         custom_fields=[cf],
     )
-    return lead
 
 
 def make_offer_lead(sent: bool = True) -> MefiLeadResponse:

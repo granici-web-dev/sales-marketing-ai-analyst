@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Phase 6 integration test suite — all 7 ROADMAP success criteria.
 
 Tests the full FastAPI stack (router → service → schema → response) using
@@ -15,8 +13,9 @@ Success Criteria coverage:
   SC#7 — GET /docs and /openapi.json → 200 with all Phase 6 paths
 """
 
-from datetime import date, datetime, timezone
-from decimal import Decimal
+from __future__ import annotations
+
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
@@ -37,11 +36,10 @@ MOCK_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 def override_deps():
     """Override get_current_user and get_session for all tests in this module."""
     from app.core.dependencies import get_current_user
+    from app.core.tenancy import set_tenant_id
     from app.db.deps import get_session
     from app.main import app
     from app.schemas.auth import UserOut
-
-    from app.core.tenancy import set_tenant_id
 
     mock_user = UserOut(id=MOCK_USER_ID, email="test@sofabelle.ro", is_active=True)
     mock_session = AsyncMock()
@@ -199,7 +197,7 @@ async def test_sc4_insights_today_200(override_deps) -> None:
         "date": date(2026, 5, 27),
         "status": "success",
         "generation_failed": False,
-        "generated_at": datetime(2026, 5, 28, 6, 1, 0, tzinfo=timezone.utc),
+        "generated_at": datetime(2026, 5, 28, 6, 1, 0, tzinfo=UTC),
         "payload": {"summary": "Buna dimineata Sofa Belle", "problems": [], "positives": [], "warnings": [], "weekly_action_plan": []},
     }
 
@@ -312,17 +310,16 @@ async def test_sc5_refresh_first_call_202(override_deps) -> None:
     mock_redis_ctx.__aenter__ = AsyncMock(return_value=mock_r)
     mock_redis_ctx.__aexit__ = AsyncMock(return_value=None)
 
-    with patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx):
-        with patch(
-            "app.tasks.insights.generate_daily_insights.generate_daily_insights",
-            mock_generate,
-        ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app),
-                base_url="http://test",
-                headers={"Authorization": "Bearer dummy"},
-            ) as c:
-                r = await c.post("/api/v1/insights/refresh")
+    with patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx), patch(
+        "app.tasks.insights.generate_daily_insights.generate_daily_insights",
+        mock_generate,
+    ):
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers={"Authorization": "Bearer dummy"},
+        ) as c:
+            r = await c.post("/api/v1/insights/refresh")
 
     assert r.status_code == 202
     body = r.json()
@@ -383,7 +380,7 @@ async def test_sc6_health_data_200_with_session(override_deps) -> None:
     from app.main import app
 
     mock_health = {
-        "last_sync_at": datetime(2026, 5, 28, 3, 47, 12, tzinfo=timezone.utc),
+        "last_sync_at": datetime(2026, 5, 28, 3, 47, 12, tzinfo=UTC),
         "last_pipeline_status": "success",
         "stale": False,
     }

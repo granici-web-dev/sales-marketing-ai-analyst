@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Integration tests for generate_daily_insights Celery task — RED-state contracts for Phase 5.
 
 Most tests are skipped without TEST_DATABASE_URL (require a live DB).
@@ -16,6 +14,8 @@ Patterns tested:
   D-18: NullPool + asyncio.run(_generate_async()) pattern (mirrors detect_anomalies.py)
   D-20: Beat entry at 06:00 Europe/Bucharest (separate from 04:00 mefi-sync entry)
 """
+
+from __future__ import annotations
 
 import os
 import subprocess
@@ -118,7 +118,7 @@ async def test_task_writes_success_row() -> None:
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import create_async_engine
 
-    from app.tasks.insights.generate_daily_insights import _generate_async  # noqa: PLC0415
+    from app.tasks.insights.generate_daily_insights import _generate_async  # deferred (INFRA-05)
 
     kpi_date = date.today()
     engine = create_async_engine(_TEST_DB_URL)
@@ -165,7 +165,7 @@ async def test_token_usage_logged() -> None:
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import create_async_engine
 
-    from app.tasks.insights.generate_daily_insights import _generate_async  # noqa: PLC0415
+    from app.tasks.insights.generate_daily_insights import _generate_async  # deferred (INFRA-05)
 
     kpi_date = date.today()
     engine = create_async_engine(_TEST_DB_URL)
@@ -211,7 +211,7 @@ async def test_upsert_is_idempotent() -> None:
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import create_async_engine
 
-    from app.tasks.insights.generate_daily_insights import _generate_async  # noqa: PLC0415
+    from app.tasks.insights.generate_daily_insights import _generate_async  # deferred (INFRA-05)
 
     kpi_date = date.today()
     engine = create_async_engine(_TEST_DB_URL)
@@ -326,7 +326,7 @@ async def test_fallback_on_all_claude_failures() -> None:
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import create_async_engine
 
-    from app.tasks.insights.generate_daily_insights import _generate_async  # noqa: PLC0415
+    from app.tasks.insights.generate_daily_insights import _generate_async  # deferred (INFRA-05)
 
     kpi_date = date.today()
     engine = create_async_engine(_TEST_DB_URL)

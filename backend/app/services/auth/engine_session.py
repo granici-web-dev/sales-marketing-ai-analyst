@@ -58,7 +58,7 @@ class EngineIdentity:
     email: str
 
 
-class EngineUnreachable(RuntimeError):
+class EngineUnreachableError(RuntimeError):
     """Движок не ответил.
 
     Отдельно от «не авторизован» намеренно: недоступный движок — это наша
@@ -90,12 +90,12 @@ async def _ask_engine(token: str) -> EngineIdentity | None:
         async with httpx.AsyncClient(timeout=ENGINE_TIMEOUT_SECONDS) as client:
             response = await client.get(url, cookies={ENGINE_SESSION_COOKIE: token})
     except httpx.HTTPError as exc:
-        raise EngineUnreachable(str(exc)[:200]) from exc
+        raise EngineUnreachableError(str(exc)[:200]) from exc
 
     if response.status_code == 401:
         return None
     if response.status_code >= 500:
-        raise EngineUnreachable(f"движок ответил {response.status_code}")
+        raise EngineUnreachableError(f"движок ответил {response.status_code}")
     if response.status_code != 200:
         # 403 и прочее — не наша область: сессия есть, но движок её чем-то
         # ограничил. Пускать в этом случае нельзя.
@@ -108,7 +108,7 @@ async def _ask_engine(token: str) -> EngineIdentity | None:
     if not user_id or not tenant_id:
         # Старая сборка движка идентификаторов не отдаёт. Сводить не по чему,
         # и догадываться по почте нельзя.
-        raise EngineUnreachable("движок не вернул идентификаторы сессии")
+        raise EngineUnreachableError("движок не вернул идентификаторы сессии")
 
     return EngineIdentity(
         engine_user_id=UUID(user_id),
@@ -121,7 +121,7 @@ async def resolve(token: str) -> EngineIdentity | None:
     """Разобрать сессию движка. None — недействительна.
 
     Raises:
-        EngineUnreachable: движок не ответил или ответил непонятным.
+        EngineUnreachableError: движок не ответил или ответил непонятным.
     """
     if not settings.engine_base_url:
         return None

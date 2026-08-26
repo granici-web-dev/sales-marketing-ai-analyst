@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Backfill daily KPI computation for a date range — tasks.etl.backfill_daily_kpis.
 
 Computes and UPSERTs daily_kpi, salesperson_daily_kpi, and source_daily_kpi for
@@ -17,6 +15,8 @@ Security:
   date.fromisoformat()     — parses dates as Python date; raw strings never reach SQL
   set_tenant_id(tenant_id) — scopes the tenancy context for all downstream queries
 """
+
+from __future__ import annotations
 
 import asyncio
 from datetime import UTC, date, datetime, timedelta
@@ -60,9 +60,9 @@ def backfill_daily_kpis(
 
 async def _backfill_async(tenant_id: UUID, date_from_str: str, date_to_str: str) -> dict:
     """Core backfill coroutine — all DB/model imports deferred (INFRA-05, Pitfall 2)."""
+    from sqlalchemy import update as _update
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
     from sqlalchemy.pool import NullPool
-    from sqlalchemy import update as _update
 
     from app.core.config import settings
     from app.core.tenancy import set_tenant_id

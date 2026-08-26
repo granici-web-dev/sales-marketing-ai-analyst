@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Dashboard read service — assembles pre-computed metrics for FastAPI routers.
 
 Queries daily_kpi, salesperson_daily_kpi, source_daily_kpi, and raw_mefi_leads
@@ -13,19 +11,21 @@ Security:
   T-06-02-02: text() queries bind :tid parameter explicitly (MARK-04 exception)
 """
 
+from __future__ import annotations
+
 from datetime import date, timedelta
 from decimal import Decimal
 from uuid import UUID
 
 import structlog
-from sqlalchemy import and_, cast, func, select, text
 from sqlalchemy import Integer as SAInteger
+from sqlalchemy import and_, cast, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.mefi import MefiSalesperson
 from app.models.metrics.daily_kpi import DailyKpi
 from app.models.metrics.salesperson_kpi import SalespersonDailyKpi
 from app.models.metrics.source_kpi import SourceDailyKpi
-from app.models.mefi import MefiSalesperson
 
 logger = structlog.get_logger(__name__)
 

@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """Unit tests for sync_mefi_leads Celery task.
 
 Tests mock Redis, MefiClient, and AsyncSession. No live DB or Redis required.
 
 Requirements: MEFI-08, MEFI-11, MEFI-12, PIPE-01, PIPE-02
 """
+
+from __future__ import annotations
 
 from datetime import date
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -57,8 +57,9 @@ class TestRedisLock:
         set_tenant_id is a deferred import inside _sync_async — patch at source.
         aioredis is a module-level import — patch on the task module.
         """
-        from app.tasks.etl.sync_mefi_leads import _sync_async
         import uuid
+
+        from app.tasks.etl.sync_mefi_leads import _sync_async
 
         tenant_id = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
@@ -90,8 +91,9 @@ class TestRedisLock:
     @pytest.mark.asyncio
     async def test_lock_released_after_noop(self) -> None:
         """When lock is held, delete is NOT called (we never acquired it)."""
-        from app.tasks.etl.sync_mefi_leads import _sync_async
         import uuid
+
+        from app.tasks.etl.sync_mefi_leads import _sync_async
 
         tenant_id = uuid.UUID("00000000-0000-0000-0000-000000000001")
         mock_redis = AsyncMock()

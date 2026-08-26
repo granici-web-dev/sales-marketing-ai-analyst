@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for Phase 8 AI Chat repositories + SSE event schemas (Plan 08-04 Task 1).
 
 Coverage (per 08-04-PLAN.md <behavior>):
@@ -18,12 +16,13 @@ References:
   - backend/app/services/repositories/insight_repository.py (cross-tenant guard pattern)
 """
 
-from datetime import datetime, timezone
+from __future__ import annotations
+
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
 import pytest
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Test 1 — 7 SSE event Pydantic schemas (D-09)
@@ -132,8 +131,8 @@ class TestRequestResponseSchemas:
         out = ConversationOut(
             id=uuid4(),
             title="Vânzări mai 2026",
-            created_at=datetime.now(timezone.utc),
-            last_message_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            last_message_at=datetime.now(UTC),
             archived=False,
         )
         d = out.model_dump()
@@ -153,7 +152,7 @@ class TestRequestResponseSchemas:
         ok = MessageOut(
             role="assistant",
             content="Răspuns",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             tokens_used=80,
             hallucination_flag=False,
             regenerate_count=0,
@@ -165,7 +164,7 @@ class TestRequestResponseSchemas:
             MessageOut(
                 role="tool_use",  # type: ignore[arg-type]
                 content="",
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
                 tokens_used=None,
                 hallucination_flag=False,
                 regenerate_count=0,
@@ -201,7 +200,7 @@ class TestConversationRepository:
             "tenant_id": TENANT_B,  # mismatch
             "user_id": USER_ID,
             "title": None,
-            "last_message_at": datetime.now(timezone.utc),
+            "last_message_at": datetime.now(UTC),
             "archived": False,
         }
         with pytest.raises(ValueError, match="cross-tenant write blocked"):
@@ -222,7 +221,7 @@ class TestConversationRepository:
                     "id": uuid4(),
                     "user_id": USER_ID,
                     "title": None,
-                    "last_message_at": datetime.now(timezone.utc),
+                    "last_message_at": datetime.now(UTC),
                     "archived": False,
                 }
             )
@@ -308,7 +307,7 @@ class TestConversationRepositoryCrossUserCR01:
             "tenant_id": TENANT_A,
             "user_id": OTHER_USER_ID,  # mismatch — User B writing through User A's repo
             "title": None,
-            "last_message_at": datetime.now(timezone.utc),
+            "last_message_at": datetime.now(UTC),
             "archived": False,
         }
         with pytest.raises(ValueError, match="cross-user write blocked"):
@@ -470,13 +469,13 @@ class TestMessageRepository:
         first_user_row = MagicMock(
             role="user",
             content="Prima întrebare",
-            created_at=datetime(2026, 5, 1, 9, 0, tzinfo=timezone.utc),
+            created_at=datetime(2026, 5, 1, 9, 0, tzinfo=UTC),
         )
         followups = [
             MagicMock(
                 role="assistant" if i % 2 else "user",
                 content=f"Mesaj #{i}",
-                created_at=datetime(2026, 5, 1, 9, i + 1, tzinfo=timezone.utc),
+                created_at=datetime(2026, 5, 1, 9, i + 1, tzinfo=UTC),
             )
             for i in range(24)
         ]
@@ -511,12 +510,12 @@ class TestMessageRepository:
             MagicMock(
                 role="user",
                 content="A",
-                created_at=datetime(2026, 5, 1, 9, 0, tzinfo=timezone.utc),
+                created_at=datetime(2026, 5, 1, 9, 0, tzinfo=UTC),
             ),
             MagicMock(
                 role="assistant",
                 content="B",
-                created_at=datetime(2026, 5, 1, 9, 1, tzinfo=timezone.utc),
+                created_at=datetime(2026, 5, 1, 9, 1, tzinfo=UTC),
             ),
         ]
         session = AsyncMock()

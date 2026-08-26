@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Real-DB regression test for the chat_tool_calls.message_id FK ordering bug.
 
 Bug (caught in production logs on 2026-05-29, fixed in plan 08-07 hotfix):
@@ -34,8 +32,10 @@ have a live PostgreSQL); runs on CI and when developers run `docker compose
 up -d` + export TEST_DATABASE_URL.
 """
 
+from __future__ import annotations
+
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
@@ -61,7 +61,7 @@ async def real_session():
     # listener (app.db.session._add_tenant_filter) raises TenantIsolationError
     # on every SELECT. In production this is set by app.core.dependencies on
     # every HTTP request; in tests we set it manually for the duration.
-    from app.core.tenancy import set_tenant_id  # noqa: PLC0415
+    from app.core.tenancy import set_tenant_id  # deferred (INFRA-05)
 
     set_tenant_id(SOFA_BELLE_TENANT_ID)
     engine = create_async_engine(_TEST_DB_URL, echo=False)
@@ -74,7 +74,7 @@ async def real_session():
 @pytest.fixture
 async def seeded_conversation_id(real_session) -> UUID:
     """Insert a fresh conversation row owned by SOFA_BELLE_USER_ID; clean up after."""
-    from app.models.chat import ChatConversation  # noqa: PLC0415
+    from app.models.chat import ChatConversation  # deferred (INFRA-05)
 
     conv_id = uuid4()
     conv = ChatConversation(
@@ -83,7 +83,7 @@ async def seeded_conversation_id(real_session) -> UUID:
         user_id=SOFA_BELLE_USER_ID,
         title="FK ordering regression test",
         archived=False,
-        last_message_at=datetime.now(timezone.utc),
+        last_message_at=datetime.now(UTC),
     )
     real_session.add(conv)
     await real_session.commit()
@@ -111,7 +111,7 @@ async def test_assistant_stub_then_tool_call_then_finalize_no_fk_violation(
 ) -> None:
     """The exact sequence the orchestrator now follows must not violate the
     chat_tool_calls.message_id FK and must not poison the session."""
-    from app.services.chat.repositories import (  # noqa: PLC0415
+    from app.services.chat.repositories import (  # deferred (INFRA-05)
         MessageRepository,
         ToolCallRepository,
     )
@@ -188,7 +188,7 @@ async def test_finalize_without_stub_is_noop(real_session, seeded_conversation_i
     """Defensive: calling finalize on a non-existent message_id must be a no-op,
     not raise. (UPDATE with no matching row affects zero rows in PostgreSQL.)
     """
-    from app.services.chat.repositories import MessageRepository  # noqa: PLC0415
+    from app.services.chat.repositories import MessageRepository  # deferred (INFRA-05)
 
     msg_repo = MessageRepository(real_session, SOFA_BELLE_TENANT_ID)
     nonexistent_id = uuid4()

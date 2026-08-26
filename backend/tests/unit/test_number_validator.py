@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for number_validator module — RED-state contracts for Phase 5.
 
 All tests will fail with ImportError until Plan 05-02 (Wave 2) implements
@@ -14,9 +12,9 @@ Patterns tested:
   Cross-check fails if numbers in text deviate >2% from any input value (fabrication detection)
 """
 
-from decimal import Decimal
+from __future__ import annotations
 
-import pytest
+from decimal import Decimal
 
 
 class TestExtractNumbersFromText:
@@ -28,7 +26,9 @@ class TestExtractNumbersFromText:
         In Romanian, . is the thousands separator (e.g., 23.400 = 23400).
         The extractor must handle this format and return the numeric value.
         """
-        from app.services.insights.number_validator import extract_numbers_from_text  # noqa: PLC0415
+        from app.services.insights.number_validator import (
+            extract_numbers_from_text,  # deferred (INFRA-05)
+        )
 
         result = extract_numbers_from_text("23.400 RON pierdere estimată")
         assert 23400.0 in result, (
@@ -41,7 +41,9 @@ class TestExtractNumbersFromText:
         In Romanian, , is the decimal separator (e.g., 8,3 = 8.3).
         Percentages are common in KPI summaries.
         """
-        from app.services.insights.number_validator import extract_numbers_from_text  # noqa: PLC0415
+        from app.services.insights.number_validator import (
+            extract_numbers_from_text,  # deferred (INFRA-05)
+        )
 
         result = extract_numbers_from_text("8,3% conversie L→C în showroom")
         assert 8.3 in result, (
@@ -53,7 +55,9 @@ class TestExtractNumbersFromText:
 
         Plain integers without separators must also be extracted.
         """
-        from app.services.insights.number_validator import extract_numbers_from_text  # noqa: PLC0415
+        from app.services.insights.number_validator import (
+            extract_numbers_from_text,  # deferred (INFRA-05)
+        )
 
         result = extract_numbers_from_text("351 lead-uri înregistrate în total")
         assert 351.0 in result, (
@@ -70,9 +74,9 @@ class TestCrossCheck:
         If summary mentions '12 leads' and kpi_snapshot has leads_total=12,
         the value is grounded — cross_check must pass.
         """
-        from unittest.mock import MagicMock  # noqa: PLC0415
+        from unittest.mock import MagicMock  # deferred (INFRA-05)
 
-        from app.services.insights.number_validator import cross_check  # noqa: PLC0415
+        from app.services.insights.number_validator import cross_check  # deferred (INFRA-05)
 
         # Mock DailyInsightResponse with summary mentioning 12 leads (matches kpi_snapshot)
         parsed = MagicMock()
@@ -95,9 +99,9 @@ class TestCrossCheck:
         47320 is > 2% from 5000 — this is a hallucinated figure.
         cross_check must return False to trigger a regeneration.
         """
-        from unittest.mock import MagicMock  # noqa: PLC0415
+        from unittest.mock import MagicMock  # deferred (INFRA-05)
 
-        from app.services.insights.number_validator import cross_check  # noqa: PLC0415
+        from app.services.insights.number_validator import cross_check  # deferred (INFRA-05)
 
         parsed = MagicMock()
         parsed.summary = "ai pierdut 47320 RON luna aceasta"
@@ -120,9 +124,9 @@ class TestCrossCheck:
         ±2% tolerance: 5050 / 5000 - 1 = 1% → passes.
         Allows natural rounding in Romanian text (e.g., "~5.050 RON" when actual is 5000).
         """
-        from unittest.mock import MagicMock  # noqa: PLC0415
+        from unittest.mock import MagicMock  # deferred (INFRA-05)
 
-        from app.services.insights.number_validator import cross_check  # noqa: PLC0415
+        from app.services.insights.number_validator import cross_check  # deferred (INFRA-05)
 
         parsed = MagicMock()
         parsed.summary = "Estimăm o pierdere de ~5050 RON din lead-uri lente."
@@ -145,9 +149,9 @@ class TestCrossCheck:
         When detected_problems is empty and summary has no numeric values,
         there are no numbers to cross-check — validation trivially passes.
         """
-        from unittest.mock import MagicMock  # noqa: PLC0415
+        from unittest.mock import MagicMock  # deferred (INFRA-05)
 
-        from app.services.insights.number_validator import cross_check  # noqa: PLC0415
+        from app.services.insights.number_validator import cross_check  # deferred (INFRA-05)
 
         parsed = MagicMock()
         parsed.summary = "Zi liniștită. Toți vânzătorii lucrează conform planului."

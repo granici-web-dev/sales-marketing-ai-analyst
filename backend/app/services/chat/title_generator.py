@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Fire-and-forget conversation title generator (Phase 8 D-14).
 
 After the first assistant turn completes, the orchestrator schedules a separate
@@ -22,6 +20,8 @@ References:
   - .planning/phases/08-ai-chat/08-PATTERNS.md § title_generator
 """
 
+from __future__ import annotations
+
 import asyncio
 from collections.abc import Awaitable, Callable
 from uuid import UUID
@@ -32,7 +32,6 @@ import structlog
 # Phase 5 InsightService). Instantiation happens INSIDE _generate() — never at
 # module level — to satisfy INFRA-05 fork-safety.
 from anthropic import AsyncAnthropic
-
 
 log = structlog.get_logger(__name__)
 
@@ -116,7 +115,7 @@ async def _generate(
                 ),
                 timeout=TITLE_TIMEOUT_S,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             log.warning("title.gen_timeout", model=model)
             continue
         except Exception as exc:  # noqa: BLE001 — defensive: any API failure

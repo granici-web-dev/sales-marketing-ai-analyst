@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 PIPE-04 and SC#2 integration tests.
 
@@ -12,11 +10,16 @@ Required tables (SPEC.md §7, Phase 1):
   - sync_runs
   - pipeline_runs
 
-These tests connect directly to the test database via asyncpg.
-They will skip if DATABASE_URL is not set in the environment.
+These tests connect directly to a disposable test database via asyncpg.
+They gate on TEST_DATABASE_URL, like every other integration test here.
+DATABASE_URL is the application's own variable: finding it set says the app
+is configured, not that a database safe to inspect is running.
 """
 
+from __future__ import annotations
+
 import os
+
 import pytest
 
 try:
@@ -38,9 +41,9 @@ async def test_tables_exist() -> None:
     if asyncpg is None:
         pytest.skip("asyncpg not installed — install with: uv pip install asyncpg")
 
-    database_url = os.environ.get("DATABASE_URL")
+    database_url = os.environ.get("TEST_DATABASE_URL")
     if not database_url:
-        pytest.skip("DATABASE_URL environment variable not set — integration test requires live DB")
+        pytest.skip("TEST_DATABASE_URL not set — integration test requires a live DB")
 
     # asyncpg uses postgresql:// not postgresql+asyncpg://
     conn_str = database_url.replace("postgresql+asyncpg://", "postgresql://")
@@ -77,9 +80,9 @@ async def test_tenant_id_not_null_constraint() -> None:
     if asyncpg is None:
         pytest.skip("asyncpg not installed")
 
-    database_url = os.environ.get("DATABASE_URL")
+    database_url = os.environ.get("TEST_DATABASE_URL")
     if not database_url:
-        pytest.skip("DATABASE_URL environment variable not set")
+        pytest.skip("TEST_DATABASE_URL not set")
 
     conn_str = database_url.replace("postgresql+asyncpg://", "postgresql://")
 
@@ -116,9 +119,9 @@ async def test_timestamps_are_timestamptz() -> None:
     if asyncpg is None:
         pytest.skip("asyncpg not installed")
 
-    database_url = os.environ.get("DATABASE_URL")
+    database_url = os.environ.get("TEST_DATABASE_URL")
     if not database_url:
-        pytest.skip("DATABASE_URL environment variable not set")
+        pytest.skip("TEST_DATABASE_URL not set")
 
     conn_str = database_url.replace("postgresql+asyncpg://", "postgresql://")
 

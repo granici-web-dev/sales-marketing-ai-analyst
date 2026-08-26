@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """``get_leads`` chat tool — thin v_mefi_leads_active text() query (D-02 + D-03 NEW).
 
 Returns a small sample of leads (max 50) with optional filters on lifecycle,
@@ -18,6 +16,8 @@ When ``lifecycle='junk'`` the handler queries ``raw_mefi_leads`` directly
 (the conformed view ``v_mefi_leads_active`` excludes junk by design).
 Otherwise the query targets ``v_mefi_leads_active``.
 """
+
+from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal

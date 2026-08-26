@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """SQLAlchemy ORM model for chat_conversations table.
 
 One row per chat conversation. Owned by a single user inside a tenant.
@@ -25,6 +23,8 @@ applies to `users` as well. The repository asserts user.tenant_id ==
 conversation.tenant_id before returning rows.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 
@@ -32,7 +32,7 @@ from sqlalchemy import Boolean, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TIMESTAMPTZ, TenantScopedMixin
+from app.db.base import TIMESTAMPTZ, Base, TenantScopedMixin
 
 
 class ChatConversation(Base, TenantScopedMixin):

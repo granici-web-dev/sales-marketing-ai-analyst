@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for insights router rate limiting and AI-09 compliance.
 
 Tests the rate-limit logic in POST /api/v1/insights/refresh in isolation —
@@ -16,6 +14,8 @@ The tenant context is part of the same bargain. In a real request
 `StructlogContextMiddleware` sets it before routing; calling the handler
 directly skips that, so the test sets it itself.
 """
+
+from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
@@ -57,17 +57,16 @@ async def test_refresh_rate_limit_first_call_enqueues() -> None:
 
     mock_response = MagicMock()
 
-    with patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx):
-        with patch(
-            "app.tasks.insights.generate_daily_insights.generate_daily_insights",
-            mock_generate,
-        ):
-            result = await refresh_insights(
-                response=mock_response,
-                target_date=None,
-                session=AsyncMock(),
-                current_user=mock_user,
-            )
+    with patch("app.api.v1.insights.aioredis.from_url", return_value=mock_redis_ctx), patch(
+        "app.tasks.insights.generate_daily_insights.generate_daily_insights",
+        mock_generate,
+    ):
+        result = await refresh_insights(
+            response=mock_response,
+            target_date=None,
+            session=AsyncMock(),
+            current_user=mock_user,
+        )
 
     assert result.pipeline_run_id == "abc123-task-id"
     assert result.enqueued_at is not None

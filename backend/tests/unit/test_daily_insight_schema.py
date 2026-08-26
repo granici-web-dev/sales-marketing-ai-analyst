@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for DailyInsightResponse Pydantic schema — RED-state contracts for Phase 5.
 
 All tests will fail with ImportError until Plan 05-02 (Wave 1) implements
@@ -16,13 +14,12 @@ Patterns tested:
   D-19: estimated_loss_ron is Decimal, never float
 """
 
-from datetime import datetime, timezone
+from __future__ import annotations
+
+from datetime import datetime
 from decimal import Decimal
 
 import pytest
-
-from tests.factories.insight_factory import ActionItemFactory, ProblemFactory
-
 
 # ── Helper to build a valid DailyInsightResponse payload dict ─────────────────
 
@@ -84,7 +81,9 @@ class TestDailyInsightResponseSchema:
         All required fields present with correct types.
         estimated_loss_ron must parse as Decimal (D-19).
         """
-        from app.schemas.insights.daily_insight_schema import DailyInsightResponse  # noqa: PLC0415
+        from app.schemas.insights.daily_insight_schema import (
+            DailyInsightResponse,  # deferred (INFRA-05)
+        )
 
         result = DailyInsightResponse.model_validate(_make_valid_payload())
         assert result.summary != "", "summary must be a non-empty string"
@@ -98,9 +97,11 @@ class TestDailyInsightResponseSchema:
         Pydantic max_length=3 on problems field must raise ValidationError
         when Claude (or a test) provides 4+ problems.
         """
-        from pydantic import ValidationError  # noqa: PLC0415
+        from pydantic import ValidationError  # deferred (INFRA-05)
 
-        from app.schemas.insights.daily_insight_schema import DailyInsightResponse  # noqa: PLC0415
+        from app.schemas.insights.daily_insight_schema import (
+            DailyInsightResponse,  # deferred (INFRA-05)
+        )
 
         problem_dict = {
             "id": "test_rule",
@@ -126,7 +127,9 @@ class TestDailyInsightResponseSchema:
         D-19: All monetary values stored as Decimal — never float.
         Pydantic parses string/numeric inputs as Decimal for this field.
         """
-        from app.schemas.insights.daily_insight_schema import DailyInsightResponse  # noqa: PLC0415
+        from app.schemas.insights.daily_insight_schema import (
+            DailyInsightResponse,  # deferred (INFRA-05)
+        )
 
         result = DailyInsightResponse.model_validate(_make_valid_payload())
         for problem in result.problems:
@@ -141,7 +144,9 @@ class TestDailyInsightResponseSchema:
         D-04: problems[].id = rule_id from detected_problems (e.g., 'slow_first_touch').
         Must be a string with at least 1 character — not None, not int.
         """
-        from app.schemas.insights.daily_insight_schema import DailyInsightResponse  # noqa: PLC0415
+        from app.schemas.insights.daily_insight_schema import (
+            DailyInsightResponse,  # deferred (INFRA-05)
+        )
 
         result = DailyInsightResponse.model_validate(_make_valid_payload())
         for problem in result.problems:
@@ -156,7 +161,9 @@ class TestDailyInsightResponseSchema:
         D-03: Claude synthesizes weekly_action_plan independently as 5-7 items.
         At minimum, the field must be a non-empty list.
         """
-        from app.schemas.insights.daily_insight_schema import DailyInsightResponse  # noqa: PLC0415
+        from app.schemas.insights.daily_insight_schema import (
+            DailyInsightResponse,  # deferred (INFRA-05)
+        )
 
         result = DailyInsightResponse.model_validate(_make_valid_payload())
         assert len(result.weekly_action_plan) >= 1, (
@@ -169,7 +176,9 @@ class TestDailyInsightResponseSchema:
         D-10: Allowed values: Azi, Mâine, Săptămâna aceasta, Luna aceasta.
         System prompt instructs Claude to use these; schema validation confirms.
         """
-        from app.schemas.insights.daily_insight_schema import DailyInsightResponse  # noqa: PLC0415
+        from app.schemas.insights.daily_insight_schema import (
+            DailyInsightResponse,  # deferred (INFRA-05)
+        )
 
         ALLOWED_DEADLINES = {"Azi", "Mâine", "Săptămâna aceasta", "Luna aceasta"}
 
@@ -187,7 +196,9 @@ class TestDailyInsightResponseSchema:
         D-09: owner = real Sofa Belle salesperson name or role (Manager, Marketing Sofa).
         Vague assignments like empty string are caught here.
         """
-        from app.schemas.insights.daily_insight_schema import DailyInsightResponse  # noqa: PLC0415
+        from app.schemas.insights.daily_insight_schema import (
+            DailyInsightResponse,  # deferred (INFRA-05)
+        )
 
         result = DailyInsightResponse.model_validate(_make_valid_payload())
         for problem in result.problems:
@@ -203,7 +214,9 @@ class TestDailyInsightResponseSchema:
         generated_at is set server-side by InsightService — not by Claude.
         Pydantic must parse the ISO string into a datetime object.
         """
-        from app.schemas.insights.daily_insight_schema import DailyInsightResponse  # noqa: PLC0415
+        from app.schemas.insights.daily_insight_schema import (
+            DailyInsightResponse,  # deferred (INFRA-05)
+        )
 
         result = DailyInsightResponse.model_validate(_make_valid_payload())
         assert isinstance(result.generated_at, datetime), (

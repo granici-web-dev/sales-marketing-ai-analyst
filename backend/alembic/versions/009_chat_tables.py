@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Create chat_conversations, chat_messages, chat_tool_calls tables (Phase 8).
 
 Revision ID: 009
@@ -50,9 +48,12 @@ Security notes:
            not product data (documented in D-20).
 """
 
+from __future__ import annotations
+
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 revision = "009"
 down_revision = "008"

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Shared fixtures for Phase 8 AI Chat integration tests.
 
 Integration tests drive the full FastAPI request → SSE response loop with
@@ -11,6 +9,8 @@ be collected without a live DB and a configured ANTHROPIC_API_KEY.
 Wave 0 contract: this conftest creates the seams. Plan 08-05 (chat router)
 fills in the seeded-conversation fixtures with real persistence calls.
 """
+
+from __future__ import annotations
 
 import os
 from uuid import UUID, uuid4
@@ -62,9 +62,9 @@ async def streaming_client():
     this fixture yields a real AsyncClient streaming against the FastAPI app.
     """
     try:
-        from httpx import ASGITransport, AsyncClient  # noqa: PLC0415
+        from httpx import ASGITransport, AsyncClient  # deferred (INFRA-05)
 
-        from app.main import app as _app  # noqa: PLC0415
+        from app.main import app as _app  # deferred (INFRA-05)
     except ImportError:
         yield None
         return

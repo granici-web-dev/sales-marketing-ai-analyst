@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Widen conversion rate columns from NUMERIC(5,4) to NUMERIC(8,4).
 
 Revision ID: 005
@@ -24,7 +22,10 @@ Downgrade: narrows back to NUMERIC(5,4). Will fail if any stored value exceeds
            9.9999 — truncate or NULL affected rows first if needed.
 """
 
+from __future__ import annotations
+
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "005"

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """``get_funnel_data`` chat tool (D-02 + D-03).
 
 Returns Lead → Vizita → Oferta → Contract funnel counts and conversion
@@ -11,6 +9,8 @@ DATA-04: monetary Decimals serialized as str via Python conversion.
 LM-3: handler signature ``(tenant_id, session, inp)``.
 LM-10: required fields use ``Field(..., description=...)``.
 """
+
+from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal

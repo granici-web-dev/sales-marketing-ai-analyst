@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """SQLAlchemy ORM model for salesperson_daily_kpi metric table.
 
 One row per tenant per salesperson per calendar day — per-rep KPIs.
@@ -17,13 +15,15 @@ Per D-05: avg_time_to_first_touch_minutes is NULL when no mefi_lead_history rows
 Per D-06: avg_time_to_first_touch_minutes uses business-hours-adjusted calculation.
 """
 
+from __future__ import annotations
+
 from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import Date, Integer, Numeric, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TenantScopedMixin, TIMESTAMPTZ
+from app.db.base import TIMESTAMPTZ, Base, TenantScopedMixin
 
 
 class SalespersonDailyKpi(Base, TenantScopedMixin):

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """SSE event Pydantic v2 schemas (Phase 8 Plan 08-04 Task 1).
 
 D-09 declares 7 SSE event types streamed from `POST /chat/conversations/{id}/messages`
@@ -21,6 +19,8 @@ The shapes here MUST match `frontend/src/lib/chat/parseSSE.ts` SSEEvent union
 declared in plan 08-06. A wire-format contract change is breaking — bump the
 SSE schema version comment + update both sides.
 """
+
+from __future__ import annotations
 
 from typing import Literal
 from uuid import UUID

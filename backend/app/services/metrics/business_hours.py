@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Business-hours-adjusted duration utility.
 
 Provides business_minutes_between() — the core helper for computing
@@ -12,7 +10,9 @@ Pitfall 1: DST transitions handled via zoneinfo (never fixed UTC offset).
 Phase 3 Plan 03 — pure Python, no async, no DB dependency.
 """
 
-from datetime import date, datetime, time, timedelta
+from __future__ import annotations
+
+from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 
@@ -44,7 +44,7 @@ def _next_open(
     # Otherwise start from the next day.
     while True:
         if candidate_date.weekday() in work_days:
-            open_dt = datetime(
+            return datetime(
                 candidate_date.year,
                 candidate_date.month,
                 candidate_date.day,
@@ -54,7 +54,6 @@ def _next_open(
                 0,
                 tzinfo=tz,
             )
-            return open_dt
         candidate_date += timedelta(days=1)
 
 

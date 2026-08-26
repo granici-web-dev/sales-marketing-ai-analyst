@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Integration tests for Phase 8 Plan 08-05 chat endpoints (CHAT-01, CHAT-02 SC#2).
 
 These tests exercise the full FastAPI → Redis → orchestrator → DB stack with the
@@ -25,6 +23,8 @@ Coverage map:
   test_suggested_questions_with_dynamic    — D-17 hybrid: 5 static + 2 dynamic
 """
 
+from __future__ import annotations
+
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
@@ -33,8 +33,7 @@ import pytest
 
 # Cassettes from Wave 0 plan 08-01 — recorded streaming events for the
 # AsyncAnthropic mock.
-from tests.fixtures.anthropic_responses.basic_turn import BASIC_TURN_EVENTS  # noqa: F401
-from tests.fixtures.anthropic_responses.multi_tool import MULTI_TOOL_EVENTS  # noqa: F401
+from tests.fixtures.anthropic_responses.basic_turn import BASIC_TURN_EVENTS
 
 # Phase 5 carry-forward — per-test gate decorator. Skips cleanly when
 # TEST_DATABASE_URL is not set (developer machines), runs on CI.

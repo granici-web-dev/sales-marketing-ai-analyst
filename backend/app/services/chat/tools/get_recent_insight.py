@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """``get_recent_insight`` chat tool — wraps InsightReadService (D-02 + D-03).
 
 Returns today's (yesterday in Europe/Bucharest — Phase 5 timing) AI-generated
@@ -13,6 +11,8 @@ field here is ``metric_name`` in sibling tools; ``date`` here is optional).
 DATA-04: monetary values inside the insight payload remain strings (Phase 5
 already serializes Decimals via ``model_dump(mode='json')``).
 """
+
+from __future__ import annotations
 
 from datetime import date as date_type
 from decimal import Decimal

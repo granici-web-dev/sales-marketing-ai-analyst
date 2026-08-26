@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """factory-boy factories for AI insights test data.
 
 Provides DailyInsightRowFactory, DailyInsightResponseDictFactory, KpiSnapshotFactory,
@@ -19,7 +17,9 @@ Decisions locked by Phase 5 CONTEXT.md:
   D-19: All monetary values as Decimal, never float
 """
 
-from datetime import date, datetime, timezone
+from __future__ import annotations
+
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -138,7 +138,7 @@ class DailyInsightResponseDictFactory(factory.Factory):
         ]
     )
     generated_at = factory.LazyFunction(
-        lambda: datetime(2026, 5, 28, 6, 0, 0, tzinfo=timezone.utc)
+        lambda: datetime(2026, 5, 28, 6, 0, 0, tzinfo=UTC)
     )
 
 
@@ -161,7 +161,7 @@ class DailyInsightRowFactory(factory.Factory):
     status = "success"
     payload_json = factory.LazyFunction(lambda: DailyInsightResponseDictFactory.build())
     generated_at = factory.LazyFunction(
-        lambda: datetime(2026, 5, 28, 6, 5, 0, tzinfo=timezone.utc)
+        lambda: datetime(2026, 5, 28, 6, 5, 0, tzinfo=UTC)
     )
     input_tokens = 3000
     output_tokens = 2000

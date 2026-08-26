@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for MetricsRepository.
 
 Tests mock AsyncSession — no live DB required.
@@ -10,6 +8,8 @@ Tests Pitfall 5 (SourceDailyKpi 3-col conflict target),
 Pitfall 6 (tenant_id validation before INSERT),
 METR-01 SC#1 (idempotent re-runs — same row count after double-upsert).
 """
+
+from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
@@ -26,7 +26,9 @@ def _make_repo(mock_session=None):
 
     Import deferred — file parses (RED) before Plan 03 implementation exists.
     """
-    from app.services.repositories.metrics_repository import MetricsRepository  # noqa: PLC0415
+    from app.services.repositories.metrics_repository import (
+        MetricsRepository,  # deferred (INFRA-05)
+    )
 
     session = mock_session or AsyncMock()
     return MetricsRepository(session, TENANT_ID), session

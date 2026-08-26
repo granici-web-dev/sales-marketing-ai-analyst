@@ -5,14 +5,14 @@ Uses respx to mock httpx requests (no real MEFI API calls).
 """
 from __future__ import annotations
 
+import httpx
 import pytest
 import respx
-import httpx
+
+from app.schemas.mefi import MefiSearchResponse
 
 # These imports will FAIL (RED) until the integration module is created.
 from app.services.integrations.mefi import MefiClient, RateLimitError
-from app.schemas.mefi import MefiSearchResponse
-
 
 VALID_SEARCH_RESPONSE = {
     "success": True,

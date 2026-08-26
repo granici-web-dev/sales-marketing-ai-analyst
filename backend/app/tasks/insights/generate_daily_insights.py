@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """AI Insights generation Celery task — fourth and final link in the PIPE-01 chain (D-17).
 
 Wires InsightService.run() and InsightRepository.upsert_daily_insight() into a single
@@ -24,6 +22,8 @@ Security:
   T-05-04-05: NullPool + finally:dispose() — no connection leaks
   T-05-04-06: generate_daily_insights.si() is immutable — no arg injection
 """
+
+from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime
@@ -93,6 +93,11 @@ async def _generate_async(
     # ---------------------------------------------------------------------------
     # Deferred imports — must stay inside this function body (INFRA-05, Pitfall 2)
     # ---------------------------------------------------------------------------
+    from datetime import timedelta
+    from zoneinfo import ZoneInfo
+
+    from sqlalchemy import select as _select
+    from sqlalchemy import update as _update
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
     from sqlalchemy.pool import NullPool
 
@@ -102,9 +107,6 @@ async def _generate_async(
     from app.models.pipeline import SyncRun
     from app.services.insights.insight_service import InsightService
     from app.services.repositories.insight_repository import InsightRepository
-    from zoneinfo import ZoneInfo
-    from datetime import date as date_type, timedelta
-    from sqlalchemy import select as _select, update as _update
 
     # Convert string tenant_id to UUID (supports both Celery task and direct test calls)
     if isinstance(tenant_id, str):
@@ -160,7 +162,7 @@ async def _generate_async(
 
             # ── Step 2: Write DailyInsight(status='running') — D-16 state machine ─
             # UPSERT: if insight exists for this date (manual re-run), update status to 'running'
-            from sqlalchemy.dialects.postgresql import insert as pg_insert  # noqa: PLC0415
+            from sqlalchemy.dialects.postgresql import insert as pg_insert  # deferred (INFRA-05)
 
             running_row = {
                 "tenant_id": tenant_id,
@@ -226,7 +228,7 @@ async def _generate_async(
         # ── Error path: update SyncRun to failed (T-05-04-03 / PIPE-04) ─────────
         # Open a NEW session — the original session may have rolled back
         try:
-            from app.core.tenancy import set_tenant_id as _set  # noqa: PLC0415
+            from app.core.tenancy import set_tenant_id as _set  # deferred (INFRA-05)
 
             _set(tenant_id)
             async with TaskSession() as err_session:
@@ -248,12 +250,14 @@ async def _generate_async(
                     await err_session.commit()
             # Also try to update DailyInsight to 'failed'
             async with TaskSession() as err_session2:
-                from app.models.insights.daily_insight import DailyInsight as _DI  # noqa: PLC0415
+                from app.models.insights.daily_insight import (
+                    DailyInsight as _DailyInsight,  # deferred (INFRA-05)
+                )
 
                 result2 = await err_session2.execute(
-                    _select(_DI).where(
-                        _DI.tenant_id == tenant_id,
-                        _DI.date == kpi_date,
+                    _select(_DailyInsight).where(
+                        _DailyInsight.tenant_id == tenant_id,
+                        _DailyInsight.date == kpi_date,
                     )
                 )
                 insight = result2.scalar_one_or_none()

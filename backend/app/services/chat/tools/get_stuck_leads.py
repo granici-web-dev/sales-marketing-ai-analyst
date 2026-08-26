@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """``get_stuck_leads`` chat tool — wraps DashboardReadService.get_stuck_offers (D-02 + D-03).
 
 Returns leads with offers that have had no activity for ≥N days (default 14,
@@ -21,7 +19,10 @@ plain primitives — no Decimals expected, but the recursive normalizer
 defends in depth).
 """
 
-from datetime import date as date_type, timedelta
+from __future__ import annotations
+
+from datetime import date as date_type
+from datetime import timedelta
 from decimal import Decimal
 from uuid import UUID
 

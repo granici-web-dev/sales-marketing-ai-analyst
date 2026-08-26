@@ -50,7 +50,7 @@ def _categories() -> list[str]:
 
 def _make_service(mock_session=None):
     """Build SourceKpiService with a mocked AsyncSession."""
-    from app.services.metrics.source_kpi_service import SourceKpiService  # noqa: PLC0415
+    from app.services.metrics.source_kpi_service import SourceKpiService  # deferred (INFRA-05)
 
     session = mock_session or AsyncMock()
     return SourceKpiService(session, TENANT_ID), session

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """``get_showroom_performance`` chat tool — per-showroom funnel (D-02 + D-03 NEW).
 
 Thin ``text()`` query on ``v_mefi_leads_active`` grouped by ``showroom``.
@@ -17,6 +15,8 @@ Sofa Belle context: showroom is the primary conversion channel (29.5% of
 leads, 55% of contracts per Phase 3 verified-COMPLETE finding). See
 ``docs/SOFABELLE.md`` for the 3 showroom names.
 """
+
+from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Message request/response Pydantic DTOs for Phase 8 AI Chat.
 
 D-09: MessageOut.role is `Literal["user","assistant"]` — `tool_use`/`tool_result`
@@ -9,6 +7,8 @@ D-09: MessageOut.role is `Literal["user","assistant"]` — `tool_use`/`tool_resu
 D-23: shapes consumed by 5 endpoints under /api/v1/chat.
 D-37: SendMessageRequest content length 1-10000 chars (Romanian-only).
 """
+
+from __future__ import annotations
 
 from datetime import datetime
 from typing import Literal

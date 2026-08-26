@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """System prompt and user message construction for Phase 5 AI Insights.
 
 D-07: System prompt = list of text blocks; last block has cache_control={"type": "ephemeral"}
@@ -12,9 +10,10 @@ AI-04: build_user_message() selects top 3 problems by estimated_loss_ron descend
 GDPR PII guard: context_json stripped to non-PII fields only before sending to Claude API.
 """
 
+from __future__ import annotations
+
 import json
 from decimal import Decimal
-
 
 # ── System prompt string constant ────────────────────────────────────────────
 # All stable content goes here — changes here invalidate the cache (costs $3.75/MTok write).

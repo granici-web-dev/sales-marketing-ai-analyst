@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for per-handler behavior of chat tools (Phase 8 Plan 03 — D-02/D-03).
 
 This file covers the 8 handlers that need behavioral assertions beyond the
@@ -15,6 +13,8 @@ no live DB or Anthropic call is performed.
 LM-3 enforcement: each test asserts ``inspect.signature(handler).parameters``
 first param is ``tenant_id`` and the parameter has a UUID-flavored annotation.
 """
+
+from __future__ import annotations
 
 import inspect
 from datetime import date
@@ -450,8 +450,8 @@ class TestExplainMetric:
     @pytest.mark.asyncio
     async def test_explain_metric_unknown_returns_friendly_message(self) -> None:
         from app.services.chat.tools.explain_metric import (
-            ExplainMetricInput,
             GLOSSARY,
+            ExplainMetricInput,
             _handler,
         )
 

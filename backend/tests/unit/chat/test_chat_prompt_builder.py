@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for `app.services.chat.prompt_builder` (Plan 08-04 Task 2).
 
 Coverage per <behavior> Tests PB1-PB6:
@@ -10,6 +8,8 @@ Coverage per <behavior> Tests PB1-PB6:
   - PB5: text contains showrooms (Brașov / București / Cluj-Napoca)
   - PB6: text instructs markdown link format [Label](/sales) (D-18)
 """
+
+from __future__ import annotations
 
 
 class TestPromptBuilder:

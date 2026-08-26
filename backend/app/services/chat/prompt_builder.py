@@ -1,8 +1,3 @@
-from __future__ import annotations
-
-from datetime import date, datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
-
 """Romanian system prompt builder for Phase 8 AI Chat (D-26 + D-27 + D-28).
 
 D-26: base prompt = docs/CHAT.md §5 verbatim parameterized with Sofa Belle tenant
@@ -20,6 +15,10 @@ D-18: instructs markdown link format `[Label](/sales)` for inline dashboard
       references — Frontend MarkdownRenderer pill-styles these.
 """
 
+from __future__ import annotations
+
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 # ── Base system prompt (Romanian) — D-26 ──────────────────────────────────────
 # Inherits the structure of docs/CHAT.md §5 with Sofa Belle facts inlined.

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """CHAT-08 grep gate (inverse of Phase 5's AI-09 grep gate).
 
 CHAT-08 / D-25 / D-39: `app/api/v1/chat.py` is the project-wide DOCUMENTED
@@ -40,8 +38,9 @@ References:
   Phase 5 inverse: backend/tests/unit/test_insights_router.py:84-101
 """
 
-from pathlib import Path
+from __future__ import annotations
 
+from pathlib import Path
 
 # Files that aggregate routers and never own Anthropic logic — excluded from
 # both strict inclusion (chat.py) and strict exclusion (everything else).
@@ -62,8 +61,7 @@ def _resolve_api_v1_dir() -> Path:
     """
     here = Path(__file__).resolve()
     backend_root = here.parents[3]  # tests/unit/chat/test_*.py → backend/
-    api_dir = backend_root / "app" / "api" / "v1"
-    return api_dir
+    return backend_root / "app" / "api" / "v1"
 
 
 def test_chat08_async_anthropic_only_in_chat() -> None:

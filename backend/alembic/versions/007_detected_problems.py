@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Create detected_problems table for Phase 4 anomaly detection.
 
 Revision ID: 007
@@ -20,9 +18,12 @@ Security notes:
               integrity before any upgrade.
 """
 
+from __future__ import annotations
+
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 revision = "007"
 down_revision = "006"

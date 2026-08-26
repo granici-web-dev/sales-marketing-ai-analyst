@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Anomaly detection Celery task — third link in the PIPE-01 chain (D-15).
 
 Wires AnomalyService.run_all_rules() and AnomalyRepository.upsert_detected_problem()
@@ -27,6 +25,8 @@ Security:
 
 Phase 4 Plan 04 — final wave of the Anomaly Detection phase.
 """
+
+from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime
@@ -81,6 +81,9 @@ async def _detect_async(tenant_id: UUID) -> dict:
     # ---------------------------------------------------------------------------
     # Deferred imports — must stay inside this function body (INFRA-05, Pitfall 2)
     # ---------------------------------------------------------------------------
+    from datetime import timedelta
+    from zoneinfo import ZoneInfo
+
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
     from sqlalchemy.pool import NullPool
 
@@ -89,8 +92,6 @@ async def _detect_async(tenant_id: UUID) -> dict:
     from app.models.pipeline import SyncRun
     from app.services.anomaly.anomaly_service import AnomalyService
     from app.services.repositories.anomaly_repository import AnomalyRepository
-    from zoneinfo import ZoneInfo
-    from datetime import date as date_type, timedelta
 
     # WR-04: minimum staleness threshold — only clean rows older than 30 minutes
     _STALE_SYNCRUN_THRESHOLD_MINUTES = 30
@@ -183,18 +184,19 @@ async def _detect_async(tenant_id: UUID) -> dict:
         # ── Error path: update SyncRun to failed (T-04-04-03 / PIPE-04) ────────
         # Open a NEW session — the original session may have rolled back
         try:
-            from sqlalchemy import select as _select  # noqa: PLC0415
-            from app.models.pipeline import SyncRun as _SR  # noqa: PLC0415
-            from app.core.tenancy import set_tenant_id as _set  # noqa: PLC0415
+            from sqlalchemy import select as _select  # deferred (INFRA-05)
+
+            from app.core.tenancy import set_tenant_id as _set  # deferred (INFRA-05)
+            from app.models.pipeline import SyncRun as _SyncRun  # deferred (INFRA-05)
 
             _set(tenant_id)
             async with TaskSession() as err_session:
                 result = await err_session.execute(
-                    _select(_SR).where(
-                        _SR.tenant_id == tenant_id,
-                        _SR.source == "anomaly",
-                        _SR.status == "running",
-                    ).order_by(_SR.started_at.desc()).limit(1)
+                    _select(_SyncRun).where(
+                        _SyncRun.tenant_id == tenant_id,
+                        _SyncRun.source == "anomaly",
+                        _SyncRun.status == "running",
+                    ).order_by(_SyncRun.started_at.desc()).limit(1)
                 )
                 run = result.scalar_one_or_none()
                 if run:

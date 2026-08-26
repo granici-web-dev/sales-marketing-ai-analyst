@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for AnomalyService — RED-state contracts for Phase 4 anomaly detection.
 
 Tests mock AsyncSession — no live DB required.
@@ -18,9 +16,11 @@ Rule-specific specs:
   ANOM-07: junk IDs computed once and passed to all non-junk rules (D-11)
 """
 
+from __future__ import annotations
+
 from datetime import date, timedelta
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from uuid import UUID
 
 import pytest
@@ -35,7 +35,7 @@ def _make_service(mock_session=None):
     Import is deferred so the file parses (RED) even before Plan 04-02 implements AnomalyService.
     Returns (service, session) tuple.
     """
-    from app.services.anomaly.anomaly_service import AnomalyService  # noqa: PLC0415
+    from app.services.anomaly.anomaly_service import AnomalyService  # deferred (INFRA-05)
 
     session = mock_session or AsyncMock()
     return AnomalyService(session, TENANT_ID), session
@@ -325,7 +325,9 @@ class TestDetectShowroomTrafficDrop:
         """
         service, session = _make_service()
 
-        from tests.factories.anomaly_factory import make_daily_kpi_baseline_rows  # noqa: PLC0415
+        from tests.factories.anomaly_factory import (
+            make_daily_kpi_baseline_rows,  # deferred (INFRA-05)
+        )
 
         baseline_rows = make_daily_kpi_baseline_rows(30)  # 30 days of baseline
         current_kpi = {
@@ -356,7 +358,9 @@ class TestDetectShowroomTrafficDrop:
         """
         service, session = _make_service()
 
-        from tests.factories.anomaly_factory import make_daily_kpi_baseline_rows  # noqa: PLC0415
+        from tests.factories.anomaly_factory import (
+            make_daily_kpi_baseline_rows,  # deferred (INFRA-05)
+        )
 
         baseline_rows = make_daily_kpi_baseline_rows(30)
         current_kpi = {
@@ -387,7 +391,9 @@ class TestDetectShowroomTrafficDrop:
         """
         service, session = _make_service()
 
-        from tests.factories.anomaly_factory import make_daily_kpi_baseline_rows  # noqa: PLC0415
+        from tests.factories.anomaly_factory import (
+            make_daily_kpi_baseline_rows,  # deferred (INFRA-05)
+        )
 
         baseline_rows = make_daily_kpi_baseline_rows(5)  # only 5 rows — below 7-day minimum
         current_kpi = {

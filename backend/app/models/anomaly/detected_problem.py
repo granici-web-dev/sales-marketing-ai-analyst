@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """SQLAlchemy ORM model for detected_problems table.
 
 One row per rule per day per tenant.
@@ -20,6 +18,8 @@ current_value / expected_value are NUMERIC(12,4) — rule-specific metric values
 context_json holds count + offending IDs + key metric value (D-02, D-03).
 """
 
+from __future__ import annotations
+
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -27,7 +27,7 @@ from sqlalchemy import Date, Numeric, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TenantScopedMixin, TIMESTAMPTZ
+from app.db.base import TIMESTAMPTZ, Base, TenantScopedMixin
 
 
 class DetectedProblem(Base, TenantScopedMixin):

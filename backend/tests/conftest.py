@@ -1,7 +1,22 @@
+"""Shared test fixtures.
+
+The environment defaults below are set before `app.main` is imported: Settings
+reads them at import time, and CI has no .env file. They live here rather than
+in a test module because a module-level os.environ write leaks into every test
+that runs after it — which is how test_migrations.py came to try connecting to
+a database called "x".
+"""
+
 from __future__ import annotations
 
-import pytest
+import os
+
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://x:x@localhost/x")
+os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+
 from uuid import UUID
+
+import pytest
 
 # Import stubs — wrapped in try/except to survive before implementation exists
 try:
@@ -35,7 +50,7 @@ async def async_client():
         yield None
         return
 
-    from httpx import AsyncClient, ASGITransport
+    from httpx import ASGITransport, AsyncClient
 
     async with AsyncClient(
         transport=ASGITransport(app=_app),

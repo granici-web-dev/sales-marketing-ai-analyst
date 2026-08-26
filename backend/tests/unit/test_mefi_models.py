@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Unit tests for MEFI SQLAlchemy models.
 
@@ -14,18 +12,18 @@ Tests cover:
 These are pure model-introspection tests — no database connection required.
 """
 
-import pytest
-from decimal import Decimal
-from sqlalchemy import Numeric, Boolean, Integer, Text, inspect as sa_inspect
-from sqlalchemy.dialects.postgresql import JSONB
+from __future__ import annotations
 
+import pytest
+from sqlalchemy import Boolean, Integer, Numeric
+from sqlalchemy.dialects.postgresql import JSONB
 
 # ── Imports under test ────────────────────────────────────────────────────────
 # Wrapped in try/except so test collection doesn't fail before implementation.
 # Tests will explicitly fail with a descriptive message if import fails.
 
 try:
-    from app.models.mefi import RawMefiLead, MefiLeadHistory, MefiSalesperson
+    from app.models.mefi import MefiLeadHistory, MefiSalesperson, RawMefiLead
 
     _import_error: Exception | None = None
 except ImportError as exc:

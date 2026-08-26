@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for InsightReadService — Phase 6 Plan 02.
 
 Tests mock AsyncSession — no live DB required.
@@ -9,7 +7,9 @@ All tests will fail with ImportError until Plan 06-02 creates
 app.services.insights.insight_read_service.InsightReadService.
 """
 
-from datetime import date, datetime, timedelta, timezone
+from __future__ import annotations
+
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
@@ -20,7 +20,7 @@ TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 
 def _make_service(mock_session=None):
     """Build InsightReadService with mocked AsyncSession."""
-    from app.services.insights.insight_read_service import InsightReadService  # noqa: PLC0415
+    from app.services.insights.insight_read_service import InsightReadService  # deferred (INFRA-05)
 
     session = mock_session or AsyncMock()
     return InsightReadService(session, TENANT_ID), session
@@ -37,7 +37,7 @@ def _mock_insight_row(
     row.date = date_val or date(2026, 5, 27)
     row.status = status
     row.payload_json = payload_json or {"summary": "Test insight"}
-    row.generated_at = generated_at or datetime(2026, 5, 28, 6, 7, 23, tzinfo=timezone.utc)
+    row.generated_at = generated_at or datetime(2026, 5, 28, 6, 7, 23, tzinfo=UTC)
     return row
 
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Integration tests for chat history persistence (CHAT-03).
 
 Phase 5 carry-forward pattern: per-test `_integration_skip` decorator
@@ -11,13 +9,13 @@ Coverage map:
   test_tenant_isolation                — T-08-01 cross-tenant 404 isolation
 """
 
+from __future__ import annotations
+
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
-
-from tests.fixtures.anthropic_responses.basic_turn import BASIC_TURN_EVENTS  # noqa: F401
 
 _TEST_DB_URL = os.environ.get("TEST_DATABASE_URL", "")
 _integration_skip = pytest.mark.skipif(

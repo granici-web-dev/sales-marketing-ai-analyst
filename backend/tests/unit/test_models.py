@@ -33,7 +33,6 @@ from sqlalchemy import DateTime
 
 # Importing the package registers every mapped class on Base.registry.
 # Without it this file would test whatever happened to be imported first.
-import app.models  # noqa: F401
 from app.db.base import Base, TenantScopedMixin
 from app.models.tenant import Tenant
 

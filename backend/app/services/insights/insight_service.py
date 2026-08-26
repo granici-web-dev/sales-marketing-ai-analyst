@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """InsightService — Claude Sonnet 4.5 orchestration for Phase 5 AI Insights.
 
 D-14: status state machine: success | fallback | failed.
@@ -15,17 +13,19 @@ T-05-03-03: AsyncAnthropic instantiated ONLY inside run() method body (INFRA-05)
 T-05-03-04: MODEL constant is "claude-sonnet-4-5" — locked. Any change visible in code review.
 """
 
+from __future__ import annotations
+
 import json
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID
 
 import structlog
-from sqlalchemy.ext.asyncio import AsyncSession
 
 # AsyncAnthropic imported at module level for testability (patch target).
 # Instantiated ONLY inside method body per INFRA-05 (never at module level).
 from anthropic import AsyncAnthropic
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # Module-level constants — NOT inside class body
 _MAX_CLAUDE_RETRIES = 2  # attempts 0, 1, 2 = 3 total (AI-06)
@@ -68,9 +68,11 @@ class InsightService:
         """
         # All application imports inside method body (INFRA-05) except AsyncAnthropic
         # (which is imported at module level for testability — see module docstring).
-        from app.core.config import settings  # noqa: PLC0415
-        from app.schemas.insights.daily_insight_schema import DailyInsightResponse  # noqa: PLC0415
-        from app.services.insights.prompt_builder import (  # noqa: PLC0415
+        from app.core.config import settings  # deferred (INFRA-05)
+        from app.schemas.insights.daily_insight_schema import (
+            DailyInsightResponse,  # deferred (INFRA-05)
+        )
+        from app.services.insights.prompt_builder import (  # deferred (INFRA-05)
             build_system_prompt,
             build_user_message,
         )
@@ -122,7 +124,7 @@ class InsightService:
 
             last_raw = json.dumps(tool_block.input)
 
-            from pydantic import ValidationError  # noqa: PLC0415
+            from pydantic import ValidationError  # deferred (INFRA-05)
 
             try:
                 parsed = DailyInsightResponse.model_validate(tool_block.input)
@@ -211,7 +213,7 @@ class InsightService:
 
         Delegates to number_validator.cross_check().
         """
-        from app.services.insights.number_validator import cross_check  # noqa: PLC0415
+        from app.services.insights.number_validator import cross_check  # deferred (INFRA-05)
         return cross_check(parsed, kpi_snapshot, problems_input)
 
     def _build_fallback(self, problems_rows: list) -> object:
@@ -227,7 +229,7 @@ class InsightService:
         Returns:
             DailyInsightResponse with fallback content.
         """
-        from app.schemas.insights.daily_insight_schema import (  # noqa: PLC0415
+        from app.schemas.insights.daily_insight_schema import (  # deferred (INFRA-05)
             DailyInsightResponse,
             Problem,
         )
@@ -278,8 +280,9 @@ class InsightService:
         Returns:
             list of detected_problems row dicts, at most 3 items.
         """
-        from sqlalchemy import select  # noqa: PLC0415
-        from app.models.anomaly.detected_problem import DetectedProblem  # noqa: PLC0415
+        from sqlalchemy import select  # deferred (INFRA-05)
+
+        from app.models.anomaly.detected_problem import DetectedProblem  # deferred (INFRA-05)
 
         stmt = (
             select(
@@ -323,8 +326,9 @@ class InsightService:
         Returns:
             dict with KPI field values, or None.
         """
-        from sqlalchemy import select  # noqa: PLC0415
-        from app.models.metrics.daily_kpi import DailyKpi  # noqa: PLC0415
+        from sqlalchemy import select  # deferred (INFRA-05)
+
+        from app.models.metrics.daily_kpi import DailyKpi  # deferred (INFRA-05)
 
         stmt = select(
             DailyKpi.date,

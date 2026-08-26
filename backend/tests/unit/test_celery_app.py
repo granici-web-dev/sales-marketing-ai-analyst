@@ -19,15 +19,6 @@ Task 1 behaviors tested:
 """
 from __future__ import annotations
 
-import os
-
-# Set required env vars before any app imports
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://x:x@localhost/x")
-os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
-os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-32chars-minimum-abc")
-
-import pytest
-
 
 class TestCeleryAppConfig:
     """Verify the Celery application configuration for INFRA-04."""
@@ -91,18 +82,18 @@ class TestCeleryAppConfig:
         assert celery_app.conf.worker_prefetch_multiplier == 1
 
     def test_redbeat_redis_url_matches_settings(self):
-        from app.tasks.celery_app import celery_app
         from app.core.config import settings
+        from app.tasks.celery_app import celery_app
         assert celery_app.conf.redbeat_redis_url == settings.redis_url
 
     def test_broker_is_redis_url(self):
-        from app.tasks.celery_app import celery_app
         from app.core.config import settings
+        from app.tasks.celery_app import celery_app
         assert celery_app.conf.broker_url == settings.redis_url
 
     def test_backend_is_redis_url(self):
-        from app.tasks.celery_app import celery_app
         from app.core.config import settings
+        from app.tasks.celery_app import celery_app
         assert celery_app.conf.result_backend == settings.redis_url
 
 
@@ -145,7 +136,7 @@ class TestCeleryForkSafety:
     def test_worker_process_init_signal_connected(self):
         """INFRA-05: worker_process_init signal must have a receiver registered."""
         from celery.signals import worker_process_init
-        from app.tasks.celery_app import celery_app  # noqa: F401 — importing triggers signal wiring
+
 
         # celery signals use Django-style dispatch; receivers is a list of weak refs
         assert len(worker_process_init.receivers) > 0, (

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Auth boundary integration tests for Phase 6 endpoints.
 
 Verifies that protected endpoints reject requests without a valid JWT (401)
@@ -7,6 +5,8 @@ and that the public /health/data endpoint does NOT require auth.
 
 These tests use dependency_overrides to avoid real DB/Redis connections.
 """
+
+from __future__ import annotations
 
 from unittest.mock import AsyncMock
 from uuid import UUID

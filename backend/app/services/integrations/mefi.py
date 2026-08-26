@@ -23,7 +23,7 @@ Source: docs/api-references/mefi/leads-read.md (rate limit headers, request shap
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -86,7 +86,7 @@ class MefiClient(BaseIntegration):
     # Context manager support
     # ------------------------------------------------------------------
 
-    async def __aenter__(self) -> "MefiClient":
+    async def __aenter__(self) -> MefiClient:
         return self
 
     async def __aexit__(self, *args: Any) -> None:

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """``compare_periods`` chat tool — 2x DashboardReadService + delta math (D-02 + D-03).
 
 Calls :meth:`DashboardReadService.get_sales_dashboard` twice (period A and
@@ -12,6 +10,8 @@ LM-3: handler signature ``(tenant_id, session, inp)``.
 LM-10: required fields use ``Field(..., description=...)``.
 """
 
+from __future__ import annotations
+
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
@@ -21,7 +21,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.chat.tools.base import Tool
 from app.services.dashboards.dashboard_read_service import DashboardReadService
-
 
 _DEFAULT_METRICS = ["leads", "contracts", "revenue", "conversion_l_to_c"]
 

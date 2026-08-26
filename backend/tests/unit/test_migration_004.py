@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit-level tests for Alembic migration 004_metrics_schema.py.
 
 Tests verify via AST inspection and source-text analysis — no DB or alembic import required.
@@ -18,10 +16,12 @@ Covers:
 Requirements: METR-01 (schema creation gate)
 """
 
+from __future__ import annotations
+
 import ast
-import pytest
 from pathlib import Path
 
+import pytest
 
 # ── Locate migration file ─────────────────────────────────────────────────────
 

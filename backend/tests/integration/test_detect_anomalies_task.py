@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Integration tests for detect_anomalies Celery task — RED-state contracts for Phase 4.
 
 All tests will fail with ImportError until Plan 04-04 (Wave 3) implements
@@ -19,9 +17,11 @@ Patterns tested:
   D-01: detected_problems UPSERT idempotency on (tenant_id, date, rule_id)
 """
 
+from __future__ import annotations
+
 import os
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -48,7 +48,7 @@ class TestDetectAnomaliesTask:
         The detect_anomalies task must create SyncRun(source="anomaly") with
         status="running" at start, then update to status="success" on completion.
         """
-        from app.tasks.etl.detect_anomalies import detect_anomalies  # noqa: PLC0415
+        from app.tasks.etl.detect_anomalies import detect_anomalies  # deferred (INFRA-05)
 
         mock_detect_result = {
             "status": "success",
@@ -74,7 +74,7 @@ class TestDetectAnomaliesTask:
         Passing "not-a-uuid" must raise ValueError at the validation step,
         before any DB connection is opened (fail-fast pattern from calculate_daily_kpis).
         """
-        from app.tasks.etl.detect_anomalies import detect_anomalies  # noqa: PLC0415
+        from app.tasks.etl.detect_anomalies import detect_anomalies  # deferred (INFRA-05)
 
         with pytest.raises((ValueError, Exception)):
             # "not-a-uuid" must fail UUID() conversion at task entry
@@ -99,7 +99,7 @@ class TestDetectAnomaliesTask:
         from sqlalchemy import text
         from sqlalchemy.ext.asyncio import create_async_engine
 
-        from app.tasks.etl.detect_anomalies import detect_anomalies  # noqa: PLC0415
+        from app.tasks.etl.detect_anomalies import detect_anomalies  # deferred (INFRA-05)
 
         engine = create_async_engine(_TEST_DB_URL)
         try:
@@ -152,7 +152,7 @@ class TestDetectAnomaliesTask:
         from sqlalchemy import text
         from sqlalchemy.ext.asyncio import create_async_engine
 
-        from app.tasks.etl.detect_anomalies import detect_anomalies  # noqa: PLC0415
+        from app.tasks.etl.detect_anomalies import detect_anomalies  # deferred (INFRA-05)
 
         engine = create_async_engine(_TEST_DB_URL)
         # Match the task's exact kpi_date computation (detect_anomalies.py line 106):
@@ -180,7 +180,6 @@ class TestDetectAnomaliesTask:
                     )
 
                 # Seed 30-day daily_kpi baseline (>= 7 rows required by D-13)
-                from decimal import Decimal  # noqa: PLC0415
 
                 for days_ago in range(1, 31):
                     await conn.execute(
@@ -235,7 +234,7 @@ class TestDetectAnomaliesTask:
         from sqlalchemy import text
         from sqlalchemy.ext.asyncio import create_async_engine
 
-        from app.tasks.etl.detect_anomalies import detect_anomalies  # noqa: PLC0415
+        from app.tasks.etl.detect_anomalies import detect_anomalies  # deferred (INFRA-05)
 
         engine = create_async_engine(_TEST_DB_URL)
         # Match the task's exact kpi_date computation (detect_anomalies.py line 106):

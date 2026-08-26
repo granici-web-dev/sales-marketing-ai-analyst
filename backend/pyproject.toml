@@ -40,6 +40,9 @@ dev = [
     # Dependency audit. The frontend had 17 production advisories when it was
     # first checked; the backend had never been checked at all.
     "pip-audit",
+    # Configured in this file since the start and never declared as a dependency,
+    # so CI would have had nothing to run.
+    "ruff>=0.15,<1",
 ]
 
 [tool.pytest.ini_options]
@@ -58,8 +61,52 @@ line-length = 100
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "UP", "S", "B", "A", "COM", "C4", "PT", "RET", "SIM", "TID"]
-ignore = ["COM812", "S101"]
+select = [
+    "E", "F", "I", "N", "UP", "S", "B", "A", "COM", "C4", "PT", "RET", "SIM", "TID",
+    # The broad-catch discipline was a convention enforced by 28 `# noqa: BLE001`
+    # markers against a rule that was never switched on. Now it is.
+    "BLE",
+    "PLC",
+    # Fails on a `# noqa` that suppresses nothing. This is what keeps the marker
+    # count honest: a suppression outliving its rule becomes an error, not decor.
+    "RUF100",
+]
+ignore = [
+    "COM812",
+    # Tests assert.
+    "S101",
+    # `Depends()` and `Query()` in a default argument is the FastAPI idiom, not a
+    # shared-mutable-default defect. 38 occurrences, all of them the framework.
+    "B008",
+    # Deferred imports are required here, not tolerated: INFRA-05 keeps app imports
+    # out of module scope so a Celery fork does not inherit a parent's connections.
+    # 442 of them are deliberate. The rule asks for the opposite of the design, so
+    # it is off by name — and the discipline is guarded by a test that asserts
+    # `app.db.session` is absent from `celery_app`'s module scope, which is the
+    # thing that actually breaks.
+    "PLC0415",
+    # Function-local constants are spelled as constants here (`_GROUP_COLUMNS`,
+    # `PERCENT_FIELDS`). 31 of them, deliberate and readable.
+    "N806",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Test code is not deployed. `exec`, a partial executable path and a subprocess
+# call are how these tests inspect migrations and worker start-up; none of them
+# is reachable by a request.
+"tests/**" = ["S102", "S105", "S603", "S607", "SIM102", "SIM117", "PT018", "PT028"]
+# Migrations carry seed data, including a password *hash*, which is not a secret
+# in the sense S105 means.
+"alembic/versions/**" = ["S105"]
+# Two chat tools build a `text()` query with an interpolated identifier. In
+# get_leads it is one of two literal table names chosen by an if/else; in
+# get_loss_reasons it is a value from a static dict whose KeyError fails closed
+# (CR-06). Every *value* in both queries is a bound parameter. Ruff anchors this
+# diagnostic inside an implicit string concatenation where a `# noqa` cannot be
+# placed, so the exemption is recorded here — narrowed to these two files, and
+# it lapses the moment either one is renamed.
+"app/services/chat/tools/get_leads.py" = ["S608"]
+"app/services/chat/tools/get_loss_reasons.py" = ["S608"]
 
 [tool.mypy]
 python_version = "3.11"

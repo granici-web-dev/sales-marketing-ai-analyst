@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """HealthReadService — queries sync_runs and pipeline_runs for data freshness.
 
 Returns the data freshness health status for the GET /health/data endpoint.
@@ -10,7 +8,9 @@ PIPE-04: last_pipeline_status from PipelineRun most recent row
 Phase 6 Plan 02 — read service for health router in Plan 03.
 """
 
-from datetime import datetime, timedelta, timezone
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import structlog
@@ -69,14 +69,14 @@ class HealthReadService:
         last_pipeline_status: str | None = pipeline_row.status if pipeline_row else None
 
         # UI-06: stale when no sync run or sync completed more than 26h ago
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(UTC)
         if last_sync_at is None:
             stale = True
         else:
             # Ensure timezone-aware comparison (defensive: completed_at should be TIMESTAMPTZ)
             sync_dt = last_sync_at
             if sync_dt.tzinfo is None:
-                sync_dt = sync_dt.replace(tzinfo=timezone.utc)
+                sync_dt = sync_dt.replace(tzinfo=UTC)
             stale = (now_utc - sync_dt) > timedelta(hours=26)
 
         logger.bind(tenant_id=str(self._tenant_id)).info(

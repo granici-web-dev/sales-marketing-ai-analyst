@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Unit-level tests for Alembic migration 003_mefi_schema.py.
 
@@ -14,14 +12,14 @@ These tests do NOT require a live database connection — they inspect the
 migration module directly as Python code.
 """
 
+from __future__ import annotations
+
 import ast
 import importlib
 import importlib.util
-import os
-import sys
-import pytest
 from pathlib import Path
 
+import pytest
 
 # ── Locate migration file ─────────────────────────────────────────────────────
 
@@ -42,7 +40,7 @@ def _load_migration_module():
     try:
         spec.loader.exec_module(module)
         return module
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None
 
 

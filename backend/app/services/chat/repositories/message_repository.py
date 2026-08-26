@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """MessageRepository — tenant-scoped persistence for `chat_messages` (Phase 8 Plan 08-04).
 
 D-09: pre-allocated `assistant_msg_id` is honored so the SSE `conversation_meta`
@@ -12,7 +10,9 @@ WR-04: NO commit — caller commits atomically.
 T-08-01: cross-tenant write attempts raise ValueError before the SQL round-trip.
 """
 
-from datetime import datetime, timezone
+from __future__ import annotations
+
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import asc, select, update
@@ -55,7 +55,7 @@ class MessageRepository:
             update(ChatConversation)
             .where(ChatConversation.tenant_id == self._tenant_id)
             .where(ChatConversation.id == conversation_id)
-            .values(last_message_at=datetime.now(timezone.utc))
+            .values(last_message_at=datetime.now(UTC))
         )
         await self._session.execute(bump)
         return new_id
@@ -98,7 +98,7 @@ class MessageRepository:
             update(ChatConversation)
             .where(ChatConversation.tenant_id == self._tenant_id)
             .where(ChatConversation.id == conversation_id)
-            .values(last_message_at=datetime.now(timezone.utc))
+            .values(last_message_at=datetime.now(UTC))
         )
         await self._session.execute(bump)
         return new_id
@@ -138,7 +138,7 @@ class MessageRepository:
                    .where(ChatMessage.id == message_id)
                    .where(ChatMessage.tenant_id == self._tenant_id)
                    .scalar_subquery())
-            .values(last_message_at=datetime.now(timezone.utc))
+            .values(last_message_at=datetime.now(UTC))
         )
         await self._session.execute(conv_bump)
 

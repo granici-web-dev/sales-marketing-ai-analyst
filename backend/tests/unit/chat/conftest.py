@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Shared fixtures for Phase 8 AI Chat unit tests.
 
 Provides reusable test infrastructure that every chat unit test relies on:
@@ -21,6 +19,8 @@ Patch target convention:
     AND the corresponding `_active_chat_module` constant so future plans don't
     silently no-op the patch (see T-08 threat register: tampering — patch drift).
 """
+
+from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock, MagicMock, patch

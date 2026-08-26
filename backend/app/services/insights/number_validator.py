@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Number cross-check validator for Phase 5 AI Insights.
 
 AI-06: Numbers extracted from Claude's narrative text (summary + problem descriptions)
@@ -12,9 +10,10 @@ Handles Romanian number formatting:
   % suffix: ignored for parsing purposes
 """
 
-import re
-from decimal import Decimal
+from __future__ import annotations
 
+import contextlib
+import re
 
 # Romanian number pattern:
 # Matches: 23.400 (thousands), 8,3% (decimal comma), 351 (plain integer),
@@ -76,10 +75,8 @@ def extract_numbers_from_text(text: str) -> list[float]:
                 # Single dot with non-3-digit decimal → decimal point (e.g. "8.3")
                 normalized = raw
 
-        try:
+        with contextlib.suppress(ValueError):
             results.append(float(normalized))
-        except ValueError:
-            pass
 
     return results
 

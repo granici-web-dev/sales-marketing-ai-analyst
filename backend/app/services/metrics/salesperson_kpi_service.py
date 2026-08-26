@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Per-salesperson KPI aggregation service.
 
 Computes per-salesperson daily KPIs from v_mefi_leads_active (D-14):
@@ -31,6 +29,8 @@ T-03-03-01: Explicit tenant_id filter in every Core SELECT.
 
 Phase 3 Plan 03 — service layer for salesperson_daily_kpi table writes.
 """
+
+from __future__ import annotations
 
 from datetime import date, datetime, time
 from decimal import Decimal
@@ -228,12 +228,12 @@ class SalespersonKpiService:
 
             leads_assigned = len(leads)
             # visits_conducted = Showroom walk-ins (source_id=5) — matches "Vizita" in Sofa Belle Excel.
-            visits_conducted = sum(1 for l in leads if l.source_id == 5)
-            offers_sent = sum(1 for l in leads if l.reached_offer)
+            visits_conducted = sum(1 for lead in leads if lead.source_id == 5)
+            offers_sent = sum(1 for lead in leads if lead.reached_offer)
             # deals_lost stays on the creation cohort (out of scope for the contract
             # hotfix; not a MEFI-comparison metric). Note the deliberate asymmetry with
             # deals_won (event model) documented in the module docstring.
-            deals_lost = sum(1 for l in leads if not l.reached_contract and not l.reached_offer)
+            deals_lost = sum(1 for lead in leads if not lead.reached_contract and not lead.reached_offer)
 
             # deals_won + revenue use the EVENT model: deals this rep SIGNED on
             # kpi_date (status→Clienți, status_id=1), keyed on status_changed_at —
@@ -265,7 +265,7 @@ class SalespersonKpiService:
             # data_completeness_pct (METR-06)
             data_completeness_pct: Decimal | None = None
             if leads_assigned > 0:
-                non_null_count = sum(1 for l in leads if l.estimated_value is not None)
+                non_null_count = sum(1 for lead in leads if lead.estimated_value is not None)
                 data_completeness_pct = Decimal(str(non_null_count)) / Decimal(str(leads_assigned)) * Decimal("100")
 
             # WR-03 FIX: Initialize history_by_lead unconditionally to avoid implicit
@@ -277,7 +277,7 @@ class SalespersonKpiService:
             # Time to first touch — fetch lead history for this rep's leads (D-05, D-06)
             ttft_minutes: int | None = None
             if leads_assigned > 0:
-                lead_ids = [str(l.lead_external_id) for l in leads]
+                lead_ids = [str(lead.lead_external_id) for lead in leads]
                 history_sql = text("""
                     SELECT lead_external_id, changed_at
                     FROM mefi_lead_history
@@ -297,14 +297,14 @@ class SalespersonKpiService:
 
                 # Compute TTFT for each lead and average
                 ttft_values: list[int] = []
-                for l in leads:
-                    if l.created_at_source is None:
+                for lead in leads:
+                    if lead.created_at_source is None:
                         continue
-                    lead_history = history_by_lead.get(str(l.lead_external_id), [])
+                    lead_history = history_by_lead.get(str(lead.lead_external_id), [])
                     ttft = self._compute_time_to_first_touch(
-                        str(l.lead_external_id),
+                        str(lead.lead_external_id),
                         lead_history,
-                        lead_created_at=l.created_at_source,
+                        lead_created_at=lead.created_at_source,
                         open_time=open_time,
                         close_time=close_time,
                         work_days=work_days,
@@ -335,8 +335,8 @@ class SalespersonKpiService:
             # history_by_lead is always defined (initialized unconditionally above)
             if leads_assigned > 0:
                 leads_contacted = sum(
-                    1 for l in leads
-                    if str(l.lead_external_id) in history_by_lead
+                    1 for lead in leads
+                    if str(lead.lead_external_id) in history_by_lead
                 )
             else:
                 leads_contacted = 0

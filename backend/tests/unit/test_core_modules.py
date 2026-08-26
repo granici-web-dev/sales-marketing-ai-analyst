@@ -17,15 +17,16 @@ Task 2 behaviors:
 """
 from __future__ import annotations
 
-import pytest
 from uuid import UUID
+
+import pytest
 
 
 class TestExceptionHierarchy:
     """Test exception class hierarchy."""
 
     def test_tenant_isolation_error_is_subclass_of_app_error(self):
-        from app.core.exceptions import TenantIsolationError, AppError
+        from app.core.exceptions import AppError, TenantIsolationError
         assert issubclass(TenantIsolationError, AppError)
 
     def test_app_error_is_subclass_of_exception(self):
@@ -33,7 +34,7 @@ class TestExceptionHierarchy:
         assert issubclass(AppError, Exception)
 
     def test_not_found_error_is_subclass_of_app_error(self):
-        from app.core.exceptions import NotFoundError, AppError
+        from app.core.exceptions import AppError, NotFoundError
         assert issubclass(NotFoundError, AppError)
 
     def test_not_found_error_has_message_attribute(self):
@@ -42,11 +43,11 @@ class TestExceptionHierarchy:
         assert err.message == "User not found"
 
     def test_authentication_error_is_subclass_of_app_error(self):
-        from app.core.exceptions import AuthenticationError, AppError
+        from app.core.exceptions import AppError, AuthenticationError
         assert issubclass(AuthenticationError, AppError)
 
     def test_authorization_error_is_subclass_of_app_error(self):
-        from app.core.exceptions import AuthorizationError, AppError
+        from app.core.exceptions import AppError, AuthorizationError
         assert issubclass(AuthorizationError, AppError)
 
     def test_tenant_isolation_error_has_message(self):
@@ -60,14 +61,14 @@ class TestTenancyContextVar:
     """Test tenant ContextVar behavior."""
 
     def test_get_current_tenant_id_returns_none_when_not_set(self):
-        from app.core.tenancy import get_current_tenant_id, _tenant_id_var
+        from app.core.tenancy import _tenant_id_var, get_current_tenant_id
         # Reset to None
         _tenant_id_var.set(None)
         result = get_current_tenant_id()
         assert result is None
 
     def test_set_tenant_id_causes_get_to_return_that_uuid(self):
-        from app.core.tenancy import set_tenant_id, get_current_tenant_id, _tenant_id_var
+        from app.core.tenancy import _tenant_id_var, get_current_tenant_id, set_tenant_id
         tenant_uuid = UUID("00000000-0000-0000-0000-000000000001")
         set_tenant_id(tenant_uuid)
         result = get_current_tenant_id()
@@ -81,14 +82,14 @@ class TestTenancyContextVar:
         assert _tenant_id_var.get(None) is None or _tenant_id_var.get() is None
 
     def test_require_tenant_id_raises_when_none(self):
-        from app.core.tenancy import require_tenant_id, _tenant_id_var
         from app.core.exceptions import TenantIsolationError
+        from app.core.tenancy import _tenant_id_var, require_tenant_id
         _tenant_id_var.set(None)
         with pytest.raises(TenantIsolationError):
             require_tenant_id()
 
     def test_require_tenant_id_returns_uuid_when_set(self):
-        from app.core.tenancy import require_tenant_id, set_tenant_id, _tenant_id_var
+        from app.core.tenancy import _tenant_id_var, require_tenant_id, set_tenant_id
         tenant_uuid = UUID("00000000-0000-0000-0000-000000000001")
         set_tenant_id(tenant_uuid)
         result = require_tenant_id()
@@ -140,7 +141,6 @@ class TestLogging:
 
     def test_configure_logging_has_merge_contextvars(self):
         """Logging config must include merge_contextvars processor."""
-        import ast
         import os
         logging_path = os.path.join(
             os.path.dirname(__file__), "..", "..", "app", "core", "logging.py"

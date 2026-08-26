@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import redis.asyncio as aioredis
 import structlog
@@ -75,7 +75,7 @@ async def trigger_sync(
     )
     return SyncTriggerResponse(
         task_id=str(task.id),
-        enqueued_at=datetime.now(timezone.utc).isoformat(),
+        enqueued_at=datetime.now(UTC).isoformat(),
     )
 
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for prompt_builder module — RED-state contracts for Phase 5.
 
 All tests will fail with ImportError until Plan 05-02 (Wave 1) implements
@@ -17,10 +15,10 @@ Patterns tested:
   AI-04: build_user_message caps problems at 3 by estimated_loss_ron descending
 """
 
+from __future__ import annotations
+
 import json
 from decimal import Decimal
-
-import pytest
 
 from tests.factories.insight_factory import make_kpi_snapshot, make_three_anomaly_day
 
@@ -34,7 +32,7 @@ class TestBuildSystemPrompt:
         D-08: System prompt = Python list of text blocks with cache_control.
         At minimum: one content block + one block with cache_control on last.
         """
-        from app.services.insights.prompt_builder import build_system_prompt  # noqa: PLC0415
+        from app.services.insights.prompt_builder import build_system_prompt  # deferred (INFRA-05)
 
         result = build_system_prompt()
         assert isinstance(result, list), (
@@ -50,7 +48,7 @@ class TestBuildSystemPrompt:
         D-07: cache_control on the last block caches all preceding content.
         This maximizes prompt caching — stable system prompt cached at ~$0.30/MTok.
         """
-        from app.services.insights.prompt_builder import build_system_prompt  # noqa: PLC0415
+        from app.services.insights.prompt_builder import build_system_prompt  # deferred (INFRA-05)
 
         result = build_system_prompt()
         last = result[-1]
@@ -68,7 +66,7 @@ class TestBuildSystemPrompt:
         specific names to actions (not generic 'echipa de vânzări').
         Required names: Dragoi Mihaela, Raileanu Leon (known from Phase 3 backfill data).
         """
-        from app.services.insights.prompt_builder import build_system_prompt  # noqa: PLC0415
+        from app.services.insights.prompt_builder import build_system_prompt  # deferred (INFRA-05)
 
         result = build_system_prompt()
         full_text = " ".join(b.get("text", "") for b in result)
@@ -86,7 +84,7 @@ class TestBuildSystemPrompt:
         D-10: Claude must be instructed to use Azi, Mâine, Săptămâna aceasta, Luna aceasta.
         Labels in system prompt → Claude respects them in output → validated in schema tests.
         """
-        from app.services.insights.prompt_builder import build_system_prompt  # noqa: PLC0415
+        from app.services.insights.prompt_builder import build_system_prompt  # deferred (INFRA-05)
 
         result = build_system_prompt()
         full_text = " ".join(b.get("text", "") for b in result)
@@ -104,7 +102,7 @@ class TestBuildSystemPrompt:
         D-02: Hard cap of 3 problems — both Pydantic max_length=3 AND system prompt instruction.
         System prompt text must contain the "Maximum 3" instruction (case-insensitive).
         """
-        from app.services.insights.prompt_builder import build_system_prompt  # noqa: PLC0415
+        from app.services.insights.prompt_builder import build_system_prompt  # deferred (INFRA-05)
 
         result = build_system_prompt()
         full_text = " ".join(b.get("text", "") for b in result)
@@ -127,7 +125,7 @@ class TestBuildUserMessage:
 
         D-06: User message is a JSON string sent fresh per day (not cached).
         """
-        from app.services.insights.prompt_builder import build_user_message  # noqa: PLC0415
+        from app.services.insights.prompt_builder import build_user_message  # deferred (INFRA-05)
 
         result = build_user_message(make_kpi_snapshot(), make_three_anomaly_day())
         assert isinstance(result, str), (
@@ -139,7 +137,7 @@ class TestBuildUserMessage:
 
         D-06: JSON structure: {"kpi_snapshot": {...}, "detected_problems": [...]}
         """
-        from app.services.insights.prompt_builder import build_user_message  # noqa: PLC0415
+        from app.services.insights.prompt_builder import build_user_message  # deferred (INFRA-05)
 
         result = build_user_message(make_kpi_snapshot(), make_three_anomaly_day())
         data = json.loads(result)  # must not raise
@@ -157,7 +155,7 @@ class TestBuildUserMessage:
         D-02: Even when 4+ anomaly rules fire, only the top 3 by estimated_loss_ron
         descending are sent to Claude. Python selection — not Claude's decision.
         """
-        from app.services.insights.prompt_builder import build_user_message  # noqa: PLC0415
+        from app.services.insights.prompt_builder import build_user_message  # deferred (INFRA-05)
 
         four_problems = make_three_anomaly_day() + [
             {"rule_id": "extra_rule", "severity": "low",
@@ -181,7 +179,7 @@ class TestBuildUserMessage:
         to only {rule_id, current_value, expected_value}. Phone numbers, email
         addresses, and customer names must never reach the Claude API payload.
         """
-        from app.services.insights.prompt_builder import build_user_message  # noqa: PLC0415
+        from app.services.insights.prompt_builder import build_user_message  # deferred (INFRA-05)
 
         problems_with_pii_risk = make_three_anomaly_day()
         result = build_user_message(make_kpi_snapshot(), problems_with_pii_risk)
@@ -202,7 +200,7 @@ class TestBuildUserMessage:
         D-13: Zero-anomaly day still generates a report — build_user_message must
         accept empty problems list and produce valid JSON with detected_problems=[].
         """
-        from app.services.insights.prompt_builder import build_user_message  # noqa: PLC0415
+        from app.services.insights.prompt_builder import build_user_message  # deferred (INFRA-05)
 
         result = build_user_message(make_kpi_snapshot(), [])
         data = json.loads(result)

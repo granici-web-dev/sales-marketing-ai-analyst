@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """Pydantic v2 response schema for the Salespeople Dashboard.
 
 DATA-04: All Decimal fields use @field_serializer returning str | None.
 
 Exports: SalespeopleDashboardResponse, SalespersonRow
 """
+
+from __future__ import annotations
 
 from decimal import Decimal
 

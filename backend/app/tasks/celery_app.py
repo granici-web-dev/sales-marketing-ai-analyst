@@ -105,10 +105,10 @@ celery_app.conf.update(
 # stale data. The standalone daily-insights-generation entry is removed;
 # generate_daily_insights is now the 4th link in the chain.
 try:
-    from celery.schedules import crontab  # noqa: PLC0415
-    from redbeat import RedBeatSchedulerEntry  # noqa: PLC0415
+    from celery.schedules import crontab  # deferred (INFRA-05)
+    from redbeat import RedBeatSchedulerEntry  # deferred (INFRA-05)
 
-    from app.tasks.etl.sync_mefi_leads import daily_pipeline  # noqa: PLC0415
+    from app.tasks.etl.sync_mefi_leads import daily_pipeline  # deferred (INFRA-05)
 
     _pipeline_sig = daily_pipeline(settings.sofa_belle_tenant_id)
     _entry = RedBeatSchedulerEntry(
@@ -118,7 +118,7 @@ try:
         app=celery_app,
     )
     _entry.save()
-except Exception:  # noqa: BLE001
+except Exception:
     # This used to swallow the failure, on the grounds that "the beat
     # container registers it authoritatively on startup". This IS the code
     # that runs there — there is no second registration site. A bad crontab,

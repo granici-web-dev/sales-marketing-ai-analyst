@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """``explain_metric`` chat tool — static Romanian metric glossary (D-02 + D-03).
 
 **NEW PATTERN** — pure Python dict lookup. No DB hit. The only tool in the
@@ -20,13 +18,14 @@ Each glossary entry is a dict with:
     limits block).
 """
 
+from __future__ import annotations
+
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.chat.tools.base import Tool
-
 
 # 9 entries per CONTEXT specifics + SPEC.md §6 + docs/CHAT.md.
 # Keys are upper-case canonical names; the handler lookup is

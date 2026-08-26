@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """SQLAlchemy ORM model for chat_messages table.
 
 One row per turn in a chat conversation (user input, assistant reply,
@@ -41,7 +39,8 @@ D-22 (audit logging): each `tool_calls` / `tool_results` JSONB blob has a
 matching row in `chat_tool_calls` for structured audit lookup by tool_name.
 """
 
-from datetime import datetime
+from __future__ import annotations
+
 from uuid import UUID
 
 from sqlalchemy import Boolean, Integer, Text

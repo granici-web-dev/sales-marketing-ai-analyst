@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """``get_kpi`` chat tool — aggregated KPI values for a date range (D-02 + D-03).
 
 Wraps :class:`app.services.metrics.daily_kpi_service.DailyKpiService`. The
@@ -13,6 +11,8 @@ LM-3: handler signature is ``(tenant_id, session, inp)``.
 LM-10: required fields use ``Field(..., description=...)``.
 """
 
+from __future__ import annotations
+
 from datetime import date, timedelta
 from decimal import Decimal
 from uuid import UUID
@@ -22,7 +22,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.chat.tools.base import Tool
 from app.services.metrics.daily_kpi_service import DailyKpiService
-
 
 # Metrics accepted by Claude. Each maps to one daily_kpi column (or a
 # group of columns). Unknown metrics are silently ignored to keep the

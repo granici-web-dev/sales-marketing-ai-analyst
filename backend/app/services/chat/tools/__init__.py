@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Chat tool registry — single source of truth for Anthropic Tool Use.
 
 Implements D-01..D-04:
@@ -24,9 +22,17 @@ LM-3: every handler keeps the ``(tenant_id, session, inp)`` signature
 contract (see ``tests/unit/chat/test_chat_tools_registry.py``).
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from app.services.chat.tools.base import Tool
+
+# ── Task 2 tools (4 of 12) — thin text() queries + delta math ─────────────────
+from app.services.chat.tools.compare_periods import TOOL as _COMPARE_PERIODS
+
+# ── Task 3 tools (4 of 12) — insight read + static glossary + stuck + trend ──
+from app.services.chat.tools.explain_metric import TOOL as _EXPLAIN_METRIC
 
 # ── Task 1 tools (4 of 12) — wrap existing Phase 3/6 services ─────────────────
 from app.services.chat.tools.get_funnel_data import TOOL as _GET_FUNNEL_DATA
@@ -34,24 +40,17 @@ from app.services.chat.tools.get_kpi import TOOL as _GET_KPI
 from app.services.chat.tools.get_lead_categories_breakdown import (
     TOOL as _GET_LEAD_CATEGORIES_BREAKDOWN,
 )
+from app.services.chat.tools.get_leads import TOOL as _GET_LEADS
+from app.services.chat.tools.get_loss_reasons import TOOL as _GET_LOSS_REASONS
+from app.services.chat.tools.get_recent_insight import TOOL as _GET_RECENT_INSIGHT
 from app.services.chat.tools.get_salesperson_performance import (
     TOOL as _GET_SALESPERSON_PERFORMANCE,
 )
-
-# ── Task 2 tools (4 of 12) — thin text() queries + delta math ─────────────────
-from app.services.chat.tools.compare_periods import TOOL as _COMPARE_PERIODS
-from app.services.chat.tools.get_leads import TOOL as _GET_LEADS
-from app.services.chat.tools.get_loss_reasons import TOOL as _GET_LOSS_REASONS
 from app.services.chat.tools.get_showroom_performance import (
     TOOL as _GET_SHOWROOM_PERFORMANCE,
 )
-
-# ── Task 3 tools (4 of 12) — insight read + static glossary + stuck + trend ──
-from app.services.chat.tools.explain_metric import TOOL as _EXPLAIN_METRIC
-from app.services.chat.tools.get_recent_insight import TOOL as _GET_RECENT_INSIGHT
 from app.services.chat.tools.get_stuck_leads import TOOL as _GET_STUCK_LEADS
 from app.services.chat.tools.get_trend import TOOL as _GET_TREND
-
 
 # Canonical name → Tool mapping (D-04). Final 12-tool registry per D-01 + D-02.
 TOOLS_REGISTRY: dict[str, Tool] = {

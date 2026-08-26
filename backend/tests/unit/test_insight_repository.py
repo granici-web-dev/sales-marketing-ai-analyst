@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Unit tests for InsightRepository — RED-state contracts for Phase 5.
 
 All tests will fail with ImportError until Plan 05-02 (Wave 2) implements
@@ -16,8 +14,9 @@ Patterns tested:
   Cross-tenant write guard: repo tenant_id must match row tenant_id
 """
 
+from __future__ import annotations
+
 from datetime import date
-from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 
@@ -35,7 +34,9 @@ def _make_repo(mock_session=None, tenant_id=None):
     Import deferred — file parses (RED) before Plan 05-02 implements InsightRepository.
     Returns (repo, session) tuple.
     """
-    from app.services.repositories.insight_repository import InsightRepository  # noqa: PLC0415
+    from app.services.repositories.insight_repository import (
+        InsightRepository,  # deferred (INFRA-05)
+    )
 
     session = mock_session or AsyncMock()
     tid = tenant_id or TENANT_ID
@@ -84,7 +85,7 @@ class TestUpsertDailyInsight:
             "output_tokens": 2000,
         }
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="missing tenant_id"):
             await repo.upsert_daily_insight(row_without_tenant)
 
     @pytest.mark.asyncio
@@ -100,7 +101,9 @@ class TestUpsertDailyInsight:
         repo, _ = _make_repo(tenant_id=TENANT_A)
         row_with_wrong_tenant = make_insight_row(tenant_id=TENANT_B)
 
-        with pytest.raises(ValueError):
+        # Without `match` this passes on any ValueError — including one raised
+        # for an unrelated reason — and the cross-tenant guard goes unproven.
+        with pytest.raises(ValueError, match="cross-tenant write blocked"):
             await repo.upsert_daily_insight(row_with_wrong_tenant)
 
     @pytest.mark.asyncio
