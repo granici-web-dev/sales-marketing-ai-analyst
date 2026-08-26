@@ -2,9 +2,9 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { ArrowRight, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { PortalSignIn } from "@/components/portal/portal-sign-in";
 import {
   fetchPortalAgents,
-  PORTAL_AGENTS_ARE_STUBBED,
   type AgentAccess,
   type PortalAgent,
 } from "@/lib/portal-agents";
@@ -24,7 +24,7 @@ const TONE: Record<AgentAccess, "ok" | "warn" | "neutral"> = {
 
 export default async function AgentsPage() {
   const t = await getTranslations("agents");
-  const agents = await fetchPortalAgents();
+  const result = await fetchPortalAgents();
 
   return (
     <div className="space-y-6">
@@ -33,17 +33,18 @@ export default async function AgentsPage() {
         <p className="mt-1 text-sm text-muted-foreground">{t("lead")}</p>
       </div>
 
-      {PORTAL_AGENTS_ARE_STUBBED && (
-        <p className="rounded-control border border-warn/30 bg-warn/10 px-4 py-3 text-sm text-warn">
-          {t("stubNotice")}
-        </p>
+      {/* Не вошёл — на месте списка вход, а не пустая ведомость и не семь
+          замков. Семь замков были бы враньём: мы не знаем, что у человека
+          куплено, пока не знаем, кто он. */}
+      {result.ok ? (
+        <ul className="divide-y divide-border overflow-hidden rounded-card border bg-card">
+          {result.data.map((agent) => (
+            <AgentRow key={agent.id} agent={agent} />
+          ))}
+        </ul>
+      ) : (
+        <PortalSignIn />
       )}
-
-      <ul className="divide-y divide-border overflow-hidden rounded-card border bg-card">
-        {agents.map((agent) => (
-          <AgentRow key={agent.id} agent={agent} />
-        ))}
-      </ul>
     </div>
   );
 }

@@ -265,7 +265,15 @@
   "agents": {
     "heading": "Agents",
     "lead": "What is running for you, and what can be.",
-    "stubNotice": "The figures below are sample data. This panel's account and the engine's account are still separate, so the real payment state cannot be read yet.",
+    "signIn": {
+      "title": "The agents section belongs to your Davoq account",
+      "lead": "Sign in with your Davoq panel credentials: that is where what you pay for is recorded.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "invalid": "Wrong email or password.",
+      "unavailable": "Could not reach the engine. Try again."
+    },
     "unlock": "Turn on",
     "open": "Open",
     "comingSoon": "In progress",

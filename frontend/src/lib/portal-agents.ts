@@ -3,23 +3,16 @@
  *
  * Портал один на всех агентов: разделы оплаченных открыты, остальные заперты
  * и предлагают оплату. Ответ на вопрос «что оплачено» даёт движок —
- * `GET /admin/api/agents`, модуль `billing/agents.ts`.
- *
- * ── Почему пока заглушка ──
- *
- * Спросить движок отсюда нечем. У этого кабинета своя таблица пользователей
- * и свой JWT, у движка свои тенанты и своя сессия; общей личности между ними
- * не существует, поэтому запрос будет отвергнут как неавторизованный.
- * Сведение личностей — отдельная работа, и до неё замки показывать не на чем.
- *
- * Заглушка ровно одна и вся здесь: `fetchPortalAgents`. Когда вход станет
- * общим, меняется тело этой функции и больше ничего — ни страница, ни типы.
- * Форма ответа совпадает с тем, что уже отдаёт движок, специально.
+ * `GET /admin/api/agents`, модуль `billing/agents.ts`. Здесь этот ответ
+ * только дополняется тем, чего движок знать не может: куда ведёт открытый
+ * раздел в ЭТОМ приложении.
  */
+import { engineGet, type EngineResult } from "@/lib/engine";
 
 export type AgentAccess = "unlocked" | "expiring" | "locked" | "unavailable";
 
-export interface PortalAgent {
+/** То, что отдаёт движок. Форма повторяет `PortalAgent` из billing/agents.ts. */
+interface EngineAgent {
   id: string;
   access: AgentAccess;
   tier: "basic" | "pro" | null;
@@ -27,32 +20,34 @@ export interface PortalAgent {
   priceFrom: number | null;
   /** Дней до конца оплаченного периода. null — бессрочно либо не куплен. */
   daysLeft: number | null;
+}
+
+export interface PortalAgent extends EngineAgent {
   /** Куда ведёт открытый раздел. null — вести некуда, раздел ещё не перенесён. */
   href: string | null;
 }
 
 /**
- * Порядок тот же, что в контракте и на витрине: человек не должен пересобирать
- * в голове список, переходя из прайса в кабинет.
+ * Чьи экраны уже живут в этом приложении.
  *
- * Значения — то, что вернул бы движок для клиента на тарифе business: чат-бот,
- * конфигуратор, дожим и статус заказа перенесены со старой лестницы, голосовой
- * и контент заперты, аналитик недоступен, потому что не запущен.
+ * Пусто не случайно: сегодня здесь только аналитик, а он не запущен и
+ * приходит от движка недоступным. Остальные шестеро управляются в кабинете
+ * движка, и ссылка туда была бы ссылкой в другое приложение — про это
+ * страница говорит словами, а не кнопкой, которая никуда не ведёт.
  */
-const STUB: PortalAgent[] = [
-  { id: "chatbot", access: "unlocked", tier: null, priceFrom: 149, daysLeft: null, href: null },
-  { id: "voice-assistant", access: "locked", tier: null, priceFrom: 249, daysLeft: null, href: null },
-  { id: "configurator", access: "unlocked", tier: null, priceFrom: 129, daysLeft: null, href: null },
-  { id: "follow-up", access: "unlocked", tier: null, priceFrom: 99, daysLeft: null, href: null },
-  { id: "order-status", access: "expiring", tier: null, priceFrom: 79, daysLeft: 9, href: null },
-  { id: "content-engine", access: "locked", tier: null, priceFrom: 149, daysLeft: null, href: null },
-  // Единственный, чьи экраны уже существуют в этом приложении.
-  { id: "data-analyst", access: "unavailable", tier: null, priceFrom: null, daysLeft: null, href: "/insights" },
-];
+const SCREENS: Record<string, string> = {
+  "data-analyst": "/insights",
+};
 
-export async function fetchPortalAgents(): Promise<PortalAgent[]> {
-  return STUB;
+export async function fetchPortalAgents(): Promise<EngineResult<PortalAgent[]>> {
+  const result = await engineGet<{ agents: EngineAgent[] }>("/admin/api/agents");
+  if (!result.ok) return result;
+
+  return {
+    ok: true,
+    data: result.data.agents.map((agent) => ({
+      ...agent,
+      href: SCREENS[agent.id] ?? null,
+    })),
+  };
 }
-
-/** Заглушка ли это. Страница обязана сказать об этом вслух. */
-export const PORTAL_AGENTS_ARE_STUBBED = true;

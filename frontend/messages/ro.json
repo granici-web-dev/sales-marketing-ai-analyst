@@ -265,7 +265,15 @@
   "agents": {
     "heading": "Agenți",
     "lead": "Ce este pornit la dumneavoastră și ce se poate porni.",
-    "stubNotice": "Datele de mai jos sunt de probă. Contul acestui panou și contul motorului sunt încă separate, așa că starea reală a plăților nu poate fi citită încă.",
+    "signIn": {
+      "title": "Secțiunea agenților ține de contul Davoq",
+      "lead": "Intrați cu datele panoului Davoq: acolo se ține evidența a ceea ce este plătit.",
+      "email": "Email",
+      "password": "Parolă",
+      "submit": "Intră",
+      "invalid": "Email sau parolă incorectă.",
+      "unavailable": "Nu am putut ajunge la motor. Încercați din nou."
+    },
     "unlock": "Pornește",
     "open": "Deschide",
     "comingSoon": "În lucru",
