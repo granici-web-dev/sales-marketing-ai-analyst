@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { ArrowRight, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { PlanPanel } from "@/components/portal/plan";
 import { PortalSignIn } from "@/components/portal/portal-sign-in";
 import { isLocked, type NavAgent } from "@/lib/portal-nav";
 import { loadPortalNav } from "@/lib/portal-nav.server";
@@ -27,8 +28,12 @@ export default async function SubscriptionPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">{t("subscriptionHeading")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("subscriptionLead")}</p>
+        <h1 className="text-xl font-semibold tracking-tight">
+          {t("subscriptionHeading")}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t("subscriptionLead")}
+        </p>
       </div>
 
       {/* Не вошёл — на месте ведомости вход, а не семь замков. Семь замков
@@ -42,6 +47,11 @@ export default async function SubscriptionPage() {
       ) : (
         <PortalSignIn />
       )}
+
+      {/* Тариф ниже ведомости, а не вместо неё. Ведомость отвечает «что у меня
+          куплено», тариф — «оплачен ли кабинет, сколько израсходовано и что
+          будет с данными». Второй вопрос задают реже, поэтому он ниже. */}
+      {nav.linked && <PlanPanel />}
     </div>
   );
 }
@@ -55,16 +65,26 @@ async function AgentRow({ agent }: { agent: NavAgent }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           {locked && (
-            <Lock size={13} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+            <Lock
+              size={13}
+              className="shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            />
           )}
           <span className="font-medium">{t(`names.${agent.id}`)}</span>
-          <Badge variant={TONE[agent.access]}>{t(`access.${agent.access}`)}</Badge>
+          <Badge variant={TONE[agent.access]}>
+            {t(`access.${agent.access}`)}
+          </Badge>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">{t(`short.${agent.id}`)}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t(`short.${agent.id}`)}
+        </p>
         {agent.access === "expiring" && agent.daysLeft !== null && (
           /* Срок называется заранее, а не в день отключения: человек должен
              успеть продлить, а не обнаружить закрытый раздел. */
-          <p className="mt-1 text-sm text-warn">{t("daysLeft", { days: agent.daysLeft })}</p>
+          <p className="mt-1 text-sm text-warn">
+            {t("daysLeft", { days: agent.daysLeft })}
+          </p>
         )}
       </div>
 
@@ -78,7 +98,9 @@ async function AgentRow({ agent }: { agent: NavAgent }) {
         {agent.access === "unavailable" ? (
           /* Ни цены, ни кнопки. Оплата за непостроенного агента — это деньги
              за обещание, и никакая формулировка этого не исправляет. */
-          <span className="text-sm text-muted-foreground">{t("comingSoon")}</span>
+          <span className="text-sm text-muted-foreground">
+            {t("comingSoon")}
+          </span>
         ) : (
           <Link
             href={agent.href}
