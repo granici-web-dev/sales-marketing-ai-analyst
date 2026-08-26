@@ -316,19 +316,27 @@
       "running": "The agent is running."
     },
     "unlockPanel": {
-      "lead": "This agent is turned on with the {plan} plan.",
       "period": "Billing period",
       "monthly": "Monthly",
       "yearly": "Yearly",
       "perMonth": "{price} € / month",
       "perYear": "{price} € / year",
-      "yearlySaving": "Two months free compared with paying monthly.",
-      "subscribe": "Subscribe",
+      "subscribe": "Order",
       "requested": "Request sent. We will call you and turn the agent on.",
-      "changed": "The plan has changed. The agent starts in a moment.",
       "signedOut": "Your session expired. Sign in again.",
       "failed": "Could not start the payment. Try again.",
-      "note": "Payment goes through your Davoq account. You can cancel at any time — the agent keeps running until the end of the paid period."
+      "note": "Payment goes through your Davoq account. You can cancel at any time — the agent keeps running until the end of the paid period.",
+      "tier": "Tier",
+      "tiers": {
+        "basic": "Basic",
+        "pro": "Pro"
+      },
+      "perMonthShort": "{price} €/month",
+      "volumeDiscount": "Discount for several agents: −{percent} %",
+      "annualDiscount": "Discount for paying yearly: −{percent} %",
+      "setup": "Setup: {price} € once",
+      "dueNow": "Due now: {price} €",
+      "counting": "Calculating…"
     }
   },
   "settings": {

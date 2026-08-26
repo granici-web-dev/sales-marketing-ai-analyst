@@ -30,8 +30,10 @@ interface EngineAgent {
   priceFrom: number | null;
   /** Дней до конца оплаченного периода. null — бессрочно либо не куплен. */
   daysLeft: number | null;
-  /** Чем включить. null — ни один покупаемый тариф его не даёт. */
+  /** Чем включить целым тарифом. null — покупаемого тарифа с ним нет. */
   plan: UnlockPlan | null;
+  /** Вилки с ценами. null — агент не продаётся. */
+  tiers: Partial<Record<"basic" | "pro", number>> | null;
 }
 
 export type PortalAgent = EngineAgent;

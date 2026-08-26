@@ -41,6 +41,7 @@ export const loadPortalNav = cache(async (): Promise<PortalNav> => {
             daysLeft: agent.daysLeft,
             priceFrom: agent.priceFrom,
             plan: agent.plan,
+            tiers: agent.tiers,
           },
     ),
   };

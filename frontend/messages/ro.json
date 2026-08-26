@@ -316,19 +316,27 @@
       "running": "Agentul este pornit."
     },
     "unlockPanel": {
-      "lead": "Agentul se pornește cu pachetul {plan}.",
       "period": "Perioada de plată",
       "monthly": "Lunar",
       "yearly": "Anual",
       "perMonth": "{price} € / lună",
       "perYear": "{price} € / an",
-      "yearlySaving": "Două luni cadou față de plata lunară.",
-      "subscribe": "Abonează-te",
+      "subscribe": "Comandă",
       "requested": "Am trimis cererea. Vă sunăm și pornim agentul.",
-      "changed": "Pachetul a fost schimbat. Agentul pornește în câteva momente.",
       "signedOut": "Sesiunea a expirat. Intrați din nou.",
       "failed": "Nu am putut începe plata. Încercați din nou.",
-      "note": "Plata se face în contul Davoq. Puteți renunța oricând — agentul rămâne pornit până la sfârșitul perioadei plătite."
+      "note": "Plata se face în contul Davoq. Puteți renunța oricând — agentul rămâne pornit până la sfârșitul perioadei plătite.",
+      "tier": "Nivelul",
+      "tiers": {
+        "basic": "Basic",
+        "pro": "Pro"
+      },
+      "perMonthShort": "{price} €/lună",
+      "volumeDiscount": "Reducere pentru mai mulți agenți: −{percent} %",
+      "annualDiscount": "Reducere pentru plata anuală: −{percent} %",
+      "setup": "Instalare: {price} € o singură dată",
+      "dueNow": "De plată acum: {price} €",
+      "counting": "Se calculează…"
     }
   },
   "settings": {

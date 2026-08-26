@@ -35,11 +35,11 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
         )}
 
         {agent.access === "locked" &&
-          (agent.plan ? (
-            <UnlockPanel plan={agent.plan} />
+          (agent.tiers ? (
+            <UnlockPanel agentId={agent.id} tiers={agent.tiers} />
           ) : (
-            /* Ни один покупаемый тариф его не даёт. Кнопка, ведущая к отказу
-               «этот пакет ещё не продаётся», хуже отсутствия кнопки. */
+            /* Цены нет — продавать нечего. Кнопка, ведущая к отказу «у этого
+               агента нет цены», хуже отсутствия кнопки. */
             <p className="text-sm text-muted-foreground">{t("page.notPurchasable")}</p>
           ))}
 

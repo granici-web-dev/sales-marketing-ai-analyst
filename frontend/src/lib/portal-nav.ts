@@ -40,8 +40,10 @@ export interface NavAgent {
   href: string;
   daysLeft: number | null;
   priceFrom: number | null;
-  /** Чем включить. null — покупаемого тарифа с ним нет. */
+  /** Чем включить целым тарифом. null — покупаемого тарифа с ним нет. */
   plan: UnlockPlan | null;
+  /** Вилки с ценами. null — агент не продаётся. */
+  tiers: Partial<Record<"basic" | "pro", number>> | null;
 }
 
 export interface PortalAccount {
@@ -70,6 +72,7 @@ export const HOST_AGENT_NAV: NavAgent = {
   daysLeft: null,
   priceFrom: null,
   plan: null,
+  tiers: null,
 };
 
 /** Заперт ли раздел: и «можно купить», и «ещё не построен» одинаково закрыты. */
