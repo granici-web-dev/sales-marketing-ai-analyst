@@ -366,9 +366,52 @@ remaining surfaces.
       In CI after the build, chromium only. `tests/e2e` is no longer excluded
       from `tsconfig`, so the spec is typechecked like everything else.
 
-- [ ] **No query plans measured.** `EXPLAIN ANALYZE` needs a database with real
-      data and the stack was not running. Indexes exist on every tenant-scoped
-      table; whether the funnel queries use them at volume is unverified.
+- [x] **Query plans measured.** Full write-up in `docs/QUERY-PLANS.md`;
+      reproducible from `backend/scripts/load-fixture.sql` and
+      `backend/scripts/query-plans.py`. Measured on synthetic volume — 51
+      tenants, 640k leads, 1.9M history rows — because the pilot has ~1 200
+      leads and Postgres correctly prefers a sequential scan below a few
+      thousand rows, so "the index is not used" on a test database means
+      nothing.
+
+      The question was not "is it fast for the pilot" — it is. This is a
+      multi-tenant product, so the question was whether one tenant's dashboard
+      reads the other tenants' rows. **It does not.** `v_mefi_leads_active`
+      contains a subquery over the whole history table with no WHERE at all,
+      which reads as if every dashboard folds 1.9M rows; the planner pushes
+      `tenant_id = $1` inside the GROUP BY (it may — tenant_id is a grouping
+      key) and touches 120k. Recorded in *Checked and clean* below so nobody
+      investigates it twice.
+
+      What the measurement did turn up is where the time actually goes: **the
+      sales dashboard spends 115 ms in the database and 112 of them on one
+      query** — stuck offers, 97%. It reads `mefi_lead_history` twice, once
+      inside the view and once as an outer join for `MAX(changed_at)`: the
+      same 120k rows, 2 410 pages each, 83% of the query's buffers.
+
+      Two changes follow, with numbers rather than opinions. Neither is
+      applied — the item was to measure, and both are their own decision.
+
+- [ ] **Stuck offers: read the history once, not twice.** A rewrite that folds
+      the view's aggregate and the outer `MAX` into one CTE runs in 45–48 ms
+      against 90–114 ms, over three runs each, and touches 3 400 pages against
+      5 794. Set-equivalent, not "looks equivalent": 32 179 rows on both sides,
+      `EXCEPT ALL` in both directions returns zero. It also removes the outer
+      `GROUP BY` over 102 000 rows and the `::text` casts that make
+      `ix_mefi_salespeople_tenant_external` unusable for that join. The SQL is
+      in `docs/QUERY-PLANS.md`. Worth noting the row estimates are 4× low
+      (7 752 planned, 32 179 actual) — benign today, and exactly the kind of
+      underestimate that flips a planner into a nested loop.
+
+- [ ] **`raw_mefi_leads` has no index on the date it is filtered by.** Both
+      marketing queries filter `(tenant_id, created_at_source)` and only
+      `tenant_id` is indexed, so the planner reads all 40 000 of the tenant's
+      leads and discards 31 704 after the fact. With the composite index:
+      1.27–1.43 ms against 2.72–3.08 ms, six runs each, 6.6 MB for 640k rows.
+      A millisecond and a half is not a reason to add an index — writes pay for
+      it. The shape is: without it the work is proportional to *all* of the
+      tenant's leads ever, with it only to the window. At the pilot's 1 200
+      leads there is no difference at all; at 400 000 it is 29 ms against 2.
 
 - [x] **Tools that never ran:** `semgrep`, `gitleaks`, `trivy`, `bandit`. Now in
       `.github/workflows/security.yml`, three jobs, weekly schedule. What they
@@ -515,6 +558,11 @@ Recorded so nobody re-investigates:
 - **Failure model is deliberate**: retries with backoff and jitter, `Retry-After`
   honoured, a fallback insight when Claude is unavailable, engine rebuilt per
   worker process after fork.
+- **Tenant isolation holds at volume, including through the view.** The
+  unfiltered `GROUP BY` subquery inside `v_mefi_leads_active` does not fold
+  other tenants' history: the planner pushes the tenant predicate inside it.
+  Verified by `EXPLAIN ANALYZE` at 1.9M history rows across 51 tenants —
+  120 000 rows touched, not 1 920 000. See `docs/QUERY-PLANS.md`.
 - **`anomaly_service.py` at 766 lines should not be split.** Five detection
   rules sharing thresholds, comparison windows and loss formulas. Splitting them
   across files makes them drift on the first threshold change. That length is
