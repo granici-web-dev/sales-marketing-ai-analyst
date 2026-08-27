@@ -433,15 +433,33 @@ remaining surfaces.
       underestimate that flips a planner into a nested loop. Left as is,
       noted here.
 
-- [ ] **`raw_mefi_leads` has no index on the date it is filtered by.** Both
-      marketing queries filter `(tenant_id, created_at_source)` and only
-      `tenant_id` is indexed, so the planner reads all 40 000 of the tenant's
-      leads and discards 31 704 after the fact. With the composite index:
-      1.27–1.43 ms against 2.72–3.08 ms, six runs each, 6.6 MB for 640k rows.
-      A millisecond and a half is not a reason to add an index — writes pay for
-      it. The shape is: without it the work is proportional to *all* of the
-      tenant's leads ever, with it only to the window. At the pilot's 1 200
-      leads there is no difference at all; at 400 000 it is 29 ms against 2.
+- [x] **`raw_mefi_leads` has no index on the date it is filtered by.** Added,
+      migration 013. Both marketing queries filter
+      `(tenant_id, created_at_source)` and only `tenant_id` was indexed, so the
+      planner read all 40 000 of the tenant's leads and discarded 31 704 after
+      the fact.
+
+      Re-measured on a clean stand, six runs of the service's own queries:
+      1.42–1.96 ms against 3.03–3.32. `Rows Removed by Filter` leaves the plan
+      entirely; the index scan touches 11 pages instead of 34 followed by the
+      discard. Size depends on how it came to be — 6.5 MB built on existing
+      rows, 8.5 MB built empty and filled row by row.
+
+      `CONCURRENTLY`, because a plain `CREATE INDEX` holds writes for the whole
+      build, and a deploy happens exactly when the table is large — the MEFI
+      intake would stop at the worst moment. The price is that the migration
+      runs outside a transaction, so a failed build leaves an index with
+      `indisvalid = false`; the migration says what to do about it.
+
+      No test asserts the index is used, and none can: at test volumes the
+      planner correctly prefers a sequential scan, so such a test would be red
+      for the right reason. It is measured on the stand instead.
+
+      Recorded against my own advice — I had said to wait for volume, since a
+      millisecond and a half is not a reason to add an index. The owner's call,
+      and the shape argument is on their side: without it the work is
+      proportional to *all* of a tenant's leads ever, with it only to the
+      window.
 
 - [x] **Tools that never ran:** `semgrep`, `gitleaks`, `trivy`, `bandit`. Now in
       `.github/workflows/security.yml`, three jobs, weekly schedule. What they
