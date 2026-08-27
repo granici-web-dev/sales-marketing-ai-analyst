@@ -346,7 +346,7 @@ export function ConnectorsScreen() {
                 <div className="flex gap-2">
                   <select
                     aria-label={t("method")}
-                    className="h-9 rounded-control border bg-transparent px-2 text-sm"
+                    className="h-11 rounded-control border bg-transparent px-2 text-sm"
                     value={tool.httpMethod}
                     onChange={(e) =>
                       setTool({ ...tool, httpMethod: e.target.value })

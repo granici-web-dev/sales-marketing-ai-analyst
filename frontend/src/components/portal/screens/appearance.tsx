@@ -177,7 +177,7 @@ export function AppearanceScreen() {
                 <input
                   id={`c-${key}`}
                   type="color"
-                  className="h-9 w-16 cursor-pointer rounded-control border bg-card p-1"
+                  className="h-11 w-16 cursor-pointer rounded-control border bg-card p-1"
                   value={String(data.theme[key])}
                   onChange={(e) => patch({ theme: { ...data.theme, [key]: e.target.value } })}
                 />
@@ -187,7 +187,7 @@ export function AppearanceScreen() {
               <Label htmlFor="dark-mode">{t("darkMode")}</Label>
               <select
                 id="dark-mode"
-                className="h-9 rounded-control border bg-card px-2 text-sm"
+                className="h-11 rounded-control border bg-card px-2 text-sm"
                 value={data.theme.darkMode}
                 onChange={(e) =>
                   patch({ theme: { ...data.theme, darkMode: e.target.value as DarkMode } })

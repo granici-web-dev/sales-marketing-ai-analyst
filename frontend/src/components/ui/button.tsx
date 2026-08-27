@@ -30,11 +30,24 @@ const buttonVariants = cva(
         ghost: "hover:bg-muted hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
+      /**
+       * Высота — это не размер, а цель нажатия.
+       *
+       * Из shadcn кнопка пришла на 36 px, «маленькая» — на 32. D-24 требует
+       * 44 px на всех контролах и на всех ширинах, и требование выполнялось
+       * руками: семь мест дописывали `min-h-11` поверх примитива, а остальные
+       * тридцать семь кнопок из сорока четырёх промахивались мимо пальца.
+       * Директор по продажам открывает кабинет с телефона между звонками.
+       *
+       * Поэтому пол стоит здесь, а не в разметке. Шкала теперь меняет вес —
+       * поля и кегль, — но не цель: палец у всех кнопок одинаковый, и `sm`
+       * от этого не перестаёт быть компактной.
+       */
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-control px-3 text-xs",
-        lg: "h-10 rounded-control px-8",
-        icon: "h-9 w-9",
+        default: "h-11 px-4 py-2",
+        sm: "h-11 rounded-control px-3 text-xs",
+        lg: "h-12 rounded-control px-8",
+        icon: "size-11",
       },
     },
     defaultVariants: {

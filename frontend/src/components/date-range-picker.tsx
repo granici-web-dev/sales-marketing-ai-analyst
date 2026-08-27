@@ -118,7 +118,7 @@ export function DateRangePicker() {
             key={preset.label}
             variant="outline"
             size="sm"
-            className="min-h-[44px] text-xs"
+            className="text-xs"
             onClick={() => applyPreset(preset.from, preset.to)}
           >
             {preset.label}
@@ -141,7 +141,6 @@ export function DateRangePicker() {
         <div className="flex justify-end px-1">
           <Button
             size="sm"
-            className="min-h-[44px]"
             onClick={() => applyRange(range)}
             disabled={!range?.from || !range?.to}
           >
@@ -156,7 +155,7 @@ export function DateRangePicker() {
     <Button
       variant="outline"
       className={cn(
-        "min-h-[44px] gap-2 text-sm font-normal",
+        "gap-2 text-sm font-normal",
         !validatedFrom && "text-muted-foreground",
       )}
     >
@@ -171,7 +170,7 @@ export function DateRangePicker() {
         <>
           <Button
             variant="outline"
-            className="min-h-[44px] gap-2 text-sm font-normal"
+            className="gap-2 text-sm font-normal"
             onClick={() => setOpen(true)}
           >
             <CalendarIcon size={16} />
@@ -230,7 +229,7 @@ function RefreshDataButton() {
       onClick={trigger}
       disabled={isRunning || state.kind === "rate-limited"}
       title={title}
-      className="min-h-[44px] gap-2 text-sm font-normal"
+      className="gap-2 text-sm font-normal"
     >
       {icon}
       {label}

@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { RefreshCw, Loader2, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useInsightsToday,
@@ -131,9 +132,9 @@ function InsightsPageContent() {
         <h1 className="text-xl font-semibold">{t("title")}</h1>
         <div className="flex gap-2 items-center flex-wrap">
           {/* INSI-02: historical date picker */}
-          <input
+          <Input
             type="date"
-            className="min-h-11 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-auto"
             value={selectedDate ?? ""}
             onChange={handleDateChange}
             aria-label={t("datePicker")}
@@ -143,7 +144,6 @@ function InsightsPageContent() {
             <Button
               variant="outline"
               size="sm"
-              className="min-h-11"
               onClick={() => setSelectedDate(null)}
             >
               {t("today")}
@@ -152,7 +152,6 @@ function InsightsPageContent() {
           {/* INSI-03: Reîmprospătează button */}
           <Button
             variant="default"
-            className="min-h-11"
             disabled={refreshDisabled}
             onClick={handleRefresh}
           >

@@ -184,7 +184,7 @@ export function ConversationsScreen() {
               <Label htmlFor="f-locale">{t("language")}</Label>
               <select
                 id="f-locale"
-                className="h-9 w-32 rounded-control border bg-card px-2 text-sm"
+                className="h-11 w-32 rounded-control border bg-card px-2 text-sm"
                 value={filters.locale}
                 onChange={(e) => set({ locale: e.target.value })}
               >

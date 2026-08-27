@@ -279,13 +279,44 @@ remaining surfaces.
       standalone with its own login — and the design system, which existed only
       as comments scattered across individual components.
 
-- [ ] **The base Button is 36 px tall; the 44 px touch target is added by hand.**
-      Found while writing `DESIGN.md`: `h-9` in the primitive, `min-h-11` or
-      `min-h-[44px]` at 26 call sites across 11 files, and 16 files use
-      `<Button>` — so roughly a third of the buttons in the cabinet miss the
-      target entirely. The reader opens this from a phone between calls.
-      *Fix:* in the primitive, which restyles every button at once — a visible
-      change, not a mechanical one.
+- [x] **The base Button is 36 px tall; the 44 px touch target is added by hand.**
+      Done, in the primitive. `Button` is `h-11` at every size (`lg` 48,
+      `icon` `size-11`), `Input` the same. The size scale now varies weight —
+      padding and type size — not the target: a finger is the same size on
+      every button, and `sm` is still the compact one.
+
+      Two counts in the old entry were wrong, and the correction is the
+      interesting part. Of the 26 manual overrides only **seven** sat on
+      `<Button>`; the other 19 are hand-rolled `<button>`, `<Link>` and
+      `CollapsibleTrigger` that the primitive cannot reach. But the miss was
+      wider than "roughly a third": `size="sm"` is 32 px and 27 of the 44
+      buttons use it, so 37 of 44 were under the floor.
+
+      `Input` came along because it had to. It was `h-9` too, and it stands in
+      a row with a button (`knowledge.tsx` — the page address and "Add"):
+      raising the button alone would have fixed the target and broken the row.
+      Four hand-styled `h-9` controls in the portal — two selects, a colour
+      swatch, an HTTP-method select — went with them for the same reason, and
+      the insights date input moved onto `<Input>`, which is what
+      `conversations.tsx` already did with its date fields.
+
+      Proved in both halves, like route protection. The cheap half reads the
+      rendered class list — jsdom does not compute Tailwind, so the classes are
+      converted to pixels on Tailwind's own scale — and a source sweep fails if
+      markup starts writing the floor back on top of `Button` or `Input`, since
+      an override in markup means the primitive is not providing it. The
+      expensive half measures `boundingBox()` in the built app on `/login`,
+      which needs no session and holds both primitives side by side. Seven
+      mutations seen red: each of the four sizes lowered, the icon's width,
+      `Input` lowered, and an override re-added at a call site — the browser
+      half reported `36`, which is exactly the number the class-reading half
+      cannot see.
+
+      What is not covered: the 19 hand-rolled controls hold their own 44 px,
+      and a *new* one written below the floor would pass. Detecting that from
+      source is not reliable — heights under 44 px are legitimate everywhere
+      for icons, dividers and skeletons, so a blanket sweep would be noise.
+      What can be owned is the primitive, and it is.
 
 - [ ] **Frontend coverage: 15.7% of lines, 89 of 109 files at zero.** Measured,
       not counted — `pnpm test:coverage`. The old entry said "6 test files
