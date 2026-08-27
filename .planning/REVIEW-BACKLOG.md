@@ -386,10 +386,45 @@ remaining surfaces.
       than `16.3.3`, because 16.3.3 was published a day earlier than the install
       — the CVE that prompted the bump is fixed in both.
 
-- [ ] **The control set still needs Bedrock keys**, so it is not in CI. Its
-      corpus is reproducible now (`npm run seed:control` in the engine repo)
-      and it runs on any machine rather than the one holding the pilot's
-      materials — but fifteen model calls per push is a real bill.
+- [x] **The control set is in CI** — nightly and on a button, not on every
+      commit. `.github/workflows/control-set.yml` in the engine repo.
+
+      A separate workflow rather than a step in `ci.yml`, because a model's
+      answer is not deterministic: the same question twice gives different
+      words, and the set checks meaning, not a string. A gate that sometimes
+      goes red through no fault of the commit stops being read — the same
+      reasoning already written in `ci.yml` about arriving red. A fork's pull
+      request cannot reach the secrets either, so such a step would fail on
+      every fork. Hence two triggers: nightly, which catches drift on the
+      model's side that no commit of ours caused, and manual before a deploy,
+      where `--only` can take a subset.
+
+      The stand is the one from `docker-compose`: `pgvector/pgvector:pg17` and
+      redis. Two database roles, not one — the owner `app` for migrations and
+      `assistwidget_app` for everything else. RLS does not apply to the owner,
+      so a run under it would be testing a configuration that exists nowhere.
+      `.env.example` points both at the owner; that is a development
+      convenience and there was no reason to carry it into CI.
+
+      Rehearsed rather than sketched: the whole sequence ran on a throwaway
+      database from empty — migrations, corpus (3 documents, 20 chunks),
+      engine under tsx, the set. 15/15, exit 0, and the working database with
+      the pilot's material was not touched. Measured cost per run: fifteen
+      Haiku calls plus three embeddings, a few cents.
+
+      Two things the rehearsal turned up. `--env-file=.env` fails on a missing
+      file, and CI has no `.env` — both control scripts moved to
+      `--env-file-if-exists`, which is how `env.ts` already treats it and what
+      two other scripts already did. And the first draft interpolated
+      `${{ inputs.only }}` straight into the shell command; the repo's own
+      semgrep caught it as `run-shell-injection`. Checked both ways: one
+      finding with the interpolation, zero when the value goes through the
+      environment.
+
+      Still needed from the owner: `AWS_ACCESS_KEY_ID` and
+      `AWS_SECRET_ACCESS_KEY` as repository secrets, scoped to
+      `infra/bedrock-policy.json`. Without them the run fails on the first
+      step with that sentence rather than after three minutes of install.
 
 ---
 
