@@ -561,8 +561,16 @@ class DashboardReadService:
     async def get_stuck_offers(self, from_date: date, to_date: date) -> list[dict]:
         """Return list of offers stuck > 14 days without any activity — SALE-07.
 
-        Queries v_mefi_leads_active (VIEW — not ORM model) joined to mefi_lead_history
-        and mefi_salespeople via text() SQL. Tenant_id bound explicitly.
+        Queries v_mefi_leads_active (VIEW — not ORM model) joined to
+        mefi_salespeople via text() SQL. Tenant_id bound explicitly.
+
+        Историю читает вид, и только он. Раньше она читалась дважды — внутри
+        вида ради `reached_offer` и здесь ради `MAX(changed_at)`, — и это
+        стоило 112 мс из 115, которые экран продаж проводит в базе. Теперь
+        время последнего перехода приезжает столбцом (миграция 012), внешняя
+        группировка не нужна вовсе, и с ней ушли приведения к тексту, из-за
+        которых индекс по продавцам для этого соединения был непригоден.
+        Замер и числа — docs/QUERY-PLANS.md.
 
         Args:
             from_date: Start of date range (unused in query but kept for interface consistency).
@@ -572,24 +580,25 @@ class DashboardReadService:
             List of {external_id, days_stuck (int), salesperson_name (str | None)} dicts,
             ordered by days_stuck DESC, limited to 50 records.
         """
+        # `lifecycle NOT IN ('junk')` здесь не нужен: вид и так отдаёт только
+        # 'active' и 'lost'. Условие было тавтологией и держалось на том, что
+        # его никто не проверял.
         stuck_sql = text("""
             SELECT v.external_id,
                    ms.name AS salesperson_name,
-                   EXTRACT(EPOCH FROM (now() - MAX(h.changed_at))) / 86400 AS days_stuck
+                   EXTRACT(EPOCH FROM (now() - v.last_history_change_at)) / 86400
+                       AS days_stuck
             FROM v_mefi_leads_active v
-            LEFT JOIN mefi_lead_history h
-                ON h.lead_external_id = v.external_id
-               AND h.tenant_id = :tid
             LEFT JOIN mefi_salespeople ms
-                ON ms.external_id::text = v.assigned_to_id::text
+                ON ms.external_id = v.assigned_to_id
                AND ms.tenant_id = :tid
             WHERE v.tenant_id = :tid
               AND v.reached_offer = true
-              AND v.lifecycle NOT IN ('junk')
-            GROUP BY v.external_id, ms.name
-            HAVING MAX(h.changed_at) < now() - interval '14 days'
-                OR MAX(h.changed_at) IS NULL
-            ORDER BY days_stuck DESC NULLS LAST
+              AND (v.last_history_change_at < now() - interval '14 days'
+                   OR v.last_history_change_at IS NULL)
+            -- Разрешитель ничьих: без него при совпадающих сроках нельзя
+            -- сказать, какие именно пятьдесят оферт увидит человек.
+            ORDER BY days_stuck DESC NULLS LAST, v.external_id
             LIMIT 50
         """)
 

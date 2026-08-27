@@ -392,16 +392,46 @@ remaining surfaces.
       Two changes follow, with numbers rather than opinions. Neither is
       applied — the item was to measure, and both are their own decision.
 
-- [ ] **Stuck offers: read the history once, not twice.** A rewrite that folds
-      the view's aggregate and the outer `MAX` into one CTE runs in 45–48 ms
-      against 90–114 ms, over three runs each, and touches 3 400 pages against
-      5 794. Set-equivalent, not "looks equivalent": 32 179 rows on both sides,
-      `EXCEPT ALL` in both directions returns zero. It also removes the outer
-      `GROUP BY` over 102 000 rows and the `::text` casts that make
-      `ix_mefi_salespeople_tenant_external` unusable for that join. The SQL is
-      in `docs/QUERY-PLANS.md`. Worth noting the row estimates are 4× low
-      (7 752 planned, 32 179 actual) — benign today, and exactly the kind of
-      underestimate that flips a planner into a nested loop.
+- [x] **Stuck offers: read the history once, not twice.** Done, but not the
+      way it was measured. Folding the aggregate into a CTE inside the service
+      would have needed no migration — and would have carried `IN (3, 1)` out
+      of the view and into the service. That definition of "reached the offer"
+      lives in the view and only there, and the funnel is per-tenant config
+      (`tenants.funnel_config`); a second home for the same constant costs more
+      than one migration.
+
+      So `MAX(changed_at)` is computed where the `BOOL_OR`s already are — the
+      history is folded there anyway, and one more aggregate in that fold is
+      free — and arrives as `last_history_change_at` (migration 012). The
+      service query then needs no second join to the history, no outer
+      `GROUP BY`, and no `::text` casts.
+
+      Measured on the same stand after migrating: inside the sales dashboard
+      112 ms → 68–80, standalone 88–101 → 49.5–51.3, buffers 5 794 → 3 399.
+      Equivalence re-asked on the new view: 32 179 rows both sides, `EXCEPT ALL`
+      zero in both directions. In the plan the history is one `HashAggregate`,
+      and the salespeople join is now a nested loop with `Memoize` on
+      `assigned_to_id` — precisely what the casts had been preventing.
+
+      Two things fell out. `AND v.lifecycle NOT IN ('junk')` was a tautology —
+      the view emits only `'active'` and `'lost'` — and survived because nothing
+      checked it. And `ORDER BY days_stuck DESC` had no tiebreaker, so which
+      fifty offers a person saw was undefined among equal values; `,
+      v.external_id` added in the same pass.
+
+      The SQL had no test at all: the one test on `get_stuck_offers` mocked
+      `session.execute` and knew nothing about the query. Now
+      `tests/integration/test_stuck_offers.py` seeds one lead per branch —
+      offer by status, by flag, by history only, no history at all, lost,
+      recent, never reached, junk, another tenant — against a real database.
+      Written against the OLD query and seen green on it first, because a test
+      written after the change describes the intention rather than the
+      behaviour. Seven mutations killed on both versions.
+
+      Row estimates are still 3–4× low (9 179 planned, 32 179 actual). Benign
+      today — the hash joins chosen are right — and exactly the kind of
+      underestimate that flips a planner into a nested loop. Left as is,
+      noted here.
 
 - [ ] **`raw_mefi_leads` has no index on the date it is filtered by.** Both
       marketing queries filter `(tenant_id, created_at_source)` and only
